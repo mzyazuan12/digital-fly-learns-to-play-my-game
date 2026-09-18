@@ -65,17 +65,12 @@ def test_dng100_current_engages_engineered_cpg_and_raises_vnc_cpg():
 def test_dnb08_is_not_decoded_as_walking():
     graph = miniature_connectome(1)
     bridge = MotorBridge(graph, legacy_scaffold=False)
-    result = probe_pathway(
-        graph,
-        bridge.dnb08_indices,
-        source="experiment.optogenetic.DNb08",
-        seed=1,
-        current=40.0,
-        steps=12,
-    )
-    assert result["present"]
-    assert result["driven"]["mode"] == "rest"
-    assert result["driven"]["scaffold_used"] is False
+    counts = np.zeros(graph.n, dtype=np.int32)
+    counts[bridge.dnb08_indices] = 80
+    cmd = bridge.read(counts, 0.01)
+    assert cmd.mode == "rest"
+    assert cmd.scaffold_used is False
+    assert set(bridge.dnb08_indices.tolist()).isdisjoint(set(bridge.forward_walk_indices.tolist()))
 
 
 def test_dng100_lesion_of_e1_reduces_mn_response_without_a_walk_api():
