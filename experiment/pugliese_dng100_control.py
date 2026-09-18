@@ -92,7 +92,7 @@ def run(*, n_replicates: int = 1, T: float = 2.0, stim_current: float = 250.0) -
     class_col = "class" if "class" in table.columns else None
     mn_mask = np.zeros(n_neurons, dtype=bool)
     if class_col:
-        mn_mask = table[class_col].astype(str).str.contains("motor", case=False, na=False).to_numpy()
+        mn_mask = table[class_col].astype(str).str.contains(r"motor neuron", case=False, na=False).to_numpy()
     if not mn_mask.any() and "subclass" in table.columns:
         mn_mask = table["subclass"].astype(str).str.contains("motor", case=False, na=False).to_numpy()
 

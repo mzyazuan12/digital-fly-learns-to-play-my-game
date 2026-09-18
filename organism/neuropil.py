@@ -155,7 +155,11 @@ def roi_slot_from_counts(rois: dict[str, dict[str, int]]) -> tuple[str | None, d
         if slot is None:
             continue
         scores[slot] += int(counts.get("pre", 0)) + int(counts.get("post", 0))
-    winner = _unique_argmax(scores)
+    total = sum(scores.values())
+    winner = _unique_argmax(scores, min_ratio=2.0)
+    if winner and total > 0 and scores[winner] < 0.55 * total:
+        # Descending neurons like DNg100 innervate all three neuropils on one side.
+        return None, scores
     return winner, scores
 
 
