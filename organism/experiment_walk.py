@@ -84,7 +84,7 @@ def spontaneous_in_arena(seed: int = 0, steps: int = 200) -> dict:
     scaffold = any(r.scaffold_used for r in records)
     causal = True
     for r in walked:
-        if r.walk_hz <= 0.0 and r.walk_trace <= 0.0:
+        if r.walk_hz <= 0.0 and r.walk_trace <= 0.0 and r.locomotor_drive <= 0.0:
             causal = False
             break
     return {

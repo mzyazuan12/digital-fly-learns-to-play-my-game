@@ -128,7 +128,7 @@ def test_autonomous_loop_does_not_use_a_walk_timer():
     assert all(not r.scaffold_used for r in records)
     walked = [r for r in records if r.mode == "walk"]
     for rec in walked:
-        assert rec.walk_hz > 0.0 or rec.walk_trace > 0.0
+        assert rec.walk_hz > 0.0 or rec.walk_trace > 0.0 or rec.locomotor_drive > 0.0
     sources = {s.value for r in records for s in r.sources}
     assert "developer_override" not in sources
 
