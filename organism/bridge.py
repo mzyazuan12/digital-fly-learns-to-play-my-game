@@ -148,8 +148,8 @@ class MotorBridge:
     """MaleCNS identified DNs → 2-vector command for the walking controller.
 
     Default path: analog mapping from identified DN rates. No bout timer,
-    no walking_drive fallback. If DNp09 is silent, the fly rests. That is
-    a scientific result, not a bug to paper over.
+    no walking_drive fallback. If identified forward walking DNs are silent,
+    the fly rests. That is a scientific result, not a bug to paper over.
 
     LEGACY_SCAFFOLD restores the old timer overrides for comparison only.
     """
