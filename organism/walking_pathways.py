@@ -429,6 +429,7 @@ class LegCPGCopy:
     motor_indices: np.ndarray
     assignment: str
     e1_e2_contacts: int
+    assignment_sources: dict[str, str] = field(default_factory=dict)
 
     @property
     def filled(self) -> bool:
@@ -444,6 +445,7 @@ class LegCPGCopy:
             "motor_n": int(self.motor_indices.size),
             "motor_indices": [int(i) for i in self.motor_indices.tolist()],
             "assignment": self.assignment,
+            "assignment_sources": dict(self.assignment_sources),
             "e1_e2_contacts": int(self.e1_e2_contacts),
             "filled": self.cells.get("E1") is not None,
         }
