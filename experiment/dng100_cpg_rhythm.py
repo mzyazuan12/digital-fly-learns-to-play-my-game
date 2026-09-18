@@ -229,7 +229,7 @@ def run(
         "conditions": conditions,
         "lesions": lesion_report,
         **interpretation,
-        "computational_graph": computational_graph_manifest(graph),
+        "computational_graph": computational_graph_manifest(),
     }
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
