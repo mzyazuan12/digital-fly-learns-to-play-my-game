@@ -651,16 +651,44 @@ class WalkingCircuit:
             "E3_n": int(e3.size),
             "cpg_core_to_vnc_motor": contacts_between(self.connectome, self.cpg_core_indices, mn),
             "dng100_top_partners": top_partners(self.connectome, dng, k=12),
+            "dng100_n": int(dng.size),
+            "dng100_is_six_neurons": False,
+            "dng100_to_each_E1": self._dng100_to_each_e1(),
             "notes": [
                 "Anatomy is MEASURED synapse counts. Oscillation is not implied.",
-                "Pugliese et al. 2025: DNg100 → E1 is the main walking-CPG entry.",
+                "Pugliese et al. 2025 bioRxiv: DNg100 → E1 is the main walking-CPG entry.",
+                "DNg100 is two neurons (one per side). The six-copy types are E1/E2/I1.",
+                "Leg slots are T1/T2/T3 × L/R from ROI innervation / MN connectivity / somaNeuromere, not soma XYZ.",
                 "Do not pool all IN17A001/INXXX466/IN16B036 into one CPG state; there are six leg copies.",
                 "DNp09 does not have to synapse on E1; it can recruit DNg100.",
                 "DNb08 enters via E4 (IN03A006) and E5 (INXXX464), then E1.",
-                "Published E5 is INXXX464. An older preprint passage used INXXX466; that alias is rejected.",
+                "Canonical E5 is INXXX464. An older preprint passage used INXXX466; that alias is rejected.",
                 "Foxglove (CB0890) may be absent from MaleCNS type labels.",
+                "contacts_pair is for measurement. Do not hand-wire DNg100→E1→E2→I1 gains.",
             ],
         }
+
+    def _dng100_to_each_e1(self) -> list[dict]:
+        rows = []
+        for dng_i in self.indices("DNg100").tolist():
+            dng_side = _side_of(self.connectome, int(dng_i))
+            dng_body = int(self.connectome.neuron_ids[int(dng_i)])
+            for slot, copy in self.legs.items():
+                e1 = copy.cells.get("E1")
+                if e1 is None:
+                    continue
+                rows.append(
+                    {
+                        "dng100_body_id": dng_body,
+                        "dng100_soma_side": dng_side,
+                        "e1_slot": slot,
+                        "e1_side": copy.side,
+                        "e1_neuromere": copy.neuromere,
+                        "e1_body_id": copy.body_ids.get("E1"),
+                        "contacts": contacts_pair(self.connectome, int(dng_i), int(e1)),
+                    }
+                )
+        return rows
 
     def rates(self, counts: np.ndarray, duration_s: float, analog: np.ndarray | None = None) -> dict[str, dict]:
         out: dict[str, dict] = {}
