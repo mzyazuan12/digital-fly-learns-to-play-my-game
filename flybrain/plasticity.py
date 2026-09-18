@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from flybrain.network import LIFNetwork
+from flybrain.network import LIFNetwork, MAX_PLASTIC_FACTOR, MIN_PLASTIC_FACTOR
 
 
 @dataclass
@@ -64,9 +64,10 @@ class RewardModulatedPlasticity:
         moved = delta != 0
         if not np.any(moved):
             return 0
+        lo = getattr(p, "plastic_min", MIN_PLASTIC_FACTOR - 1.0)
+        hi = getattr(p, "plastic_max", MAX_PLASTIC_FACTOR - 1.0)
         self.net.plastic_component[moved] = np.clip(
-            self.net.plastic_component[moved] + delta[moved], p.plastic_min if hasattr(p, "plastic_min") else -0.95,
-            p.plastic_max if hasattr(p, "plastic_max") else 4.0,
+            self.net.plastic_component[moved] + delta[moved], lo, hi
         )
         # Keep combined scale in sync for old readers. Anatomy is never written.
         self.net._rebuild_weights()

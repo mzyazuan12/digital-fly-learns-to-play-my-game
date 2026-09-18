@@ -42,6 +42,14 @@ from organism.config import (
     motor_fidelity_level,
 )
 
+ENGINEERED_NEURAL_MOTOR_INTERFACE = "ENGINEERED_NEURAL_MOTOR_INTERFACE"
+# 12.5 Hz of DNp09 → locomotor_drive 1.0. ASSUMED mapping onto the CPG, not biology.
+SPIKE_HZ_TO_DRIVE = 0.08
+
+
+class NonNeuralMotorAuthority(RuntimeError):
+    """NO_SCAFFOLD forbids timers, fallbacks, named gait commands, and developer motor commands."""
+
 
 # Documented expected body IDs in MaleCNS v1.0 (uint64). Used for provenance,
 # not as a hardcoded index map — lookup is still by type/side first.
@@ -86,6 +94,10 @@ class MotorCommand:
     previous_gate: float = 0.0
     controller_activation: float = 0.0
     motor_fidelity_level: int = MOTOR_FIDELITY_LEVEL
+    locomotor_drive: float = 0.0
+    steering_drive: float = 0.0
+    analog_walk: float = 0.0
+    motor_interface: str = ENGINEERED_NEURAL_MOTOR_INTERFACE
 
 
 def _norm_side(value: object) -> str:
@@ -150,12 +162,22 @@ class MotorBridge:
         self._walk_pre = np.zeros(0, dtype=np.int32)
         self._walk_post = np.zeros(0, dtype=np.int32)
         self._walk_edge = np.zeros(0, dtype=np.int32)
+        self._in_ptr = None
+        self._in_order = None
         self.notes: dict = {
             "engineered_gain": True,
             "not_motor_neuron_control": True,
             "legacy_scaffold": self.legacy_scaffold,
             "policy": self.policy.as_dict(),
             "walk_authority": "legacy_bout_timer" if self.legacy_scaffold else "identified_dn_rates",
+            "motor_interface": ENGINEERED_NEURAL_MOTOR_INTERFACE,
+            "layers": {
+                "anatomy": "MEASURED",
+                "transmitter": "PREDICTED/MEASURED-DERIVED",
+                "functional_gain": "ASSUMED",
+                "membrane_model": "ASSUMED/LITERATURE_DERIVED",
+                "motor_interface": ENGINEERED_NEURAL_MOTOR_INTERFACE,
+            },
         }
         self.walk_trace = 0.0
         self.steer_l_trace = 0.0
@@ -254,6 +276,58 @@ class MotorBridge:
             )
         }
 
+    @staticmethod
+    def _blank(value: object) -> bool:
+        if value is None:
+            return True
+        if isinstance(value, str) and value.strip().upper() in {"", "NONE"}:
+            return True
+        return False
+
+    def _reject_non_neural_authority(
+        self,
+        *,
+        walking_bout_s: float,
+        walking_drive: float,
+        grooming_drive: float,
+        flight_drive: float,
+        external_command: str,
+        developer_override: str,
+        privileged_observation: str,
+        developer_command,
+        direct_walk_fallback,
+        privileged_target,
+    ) -> None:
+        problems: list[str] = []
+        if not self.policy.allow_behavior_timers and float(walking_bout_s or 0.0) != 0.0:
+            problems.append(f"walking_bout_s={walking_bout_s}")
+        if not self.policy.allow_motor_fallbacks:
+            if float(walking_drive or 0.0) != 0.0:
+                problems.append(f"walking_drive={walking_drive}")
+            if float(grooming_drive or 0.0) != 0.0:
+                problems.append(f"grooming_drive={grooming_drive}")
+            if float(flight_drive or 0.0) != 0.0:
+                problems.append(f"flight_drive={flight_drive}")
+            if not self._blank(direct_walk_fallback):
+                problems.append(f"direct_walk_fallback={direct_walk_fallback}")
+        if not self.policy.allow_named_gait_commands:
+            cmd = str(external_command or "NONE")
+            if cmd.upper() not in {"", "NONE"} and not cmd.startswith("experiment."):
+                problems.append(f"gait_command={cmd}")
+            if not self._blank(developer_command):
+                problems.append(f"developer_command={developer_command}")
+        if not self.policy.allow_privileged_world_state:
+            if not self._blank(privileged_observation):
+                problems.append(f"privileged_observation={privileged_observation}")
+            if not self._blank(privileged_target):
+                problems.append(f"privileged_target={privileged_target}")
+        if not self._blank(developer_override):
+            problems.append(f"developer_override={developer_override}")
+        if problems:
+            raise NonNeuralMotorAuthority(
+                "NO_SCAFFOLD rejects non-neural motor authority: " + ", ".join(problems)
+            )
+
     def _fallback_note(self) -> str:
         if self.walk_indices.size and self.steer_left.size and self.steer_right.size:
             return "identified_types"
@@ -304,6 +378,14 @@ class MotorBridge:
             dns = self.connectome.lookup(superclass="descending_neuron_tbc")
         return _side_filter(self.connectome, dns, side)
 
+    def reset_traces(self) -> None:
+        self.walk_trace = 0.0
+        self.steer_l_trace = 0.0
+        self.steer_r_trace = 0.0
+        self.reverse_trace = 0.0
+        self.last_trace = {}
+        self.last_command = MotorCommand(0.0, 0.0, "rest", 0.0, 0.0, 0.0, ())
+
     def read(
         self,
         counts: np.ndarray,
@@ -319,13 +401,23 @@ class MotorBridge:
         developer_override: str = "NONE",
         privileged_observation: str = "NONE",
         motor_mode: str = "MODE_ENGINEERED_CPG",
+        developer_command=None,
+        direct_walk_fallback=None,
+        privileged_target=None,
+        physical_speed_mm_s: float = 0.0,
     ) -> MotorCommand:
-        if not self.policy.allow_behavior_timers:
-            walking_bout_s = 0.0
-        if not self.policy.allow_motor_fallbacks:
-            walking_drive = 0.0
-            grooming_drive = 0.0
-            flight_drive = 0.0
+        self._reject_non_neural_authority(
+            walking_bout_s=walking_bout_s,
+            walking_drive=walking_drive,
+            grooming_drive=grooming_drive,
+            flight_drive=flight_drive,
+            external_command=external_command,
+            developer_override=developer_override,
+            privileged_observation=privileged_observation,
+            developer_command=developer_command,
+            direct_walk_fallback=direct_walk_fallback,
+            privileged_target=privileged_target,
+        )
 
         walk_hz = _group_rate(counts, self.walk_indices, duration_s)
         left_hz = _group_rate(counts, self.steer_left, duration_s)
@@ -335,10 +427,12 @@ class MotorBridge:
         groom_hz = _group_rate(counts, self.groom_indices, duration_s)
         left_hz = left_hz + 0.5 * _group_rate(counts, self.contra_right, duration_s)
         right_hz = right_hz + 0.5 * _group_rate(counts, self.contra_left, duration_s)
-        if graded_output is not None and self.walk_indices.size:
-            walk_hz = max(walk_hz, 40.0 * float(np.mean(graded_output[self.walk_indices])))
+        analog = graded_output if graded_output is not None else getattr(net, "graded_release", None)
+        analog_walk = 0.0
+        if analog is not None and self.walk_indices.size:
+            analog_walk = float(np.mean(analog[self.walk_indices]))
 
-        previous_gate = float(np.clip(0.08 * self.walk_trace, 0.0, 1.0))
+        previous_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.walk_trace + analog_walk, 0.0, 1.2))
         dt = max(float(duration_s), 1e-4)
         alpha = float(1.0 - np.exp(-dt / self.RATE_TAU_S))
         self.walk_trace += alpha * (walk_hz - self.walk_trace)
@@ -347,15 +441,20 @@ class MotorBridge:
         self.reverse_trace += alpha * (reverse_hz - self.reverse_trace)
 
         scaffold_used = False
-        speed = float(np.clip(0.08 * self.walk_trace, 0.0, 1.2))
-        if self.reverse_trace > self.walk_trace and self.reverse_trace > 2.0:
-            speed = -float(np.clip(0.15 * self.reverse_trace, 0.0, 0.8))
-        elif self.legacy_scaffold and self.policy.allow_behavior_timers and walking_bout_s > 0.05:
-            speed = max(float(speed), float(np.clip(0.85 * walking_drive, 0.0, 1.15)))
+        # ENGINEERED_NEURAL_MOTOR_INTERFACE: continuous decode, not if rate > 18.
+        locomotor_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.walk_trace + analog_walk, 0.0, 1.2))
+        reverse_drive = float(np.clip(0.15 * self.reverse_trace, 0.0, 0.8))
+        speed = locomotor_drive
+        if reverse_drive > locomotor_drive:
+            speed = -reverse_drive
+        if self.legacy_scaffold and self.policy.allow_behavior_timers and walking_bout_s > 0.05:
+            speed = max(float(abs(speed)), float(np.clip(0.85 * walking_drive, 0.0, 1.15))) * (
+                -1.0 if speed < 0 else 1.0
+            )
             scaffold_used = True
-        steer = float(np.clip(0.08 * (self.steer_r_trace - self.steer_l_trace), -0.8, 0.8))
-        left = float(np.clip(abs(speed) * (1.0 - steer), 0.0, 1.4))
-        right = float(np.clip(abs(speed) * (1.0 + steer), 0.0, 1.4))
+        steering_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * (self.steer_r_trace - self.steer_l_trace), -0.8, 0.8))
+        left = float(np.clip(abs(speed) * (1.0 - steering_drive), 0.0, 1.4))
+        right = float(np.clip(abs(speed) * (1.0 + steering_drive), 0.0, 1.4))
 
         want_fly = False
         want_groom = False
@@ -399,9 +498,13 @@ class MotorBridge:
             walk_trace=float(self.walk_trace),
             neural_only=not scaffold_used,
             walking_gate=gate,
-            previous_gate=previous_gate,
+            previous_gate=previous_drive,
             controller_activation=gate,
             motor_fidelity_level=fidelity,
+            locomotor_drive=float(locomotor_drive),
+            steering_drive=float(steering_drive),
+            analog_walk=float(analog_walk),
+            motor_interface=ENGINEERED_NEURAL_MOTOR_INTERFACE,
         )
         self.last_command = cmd
         self.last_trace = self.build_trace(
@@ -413,6 +516,7 @@ class MotorBridge:
             external_command=external_command,
             developer_override=developer_override,
             privileged_observation=privileged_observation,
+            physical_speed_mm_s=physical_speed_mm_s,
         )
         return cmd
 
@@ -445,8 +549,105 @@ class MotorBridge:
         self._walk_post = self.connectome.post[mask].astype(np.int32)
         self._walk_edge = np.flatnonzero(mask).astype(np.int32)
 
+    def _ensure_incoming(self) -> None:
+        if self._in_ptr is not None:
+            return
+        n = self.connectome.n
+        post = np.asarray(self.connectome.post)
+        if post.size == 0:
+            self._in_ptr = np.zeros(n + 1, dtype=np.int64)
+            self._in_order = np.zeros(0, dtype=np.int32)
+            return
+        order = np.argsort(post, kind="mergesort")
+        self._in_order = order.astype(np.int32, copy=False)
+        counts = np.bincount(post.astype(np.int64, copy=False), minlength=n)
+        ptr = np.empty(n + 1, dtype=np.int64)
+        ptr[0] = 0
+        np.cumsum(counts, out=ptr[1:])
+        self._in_ptr = ptr
+
+    def _incoming_edges(self, post_idx: int) -> np.ndarray:
+        self._ensure_incoming()
+        start = int(self._in_ptr[int(post_idx)])
+        end = int(self._in_ptr[int(post_idx) + 1])
+        return self._in_order[start:end]
+
+    def _pre_of_edges(self, edges: np.ndarray) -> np.ndarray:
+        if not edges.size:
+            return np.zeros(0, dtype=np.int32)
+        return (np.searchsorted(self.connectome.pre_ptr, edges, side="right") - 1).astype(np.int32)
+
+    def _node_inputs(self, net, index: int, top_k: int) -> list[dict]:
+        edges = self._incoming_edges(index)
+        if not edges.size:
+            return []
+        pres = self._pre_of_edges(edges)
+        analog = getattr(net, "graded_release", net.graded_output)
+        activity = np.maximum(net.last_spikes.astype(np.float32), analog)
+        contrib = activity[pres] * net.weight[edges]
+        order = np.argsort(np.abs(contrib))[::-1]
+        rows: list[dict] = []
+        graded = net.is_graded
+        for j in order.tolist():
+            amp = float(contrib[j])
+            if abs(amp) < 1e-6:
+                break
+            pre = int(pres[j])
+            rows.append(
+                {
+                    "pre": pre,
+                    "pre_label": self.cell_label(pre),
+                    "pre_type": str(self.connectome.cell_type[pre] or ""),
+                    "pre_superclass": str(self.connectome.superclass[pre] or ""),
+                    "post": int(index),
+                    "post_label": self.cell_label(int(index)),
+                    "contribution": amp,
+                    "pre_spiked": bool(net.last_spikes[pre]),
+                    "pre_graded": float(analog[pre]),
+                    "pre_analog": float(analog[pre]),
+                    "pre_drive": float(net.drive[pre]),
+                    "pre_is_graded": bool(graded[pre]),
+                }
+            )
+            if len(rows) >= top_k:
+                break
+        return rows
+
+    def causality_tree(self, net, roots, *, depth: int = 3, top_k: int = 6) -> list[dict]:
+        """DNp09 ← real incoming MaleCNS edges ← active neurons ← their inputs."""
+
+        def expand(index: int, remaining: int, seen: frozenset[int]) -> dict:
+            analog = getattr(net, "graded_release", net.graded_output)
+            node = {
+                "index": int(index),
+                "label": self.cell_label(int(index)),
+                "body_id": int(self.connectome.neuron_ids[int(index)]),
+                "v": float(net.v[int(index)]),
+                "g": float(net.g[int(index)]),
+                "drive": float(net.drive[int(index)]),
+                "spiked": bool(net.last_spikes[int(index)]),
+                "analog": float(analog[int(index)]),
+                "silent": bool(net.silent[int(index)]),
+                "inputs": [],
+            }
+            if remaining <= 0 or int(index) in seen:
+                return node
+            kids = self._node_inputs(net, int(index), top_k)
+            nxt = seen | {int(index)}
+            out = []
+            for kid in kids:
+                child = expand(int(kid["pre"]), remaining - 1, nxt)
+                child["contribution"] = kid["contribution"]
+                child["pre_is_graded"] = kid["pre_is_graded"]
+                out.append(child)
+            node["inputs"] = out
+            return node
+
+        return [expand(int(i), depth, frozenset()) for i in np.asarray(roots).tolist()]
+
     def why_walk_active(self, net, top_k: int = 8) -> dict:
         """Presynaptic / modulatory contributors onto DNp09 this window."""
+        analog = getattr(net, "graded_release", net.graded_output)
         cells = []
         for i in self.walk_indices.tolist():
             cells.append(
@@ -458,19 +659,23 @@ class MotorBridge:
                     "g": float(net.g[i]),
                     "drive": float(net.drive[i]),
                     "spiked": bool(net.last_spikes[i]),
-                    "graded_output": float(net.graded_output[i]),
+                    "graded_output": float(analog[i]),
+                    "analog": float(analog[i]),
                     "silent": bool(net.silent[i]),
                 }
             )
         afferents: list[dict] = []
+        upstream = 0.0
+        graded_input = 0.0
         if net is not None:
             self._ensure_walk_afferents()
             if self._walk_pre.size:
-                activity = net.last_spikes.astype(np.float32)
-                activity = np.maximum(activity, net.graded_output)
+                activity = np.maximum(net.last_spikes.astype(np.float32), analog)
                 contrib = activity[self._walk_pre] * net.weight[self._walk_edge]
+                upstream = float(contrib.sum())
+                graded_mask = net.is_graded[self._walk_pre]
+                graded_input = float(contrib[graded_mask].sum()) if np.any(graded_mask) else 0.0
                 order = np.argsort(np.abs(contrib))[::-1]
-                kept = 0
                 for j in order.tolist():
                     amp = float(contrib[j])
                     if abs(amp) < 1e-6:
@@ -486,17 +691,28 @@ class MotorBridge:
                             "post_label": self.cell_label(int(self._walk_post[j])),
                             "contribution": amp,
                             "pre_spiked": bool(net.last_spikes[pre]),
-                            "pre_graded": float(net.graded_output[pre]),
+                            "pre_graded": float(analog[pre]),
+                            "pre_analog": float(analog[pre]),
                             "pre_drive": float(net.drive[pre]),
+                            "pre_is_graded": bool(net.is_graded[pre]),
                         }
                     )
-                    kept += 1
-                    if kept >= top_k:
+                    if len(afferents) >= top_k:
                         break
+        sources = dict(getattr(net, "drive_sources", {}) or {})
+        sensory_input = float(sum(v for k, v in sources.items() if str(k).startswith("sensory.")))
+        oa = float(sources.get("neuromod.octopamine.DNp09", 0.0) or 0.0)
+        modulation_x = 1.0 + (oa / 14.0 if oa else 0.0)
+        tree = self.causality_tree(net, self.walk_indices, depth=3, top_k=6) if net is not None and self.walk_indices.size else []
         return {
             "cells": cells,
             "afferents": afferents,
-            "drive_sources": dict(getattr(net, "drive_sources", {}) or {}),
+            "drive_sources": sources,
+            "upstream_input": upstream,
+            "graded_input": graded_input,
+            "sensory_input": sensory_input,
+            "modulation_x": modulation_x,
+            "causality": tree,
         }
 
     def build_trace(
@@ -510,73 +726,162 @@ class MotorBridge:
         external_command: str = "NONE",
         developer_override: str = "NONE",
         privileged_observation: str = "NONE",
+        physical_speed_mm_s: float = 0.0,
     ) -> dict:
         rates = self.identified_rates(counts, duration_s)
         t_s = float(getattr(net, "sim_ms", 0.0) or 0.0) / 1000.0
         bout = "NONE" if (not self.policy.allow_behavior_timers or walking_bout_s <= 0.0) else f"{walking_bout_s:.3f} s"
-        why = self.why_walk_active(net) if net is not None else {"cells": [], "afferents": [], "drive_sources": {}}
+        why = (
+            self.why_walk_active(net)
+            if net is not None
+            else {
+                "cells": [],
+                "afferents": [],
+                "drive_sources": {},
+                "upstream_input": 0.0,
+                "graded_input": 0.0,
+                "sensory_input": 0.0,
+                "modulation_x": 1.0,
+                "causality": [],
+            }
+        )
+        experiment = external_command if str(external_command).startswith("experiment.") else "NONE"
+        gait_command = "NONE" if experiment != "NONE" or self._blank(external_command) else str(external_command)
         result = {
             "t_s": t_s,
+            "age_s": t_s,
             "external_command": external_command,
             "behavior_timer": bout,
+            "timer_authority": bout,
+            "gait_command": gait_command,
+            "motor_fallback": "NONE",
+            "root_motion": "NONE",
             "developer_override": developer_override,
             "privileged_observation": privileged_observation,
+            "experiment": experiment,
             "rates_hz": rates,
             "walking_gate": cmd.walking_gate,
             "previous_gate": cmd.previous_gate,
             "controller_activation": cmd.controller_activation,
+            "locomotor_drive": cmd.locomotor_drive,
+            "steering_drive": cmd.steering_drive,
+            "analog_walk": cmd.analog_walk,
+            "cpg_amplitude": float(0.5 * (abs(cmd.left) + abs(cmd.right))),
+            "physical_speed_mm_s": float(physical_speed_mm_s),
             "mode": cmd.mode,
             "scaffold_used": cmd.scaffold_used,
             "neural_only": cmd.neural_only,
             "motor_fidelity_level": cmd.motor_fidelity_level,
+            "motor_interface": cmd.motor_interface,
             "policy": self.policy.name,
+            "no_scaffold": self.policy.name == "NO_SCAFFOLD",
             "n_spike_events": int(getattr(net, "last_n_spike_events", 0) or 0),
             "n_graded_deliveries": int(getattr(net, "last_n_graded_deliveries", 0) or 0),
+            "n_graded_considered": int(getattr(net, "last_n_graded_considered", 0) or 0),
+            "layers": dict(self.notes.get("layers") or {}),
+            "neural_sources": {
+                "DNp09_L_hz": float((rates or {}).get("DNp09_L", 0.0)),
+                "DNp09_R_hz": float((rates or {}).get("DNp09_R", 0.0)),
+                "upstream_input": float(why.get("upstream_input", 0.0) or 0.0),
+                "graded_input": float(why.get("graded_input", 0.0) or 0.0),
+                "sensory_input": float(why.get("sensory_input", 0.0) or 0.0),
+                "modulation_x": float(why.get("modulation_x", 1.0) or 1.0),
+            },
             "why_dnp09": why,
         }
         result["text"] = format_walk_trace(result)
         return result
 
 
+def _authority_mark(value: object) -> str:
+    text = "NONE" if MotorBridge._blank(value) else str(value)
+    mark = "✓" if text == "NONE" else " "
+    return f"{text} {mark}".strip()
+
+
+def _format_causality_lines(nodes: list, indent: int = 0) -> list[str]:
+    lines: list[str] = []
+    pad = "  " * indent
+    for node in nodes:
+        label = node.get("label") or node.get("pre_label") or str(node.get("index", "?"))
+        extra = ""
+        if "contribution" in node:
+            extra = f"  {float(node['contribution']):+.3f}"
+        lines.append(f"{pad}{label}{extra}")
+        kids = node.get("inputs") or []
+        if kids:
+            lines.append(f"{pad}↑")
+            lines.extend(_format_causality_lines(kids, indent + 1))
+    return lines
+
+
 def format_walk_trace(trace: dict) -> str:
     rates = trace.get("rates_hz") or {}
-
-    def hz(name: str) -> str:
-        return f"{float(rates.get(name, 0.0)):6.1f} Hz"
-
-    lines = [
-        "WALK INITIATION TRACE",
-        "",
-        f"t = {float(trace.get('t_s', 0.0)):.3f} s",
-        "",
-        f"External command:       {trace.get('external_command', 'NONE')}",
-        f"Behavior timer:         {trace.get('behavior_timer', 'NONE')}",
-        f"Developer override:     {trace.get('developer_override', 'NONE')}",
-        f"Privileged observation: {trace.get('privileged_observation', 'NONE')}",
-        "",
-        f"DNp09_L:       {hz('DNp09_L').strip()}",
-        f"DNp09_R:       {hz('DNp09_R').strip()}",
-        f"DNa01_L:       {hz('DNa01_L').strip()}",
-        f"DNa01_R:       {hz('DNa01_R').strip()}",
-        "",
-        f"Walking gate:           {float(trace.get('walking_gate', 0.0)):.2f}",
-        f"Previous gate:          {float(trace.get('previous_gate', 0.0)):.2f}",
-        "",
-        f"Controller activation:  {float(trace.get('controller_activation', 0.0)):.2f}",
-        f"Motor fidelity:         level {int(trace.get('motor_fidelity_level', 1))}",
-        "",
-        "Result:",
-        str(trace.get("mode", "rest")).upper(),
-    ]
+    neural = trace.get("neural_sources") or {}
     why = trace.get("why_dnp09") or {}
-    afferents = why.get("afferents") or []
-    if afferents:
-        lines += ["", "Why is DNp09 active?"]
-        for row in afferents:
-            lines.append(f"← {row.get('pre_label') or row.get('pre_type') or row.get('pre')}")
-    sources = why.get("drive_sources") or {}
-    if sources:
-        lines += ["", "Drive sources:"]
-        for name in sources:
-            lines.append(f"← {name}")
+    if not neural:
+        neural = {
+            "DNp09_L_hz": float(rates.get("DNp09_L", 0.0)),
+            "DNp09_R_hz": float(rates.get("DNp09_R", 0.0)),
+            "upstream_input": float(why.get("upstream_input", 0.0) or 0.0),
+            "graded_input": float(why.get("graded_input", 0.0) or 0.0),
+            "sensory_input": float(why.get("sensory_input", 0.0) or 0.0),
+            "modulation_x": float(why.get("modulation_x", 1.0) or 1.0),
+        }
+    width = 43
+
+    def row(left: str, right: str = "") -> str:
+        inner = width - 2
+        if right:
+            gap = inner - len(left) - len(right)
+            if gap < 1:
+                text = (left + " " + right)[:inner].ljust(inner)
+            else:
+                text = left + (" " * gap) + right
+        else:
+            text = left[:inner].ljust(inner)
+        return "│" + text + "│"
+
+    title = " WALK INITIATION TRACE "
+    dash = "─" * max(1, (width - 2 - len(title)) // 2)
+    top = "┌" + (dash + title + dash)[: width - 2].ljust(width - 2, "─") + "┐"
+    bot = "└" + ("─" * (width - 2)) + "┘"
+    state = str(trace.get("mode", "rest")).upper()
+    if state == "WALK":
+        state = "WALKING"
+    lines = [
+        top,
+        row("Age", f"{float(trace.get('age_s', trace.get('t_s', 0.0))):.3f} s"),
+        row(""),
+        row("TIMER AUTHORITY", _authority_mark(trace.get("timer_authority", trace.get("behavior_timer")))),
+        row("GAIT COMMAND", _authority_mark(trace.get("gait_command", "NONE"))),
+        row("MOTOR FALLBACK", _authority_mark(trace.get("motor_fallback", "NONE"))),
+        row("ROOT MOTION", _authority_mark(trace.get("root_motion", "NONE"))),
+        row("DEVELOPER OVERRIDE", _authority_mark(trace.get("developer_override"))),
+        row(""),
+        row("Neural sources"),
+        row("DNp09 L", f"{float(neural.get('DNp09_L_hz', 0.0)):.1f} Hz"),
+        row("DNp09 R", f"{float(neural.get('DNp09_R_hz', 0.0)):.1f} Hz"),
+        row("upstream input", f"{float(neural.get('upstream_input', 0.0)):+.2f}"),
+        row("graded input", f"{float(neural.get('graded_input', 0.0)):+.2f}"),
+        row("sensory input", f"{float(neural.get('sensory_input', 0.0)):+.2f}"),
+        row("modulation", f"×{float(neural.get('modulation_x', 1.0)):.2f}"),
+        row(""),
+        row("neural locomotor drive", f"{float(trace.get('locomotor_drive', trace.get('walking_gate', 0.0))):.2f}"),
+        row("neural steering", f"{float(trace.get('steering_drive', 0.0)):+.2f}"),
+        row(""),
+        row("CPG amplitude", f"{float(trace.get('cpg_amplitude', trace.get('controller_activation', 0.0))):.2f}"),
+        row("physical speed", f"{float(trace.get('physical_speed_mm_s', 0.0)):.1f} mm/s"),
+        row(""),
+        row(f"STATE: {state}"),
+        row(f"interface: {trace.get('motor_interface', ENGINEERED_NEURAL_MOTOR_INTERFACE)}"),
+        bot,
+    ]
+    experiment = trace.get("experiment") or "NONE"
+    if not MotorBridge._blank(experiment):
+        lines.append(f"EXPERIMENT {experiment}")
+    tree = why.get("causality") or []
+    if tree:
+        lines += ["", "Why did DNp09 become active?", "DNp09", "↑", "real incoming MaleCNS edges"]
+        lines.extend(_format_causality_lines(tree, 0))
     return "\n".join(lines) + "\n"

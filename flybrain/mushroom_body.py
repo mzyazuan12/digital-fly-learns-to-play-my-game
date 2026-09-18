@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from flybrain.loader import Connectome
-from flybrain.network import LIFNetwork
+from flybrain.network import LIFNetwork, MAX_PLASTIC_FACTOR, MIN_PLASTIC_FACTOR
 from flybrain.neuron_model import ParameterProvenance
 
 
@@ -42,8 +42,8 @@ def _lookup_any(connectome: Connectome, *, prefixes: tuple[str, ...], superclass
 class MushroomBodyParams:
     lr: float = 5e-3
     eligibility_decay: float = 0.92
-    plastic_min: float = -0.95
-    plastic_max: float = 4.0
+    plastic_min: float = MIN_PLASTIC_FACTOR - 1.0
+    plastic_max: float = MAX_PLASTIC_FACTOR - 1.0
     dopamine_scale: float = 1.0
 
 

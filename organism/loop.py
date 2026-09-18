@@ -90,18 +90,22 @@ class SensorimotorLoop:
         command = self.bridge.read(
             counts,
             duration_s,
-            walking_drive=self.physiology.state.walking_drive,
-            walking_bout_s=self.physiology.state.walking_bout_s,
-            grooming_drive=self.physiology.state.grooming_drive,
-            flight_drive=self.physiology.state.flight_drive,
+            **(
+                {
+                    "walking_drive": self.physiology.state.walking_drive,
+                    "walking_bout_s": self.physiology.state.walking_bout_s,
+                    "grooming_drive": self.physiology.state.grooming_drive,
+                    "flight_drive": self.physiology.state.flight_drive,
+                }
+                if (fly.policy.allow_behavior_timers or fly.policy.allow_motor_fallbacks)
+                else {}
+            ),
             graded_output=fly.net.graded_output,
             net=fly.net,
             external_command=external,
-            developer_override="NONE",
-            privileged_observation="NONE",
             motor_mode=fly.motor_mode.value,
         )
-        fly.physiology.state.walking_drive = float(command.walk_trace / 40.0) if command.walk_trace else 0.0
+        fly.physiology.state.walking_drive = float(command.locomotor_drive)
         fly.motor_report = command_for_mode(
             fly.motor_mode,
             left=command.left,
@@ -138,6 +142,9 @@ class SensorimotorLoop:
             scaffold_used=command.scaffold_used,
             motor_mode=fly.motor_mode.value,
             motor_fidelity_level=command.motor_fidelity_level,
+            locomotor_drive=command.locomotor_drive,
+            steering_drive=command.steering_drive,
+            analog_walk=command.analog_walk,
         )
 
     def step_body(self, n: int | None = None) -> None:

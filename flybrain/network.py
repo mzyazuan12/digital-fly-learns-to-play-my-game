@@ -288,31 +288,37 @@ class LIFNetwork:
             if np.any(live):
                 np.add.at(g, targets[live], w[live])
 
-    def _deliver_graded(self, cells: np.ndarray) -> None:
-        """Continuous synaptic output from nonspiking cells.
+    def _deliver_graded(self) -> None:
+        """Analog synaptic output from nonspiking cells, every tick.
 
-        Zero at rest so a silent graded neuron does not leak 0.5×weight every
-        tick. Depolarization maps linearly onto (0, 1]. LITERATURE_DERIVED
-        as a class (insect VNC premotor), ASSUMED as a numeric squash.
+        graded_release = clip((V − V_rest) / scale, 0, 1). This is not a
+        firing rate. Zero at rest so a resting graded neuron does not leak
+        0.5×weight every tick. LITERATURE_DERIVED as a class (insect VNC
+        premotor); the numeric squash is ASSUMED.
         """
-        scale = np.float32(4.0)
-        out = np.clip((self.v[cells] - self.v_rest) / scale, 0.0, 1.0)
-        self.graded_output.fill(0)
-        self.graded_output[cells] = out.astype(np.float32)
+        cells = np.flatnonzero(self.is_graded)
         self.last_n_graded_considered = int(cells.size)
-        active = out >= np.float32(1e-3)
+        self.graded_output.fill(0)
+        if not cells.size:
+            self.last_n_graded_deliveries = 0
+            return
+        scale = np.float32(GRADED_RELEASE_SCALE_MV)
+        analog = np.clip((self.v[cells] - self.v_rest) / scale, 0.0, 1.0).astype(np.float32)
+        analog[self.silent[cells]] = 0.0
+        self.graded_output[cells] = analog
+        active = analog >= np.float32(GRADED_RELEASE_EPS)
         if not np.any(active):
             self.last_n_graded_deliveries = 0
             return
         cells = cells[active]
-        out = out[active]
+        analog = analog[active]
         self.last_n_graded_deliveries = int(cells.size)
         g = self.g
         post = self.post
         weight = self.weight
         ptr = self.ptr
         silent = self.silent
-        for i, amp in zip(cells.tolist(), out.tolist()):
+        for i, amp in zip(cells.tolist(), analog.tolist()):
             if silent[i]:
                 continue
             start = int(ptr[i])
@@ -385,3 +391,89 @@ class LIFNetwork:
         if "rng_state" in data.files:
             self.rng.bit_generator.state = data["rng_state"][0]
         self._rebuild_weights()
+
+    def dataset_validation(self, *, policy_name: str = "NO_SCAFFOLD") -> dict:
+        return dataset_validation(self.connectome, models=self.models, policy_name=policy_name, net=self)
+
+
+KNOWN_EXCITATORY_NT = frozenset({"acetylcholine"})
+KNOWN_INHIBITORY_NT = frozenset({"gaba", "glutamate", "histamine"})
+
+
+def dataset_validation(
+    connectome: Connectome,
+    *,
+    models: NeuronModelTable | None = None,
+    policy_name: str = "NO_SCAFFOLD",
+    net: LIFNetwork | None = None,
+) -> dict:
+    """Startup accounting. File size is not the verification."""
+    models = models or (net.models if net is not None else assign_neuron_models(connectome))
+    kind = models.kind
+    n_spiking = int(np.count_nonzero(kind == NeuronKind.SPIKING_LIF.value))
+    n_graded = int(np.count_nonzero(kind == NeuronKind.GRADED_RATE.value))
+    n_unknown = int(connectome.n) - n_spiking - n_graded
+    degrees = np.diff(connectome.pre_ptr)
+    pre = np.repeat(np.arange(connectome.n, dtype=np.int32), degrees.astype(np.int32, copy=False))
+    nt = np.array([str(x or "").strip().lower() for x in connectome.neurotransmitter[pre]], dtype=object)
+    excitatory = int(np.count_nonzero(connectome.sign > 0))
+    inhibitory = int(np.count_nonzero(connectome.sign < 0))
+    known = np.array([t in KNOWN_EXCITATORY_NT or t in KNOWN_INHIBITORY_NT for t in nt], dtype=bool)
+    uncertain = int(nt.size) - int(known.sum())
+    dataset = str(connectome.report.get("dataset_id", "unknown"))
+    malecns = "malecns" in dataset
+    layers = {
+        "anatomy": "MEASURED" if malecns else "SYNTHETIC",
+        "transmitter": "PREDICTED/MEASURED-DERIVED" if malecns else "ASSUMED",
+        "functional_gain": "ASSUMED",
+        "membrane_model": "ASSUMED/LITERATURE_DERIVED",
+        "motor_interface": "ENGINEERED_NEURAL_MOTOR_INTERFACE",
+        "gap_junctions": "ABSENT",
+        "effectome": "ABSENT",
+    }
+    report = {
+        "dataset_id": dataset,
+        "neurons": int(connectome.n),
+        "directed_edges": int(connectome.n_edges),
+        "anatomical_contacts": int(np.asarray(connectome.anatomical).sum(dtype=np.uint64)),
+        "spiking_cells": n_spiking,
+        "graded_cells": n_graded,
+        "unknown_model_type": n_unknown,
+        "excitatory_edges": excitatory,
+        "inhibitory_edges": inhibitory,
+        "uncertain_sign": uncertain,
+        "no_scaffold": str(policy_name).upper() == "NO_SCAFFOLD",
+        "policy_name": policy_name,
+        "layers": layers,
+        "functional_gain_is_not_anatomy": True,
+        "gap_junctions": "ABSENT",
+    }
+    report["text"] = format_dataset_validation(report)
+    return report
+
+
+def format_dataset_validation(report: dict) -> str:
+    layers = report.get("layers") or {}
+    lines = [
+        "MaleCNS DATASET VALIDATION",
+        "",
+        f"neurons:            {int(report.get('neurons', 0)):,}",
+        f"directed edges:     {int(report.get('directed_edges', 0)):,}",
+        f"anatomical contacts:{int(report.get('anatomical_contacts', 0)):,}",
+        f"spiking cells:      {int(report.get('spiking_cells', 0)):,}",
+        f"graded cells:       {int(report.get('graded_cells', 0)):,}",
+        f"unknown model type: {int(report.get('unknown_model_type', 0)):,}",
+        f"excitatory edges:   {int(report.get('excitatory_edges', 0)):,}",
+        f"inhibitory edges:   {int(report.get('inhibitory_edges', 0)):,}",
+        f"uncertain-sign:     {int(report.get('uncertain_sign', 0)):,}",
+        "",
+        f"NO_SCAFFOLD: {str(bool(report.get('no_scaffold'))).upper()}",
+        "",
+        f"anatomy:            {layers.get('anatomy', 'UNKNOWN')}",
+        f"transmitter:        {layers.get('transmitter', 'UNKNOWN')}",
+        f"functional_gain:    {layers.get('functional_gain', 'ASSUMED')}",
+        f"membrane_model:     {layers.get('membrane_model', 'ASSUMED')}",
+        f"motor_interface:    {layers.get('motor_interface', 'ENGINEERED_NEURAL_MOTOR_INTERFACE')}",
+        f"gap_junctions:      {layers.get('gap_junctions', 'ABSENT')}",
+    ]
+    return "\n".join(lines) + "\n"

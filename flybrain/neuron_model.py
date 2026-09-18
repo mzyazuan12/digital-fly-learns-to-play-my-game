@@ -2,7 +2,8 @@
 
 MaleCNS does not specify membranes. Do not treat every cell as the same LIF
 unit. VNC premotor neurons are often nonspiking in insects; walking models
-therefore use graded/rate dynamics for substantial parts of those circuits.
+therefore use analog graded_release (not a firing rate) for substantial
+parts of those circuits.
 
 Every assigned parameter is labeled MEASURED, LITERATURE_DERIVED, INFERRED,
 or ASSUMED.
@@ -94,9 +95,10 @@ def assign_neuron_models(connectome: Connectome) -> NeuronModelTable:
         "default_kind": NeuronKind.SPIKING_LIF.value,
         "default_provenance": ParameterProvenance.ASSUMED.value,
         "graded_rule": (
-            "VNC premotor / local interneuron labels use graded/rate dynamics "
+            "VNC premotor / local interneuron labels use analog graded_release "
             "(literature: many insect walking premotor neurons are nonspiking). "
-            "All other cells are identical current-based LIF (ASSUMED)."
+            "This is not a firing rate. All other cells are identical "
+            "current-based LIF (ASSUMED)."
         ),
         "n_graded": graded,
         "identical_lif_for_all_cells": False,

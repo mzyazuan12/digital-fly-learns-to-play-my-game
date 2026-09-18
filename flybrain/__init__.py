@@ -6,7 +6,7 @@ ASSUMPTIONS.md.
 """
 
 from flybrain.loader import Connectome, import_malecns, load_connectome
-from flybrain.network import LIFNetwork, LIFParams
+from flybrain.network import LIFNetwork, LIFParams, dataset_validation
 from flybrain.neuron_model import NeuronKind, ParameterProvenance
 from flybrain.neurons import NT_SIGN, LIF_PARAMS
 from flybrain.plasticity import RewardModulatedPlasticity
@@ -24,4 +24,5 @@ __all__ = [
     "ParameterProvenance",
     "import_malecns",
     "load_connectome",
+    "dataset_validation",
 ]
