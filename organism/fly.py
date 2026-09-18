@@ -32,6 +32,8 @@ from organism.config import (
     LEGACY_SCAFFOLD,
     MODEL_VERSION,
     MotorMode,
+    active_policy,
+    motor_fidelity_level,
 )
 from organism.developer import DeveloperControls
 from organism.loop import SensorimotorLoop
@@ -72,6 +74,8 @@ class FlyIdentity:
     body_kind: str = "unattached"
     model_version: str = MODEL_VERSION
     motor_mode: str = DEFAULT_MOTOR_MODE.value
+    policy_name: str = "NO_SCAFFOLD"
+    motor_fidelity_level: int = 1
     notes: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict:
@@ -85,6 +89,8 @@ class FlyIdentity:
             "body_kind": self.body_kind,
             "model_version": self.model_version,
             "motor_mode": self.motor_mode,
+            "policy_name": self.policy_name,
+            "motor_fidelity_level": self.motor_fidelity_level,
             "birth_definition": BIRTH_DEFINITION,
             "consciousness_claimed": False,
             "notes": list(self.notes),
@@ -102,6 +108,8 @@ class FlyIdentity:
             body_kind=payload.get("body_kind", "unattached"),
             model_version=str(payload.get("model_version", MODEL_VERSION)),
             motor_mode=str(payload.get("motor_mode", DEFAULT_MOTOR_MODE.value)),
+            policy_name=str(payload.get("policy_name", "NO_SCAFFOLD")),
+            motor_fidelity_level=int(payload.get("motor_fidelity_level", 1)),
             notes=list(payload.get("notes", [])),
         )
 
@@ -129,7 +137,10 @@ class VirtualFly:
         self.learning = MushroomBodyLearning(self.net)
         self.plasticity = self.learning
         self.legacy_scaffold = LEGACY_SCAFFOLD if legacy_scaffold is None else bool(legacy_scaffold)
-        self.bridge = MotorBridge(connectome, legacy_scaffold=self.legacy_scaffold)
+        self.policy = active_policy(legacy_scaffold=self.legacy_scaffold)
+        self.bridge = MotorBridge(
+            connectome, legacy_scaffold=self.legacy_scaffold, policy=self.policy
+        )
         self.physiology = Physiology(seed=seed, legacy_scaffold=self.legacy_scaffold)
         self.motor_map = MotorNeuronMuscleMap(connectome)
         if motor_mode is None:
@@ -138,6 +149,10 @@ class VirtualFly:
             self.motor_mode = motor_mode
         else:
             self.motor_mode = MotorMode(motor_mode)
+        self.motor_fidelity_level = motor_fidelity_level(
+            self.motor_mode,
+            identified_dns=self.bridge.notes.get("fallback") == "identified_types",
+        )
         self.motor_report: dict = {}
         self.identity = FlyIdentity(
             fly_id=fly_id or str(uuid.uuid4()),
@@ -147,6 +162,8 @@ class VirtualFly:
             connectome_n=connectome.n,
             connectome_edges=connectome.n_edges,
             motor_mode=self.motor_mode.value,
+            policy_name=self.policy.name,
+            motor_fidelity_level=self.motor_fidelity_level,
         )
         self.history: list[dict] = []
         self.provenance = ProvenanceLog()
@@ -190,14 +207,22 @@ class VirtualFly:
         cls,
         individual_id: str,
         *,
-        seed: int = 0,
+        seed: int | None = None,
         connectome: str | Connectome = "synthetic",
         directory: Path | str | None = None,
         motor_mode: MotorMode | str | None = None,
         legacy_scaffold: bool = False,
     ) -> "VirtualFly":
         """Create a new persistent individual. Does not resurrect the EM specimen."""
+        import secrets
+
         root = Path(directory) if directory is not None else Path("individuals") / individual_id
+        if (root / "identity.json").exists() and (
+            (root / "neural_state.npz").exists() or (root / "brain.npz").exists()
+        ):
+            return cls.load(root)
+        if seed is None:
+            seed = secrets.randbelow(2**31 - 1) or 1
         graph = cls._load_graph(connectome, seed=seed)
         fly = cls(
             graph,
