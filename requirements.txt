@@ -1,0 +1,8 @@
+numpy>=2.0
+pandas>=2.2
+pyarrow>=17
+scipy>=1.13
+pytest>=8
+# Optional body (FlyBody / NeuroMechFly + MuJoCo):
+# pip install "flygym @ git+https://github.com/NeLy-EPFL/flygym.git@v2.1.0"
+playwright>=1.48

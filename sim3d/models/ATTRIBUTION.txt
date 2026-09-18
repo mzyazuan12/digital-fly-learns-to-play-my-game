@@ -1,0 +1,9 @@
+TuragaLab FlyBody visual meshes (Vaxenburg et al., Nature 2025).
+
+OBJs: flygym full-size fruitfly cache (flybody_fullsize_meshes_20260623a)
+Posed in the living room from NeuroMechFly geom_xpos / geom_xmat.
+Exported to flybody.glb for Three.js.
+
+Source: https://github.com/TuragaLab/flybody
+Paper: https://doi.org/10.1038/s41586-025-09029-4
+FlyGym: https://neuromechfly.org/

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desk — shiritori.lol</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <aside id="hud">
+      <p class="site">shiritori.lol</p>
+      <p class="tag">You play. The fly does not play.</p>
+      <p id="backend-label">Loading the live match…</p>
+      <p id="status">Loading the desk.</p>
+      <form id="url-form" class="url-row">
+        <input id="url-input" type="url" value="https://shiritori.lol/" spellcheck="false" />
+        <button id="btn-go" type="submit">Go</button>
+      </form>
+      <div class="modes">
+        <button id="btn-casual" type="button">Casual</button>
+        <button id="btn-pro" type="button" class="ghost">Pro</button>
+        <button id="btn-featherine" type="button" class="ghost">Featherine</button>
+        <button id="btn-lambdadelta" type="button" class="ghost">Lambdadelta</button>
+      </div>
+      <dl>
+        <dt>Turn</dt>
+        <dd id="command">—</dd>
+        <dt>Need</dt>
+        <dd id="need">none</dd>
+        <dt>Last</dt>
+        <dd id="last-word">—</dd>
+        <dt>Buffer</dt>
+        <dd id="buffer">_</dd>
+        <dt>Score</dt>
+        <dd id="score">0</dd>
+        <dt>Lives</dt>
+        <dd id="lives">—</dd>
+        <dt>Tries</dt>
+        <dd id="tries">—</dd>
+      </dl>
+      <div class="actions">
+        <button id="btn-follow" type="button" class="ghost">Follow</button>
+        <a class="button-link ghost" href="/habitat">Living room</a>
+      </div>
+      <p class="hint">
+        Type on your keyboard, or click the keys on the desk. Casual / Pro /
+        Featherine / Lambdadelta starts a live match on the monitor. The fly in the
+        <a href="/habitat">living room</a> is not a word solver.
+      </p>
+    </aside>
+    <div id="viewport"></div>
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>

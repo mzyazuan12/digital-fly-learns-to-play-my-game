@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Living room — virtual Drosophila</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=nmf30" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="viewport"></div>
+    <aside id="hud">
+      <p class="site">Living room</p>
+      <p class="tag">MaleCNS drives NeuroMechFly. Metrics stay on top.</p>
+      <p id="backend-label">Loading MaleCNS…</p>
+      <p id="status">Hatching the fly on the desk keyboard.</p>
+      <dl>
+        <dt>Dataset</dt><dd id="dataset">—</dd>
+        <dt>Neurons</dt><dd id="neurons">—</dd>
+        <dt>Body</dt><dd id="body">—</dd>
+        <dt>Mode</dt><dd id="drive">—</dd>
+        <dt>Walk drive</dt><dd id="walk-drive">—</dd>
+        <dt>Groom drive</dt><dd id="groom-drive">—</dd>
+        <dt>Thorax</dt><dd id="thorax">—</dd>
+        <dt>Spikes</dt><dd id="spikes">0</dd>
+        <dt>DNs</dt><dd id="pathways">—</dd>
+        <dt>Source</dt><dd id="source">—</dd>
+      </dl>
+      <div class="actions">
+        <button id="btn-invite" type="button">Ask the fly to play</button>
+        <button id="btn-follow" type="button" class="ghost">Free camera</button>
+        <button id="btn-brain" type="button" class="ghost">Hide brain</button>
+        <button id="btn-pause" type="button" class="ghost">Pause</button>
+      </div>
+      <div class="modes">
+        <button id="btn-casual" type="button">Casual</button>
+        <button id="btn-pro" type="button" class="ghost">Pro</button>
+        <button id="btn-featherine" type="button" class="ghost">Featherine</button>
+        <button id="btn-lambdadelta" type="button" class="ghost">Lambdadelta</button>
+      </div>
+      <p class="hint">
+        H hides this panel. The connectome stays on the right. WASD / drag to look around.
+        Click the monitor, or let the fly tap the menu. One tap per letter, then it has to walk off.
+      </p>
+    </aside>
+    <aside id="brain-panel">
+      <p class="kicker">MaleCNS v1.0 · live LIF</p>
+      <h1>FlyEM brain</h1>
+      <p id="brain-count" class="tag">—</p>
+      <p class="slice-cap">
+        <a id="ng-open" href="https://neuroglancer-demo.appspot.com/#!gs://flyem-male-cns/v1.0/male-cns-v1.0.json" target="_blank" rel="noreferrer">Open Neuroglancer</a>
+        · <button type="button" id="btn-em" class="ghost">Embed EM</button>
+      </p>
+      <iframe
+        id="ng-frame"
+        title="MaleCNS Neuroglancer"
+        hidden
+        allow="fullscreen"
+      ></iframe>
+      <div id="brain-stage"></div>
+      <div class="slice-row">
+        <button type="button" data-slice-axis="z" class="active">Dorsal</button>
+        <button type="button" data-slice-axis="x">Sagittal</button>
+        <button type="button" data-slice-axis="y">Frontal</button>
+      </div>
+      <input id="slice-depth" type="range" min="-1.2" max="1.2" step="0.02" value="0" />
+      <label class="check"><input id="slice-clip" type="checkbox" /> Clip 3D at plane</label>
+      <canvas id="brain-slice"></canvas>
+      <p class="slice-cap">Soma cross-section from MaleCNS somaLocation · white = spiking</p>
+      <canvas id="brain-raster"></canvas>
+      <p class="raster-cap">Display-subset spike raster · newest →</p>
+      <div class="stats">
+        <div><strong id="brain-spikes">0</strong><span>spikes / window</span></div>
+        <div><strong id="brain-active">0</strong><span>active neurons</span></div>
+        <div><strong id="brain-edges">0</strong><span>synapses firing</span></div>
+        <div><strong id="brain-window">10 ms</strong><span>LIF window</span></div>
+      </div>
+      <p class="readout-label">Descending readout: <span id="brain-readout">rest</span></p>
+      <div class="bars">
+        <label>Walk<i id="bar-walk"></i></label>
+        <label>Steer L<i id="bar-steer-l"></i></label>
+        <label>Steer R<i id="bar-steer-r"></i></label>
+        <label>Rest<i id="bar-rest"></i></label>
+        <label>Groom<i id="bar-groom"></i></label>
+        <label>Fly<i id="bar-fly"></i></label>
+      </div>
+      <h2 class="cells-h">Spikes by superclass</h2>
+      <ul id="superclass-list"><li class="empty">Waiting for LIF.</li></ul>
+      <h2 class="cells-h">Firing cells (body ID)</h2>
+      <ul id="firing-cells">
+        <li class="empty">Waiting for the first LIF window.</li></ul>
+    </aside>
+    <aside id="game-panel" hidden>
+      <p class="kicker">Shiritori</p>
+      <p class="tag">The fly plays with its body. No dictionary is injected.</p>
+      <dl>
+        <dt>Need</dt><dd id="need">—</dd>
+        <dt>Last</dt><dd id="last-word">—</dd>
+        <dt>Buffer</dt><dd id="buffer">—</dd>
+        <dt>Score</dt><dd id="score">0</dd>
+        <dt>Lives</dt><dd id="lives">—</dd>
+      </dl>
+      <p id="game-msg" class="hint">Ask the fly. One tap per key. Modes are on the monitor.</p>
+    </aside>
+    <script type="module" src="./js/organism.js?v=nmf30"></script>
+  </body>
+</html>

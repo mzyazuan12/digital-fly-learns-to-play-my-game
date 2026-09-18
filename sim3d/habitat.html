@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Living room — virtual Drosophila</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=nmf30" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <aside id="hud">
+      <p class="site">virtual Drosophila</p>
+      <p class="tag">No task. It lives here.</p>
+      <p id="backend-label">Loading the fly…</p>
+      <p id="status">The fly is waking up on the desk keyboard.</p>
+      <dl>
+        <dt>Where</dt>
+        <dd id="where">desk</dd>
+        <dt>Heading</dt>
+        <dd id="heading">—</dd>
+        <dt>Eyes</dt>
+        <dd id="eyes">—</dd>
+        <dt>Spikes</dt>
+        <dd id="spikes">0</dd>
+        <dt>Mode</dt>
+        <dd id="drive">rest</dd>
+        <dt>Physiology</dt>
+        <dd id="phys">—</dd>
+        <dt>Pathways</dt>
+        <dd id="pathways">—</dd>
+        <dt>Synapses</dt>
+        <dd id="edges">—</dd>
+        <dt>Source</dt>
+        <dd id="source">—</dd>
+      </dl>
+      <div class="actions">
+        <button id="btn-follow" type="button">Free camera</button>
+        <button id="btn-pause" type="button" class="ghost">Pause</button>
+      </div>
+      <p class="hint">
+        Same individual, same brain. Somata are atlas-mapped onto a Drosophila CNS
+        template from MaleCNS class and side — not EM skeleton XYZ. Spikes and
+        synapse flashes are this fly’s live LIF.
+      </p>
+      <p class="hint">
+        Play Shiritori yourself at
+        <a href="/desk">the desk</a>. The fly does not play.
+      </p>
+    </aside>
+    <aside id="brain-panel">
+      <p class="kicker">CNS · live LIF</p>
+      <h1>Drosophila CNS</h1>
+      <p id="brain-count" class="tag">—</p>
+      <div id="brain-stage"></div>
+      <div class="region-labels">
+        <span>OL L</span>
+        <span>CB</span>
+        <span>OL R</span>
+        <span>GNG</span>
+        <span>VNC</span>
+      </div>
+      <div class="slice-row">
+        <button type="button" data-slice-axis="z" class="active">Dorsal</button>
+        <button type="button" data-slice-axis="x">Sagittal</button>
+        <button type="button" data-slice-axis="y">Frontal</button>
+      </div>
+      <input id="slice-depth" type="range" min="-1.2" max="1.2" step="0.02" value="0" />
+      <label class="check"><input id="slice-clip" type="checkbox" /> Clip 3D at plane</label>
+      <canvas id="brain-slice"></canvas>
+      <p class="slice-cap">Cross-section · white = spiking soma · lines = firing synapses</p>
+      <canvas id="brain-raster"></canvas>
+      <p class="raster-cap">Display-subset spike raster · newest →</p>
+      <div class="stats">
+        <div><strong id="brain-spikes">0</strong><span>spikes / window</span></div>
+        <div><strong id="brain-active">0</strong><span>active neurons</span></div>
+        <div><strong id="brain-edges">0</strong><span>synapses firing</span></div>
+        <div><strong id="brain-window">10 ms</strong><span>LIF window</span></div>
+      </div>
+      <p class="readout-label">Neural readout: <span id="brain-readout">rest</span></p>
+      <div class="bars">
+        <label>Walk<i id="bar-walk"></i></label>
+        <label>Steer L<i id="bar-steer-l"></i></label>
+        <label>Steer R<i id="bar-steer-r"></i></label>
+        <label>Rest<i id="bar-rest"></i></label>
+        <label>Groom<i id="bar-groom"></i></label>
+        <label>Fly<i id="bar-fly"></i></label>
+      </div>
+      <h2 class="cells-h">Firing cells</h2>
+      <ul id="firing-cells">
+        <li class="empty">Waiting for the first LIF window.</li>
+      </ul>
+    </aside>
+    <div id="viewport"></div>
+    <script type="module" src="./js/habitat.js?v=nmf30"></script>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "virtual-drosophila"
+version = "0.2.0"
+description = "One persistent embodied Drosophila: MaleCNS brain, FlyBody body, arbitrary worlds"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=2.0",
+  "pandas>=2.2",
+  "pyarrow>=17",
+  "scipy>=1.13",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+body = ["flygym @ git+https://github.com/NeLy-EPFL/flygym.git@v2.1.0"]
+
+[project.scripts]
+fly-milestone1 = "training.milestone1:main"
+fly-train = "training.train:main"
+fly-eval = "training.evaluate:main"
+virtual-fly = "organism.first_goal:main"
+
+[tool.setuptools.packages.find]
+include = ["flybrain*", "shiritori*", "training*", "sim3d*", "organism*", "worlds*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+  "slow: uses the full MaleCNS graph",
+  "full: requires local MaleCNS Feather files",
+  "physics: requires FlyGym and MuJoCo",
+]

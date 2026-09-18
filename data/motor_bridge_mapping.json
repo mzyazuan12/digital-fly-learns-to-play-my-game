@@ -1,0 +1,187 @@
+{
+  "title": "MaleCNS → low-level locomotion mapping",
+  "note": "Explicit engineered bridge. Not recovered biological motor circuitry. Gait tests disconnect this file entirely.",
+  "architecture": [
+    "MaleCNS identified neurons",
+    "neural motor-intent decoder",
+    "FlyGym HybridTurningController (VNC/muscle surrogate)",
+    "MuJoCo FlyBody leg actuators",
+    "contact physics"
+  ],
+  "controller_inputs": [
+    "left_steering_drive",
+    "right_steering_drive",
+    "forward_locomotor_drive",
+    "flight_drive",
+    "landing_drive"
+  ],
+  "pathways": [
+    {
+      "malecns_body_id": 10783,
+      "neuron_type": "DNp09",
+      "side": "L",
+      "biological_role": "walking initiation",
+      "source": "Bidaye et al. 2020; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "HybridTurningController descending [left, right] mean amplitude"
+    },
+    {
+      "malecns_body_id": 11177,
+      "neuron_type": "DNp09",
+      "side": "R",
+      "biological_role": "walking initiation",
+      "source": "Bidaye et al. 2020; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "HybridTurningController descending [left, right] mean amplitude"
+    },
+    {
+      "malecns_body_id": 523769,
+      "neuron_type": "DNa02",
+      "side": "L",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Rayshubskiy/Yang/Feng; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "left_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[0] (left CPG amplitude)"
+    },
+    {
+      "malecns_body_id": 10360,
+      "neuron_type": "DNa02",
+      "side": "R",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Rayshubskiy/Yang/Feng; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "right_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[1] (right CPG amplitude)"
+    },
+    {
+      "malecns_body_id": 10442,
+      "neuron_type": "DNa01",
+      "side": "L",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Yang et al. 2023; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "left_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[0]"
+    },
+    {
+      "malecns_body_id": 10760,
+      "neuron_type": "DNa01",
+      "side": "R",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Yang et al. 2023; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "right_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[1]"
+    },
+    {
+      "malecns_body_id": 11074,
+      "neuron_type": "DNg13",
+      "side": "L",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Feng et al. 2024; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "left_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[0]"
+    },
+    {
+      "malecns_body_id": 512006,
+      "neuron_type": "DNg13",
+      "side": "R",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Feng et al. 2024; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "right_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[1]"
+    },
+    {
+      "malecns_body_id": 10118,
+      "neuron_type": "DNb05",
+      "side": "L",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Yang et al. 2023; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "left_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[0]"
+    },
+    {
+      "malecns_body_id": 10065,
+      "neuron_type": "DNb05",
+      "side": "R",
+      "biological_role": "ipsiversive walking steering",
+      "source": "Yang et al. 2023; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "right_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[1]"
+    },
+    {
+      "malecns_body_id": 10888,
+      "neuron_type": "DNb06",
+      "side": "L",
+      "biological_role": "contraversive steering",
+      "source": "Yang et al. 2023; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "right_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[1] (contraversive)"
+    },
+    {
+      "malecns_body_id": 11067,
+      "neuron_type": "DNb06",
+      "side": "R",
+      "biological_role": "contraversive steering",
+      "source": "Yang et al. 2023; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "left_steering_drive",
+      "locomotion_controller_input": "HybridTurningController descending[0] (contraversive)"
+    },
+    {
+      "malecns_body_id": 11288,
+      "neuron_type": "MDN",
+      "side": "L",
+      "biological_role": "backward walking",
+      "source": "Bidaye et al. 2014; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "negative HybridTurningController descending (reserved; gait test unused)"
+    },
+    {
+      "malecns_body_id": 12348,
+      "neuron_type": "MDN",
+      "side": "L",
+      "biological_role": "backward walking",
+      "source": "Bidaye et al. 2014; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "negative HybridTurningController descending (reserved; gait test unused)"
+    },
+    {
+      "malecns_body_id": 10763,
+      "neuron_type": "MDN",
+      "side": "R",
+      "biological_role": "backward walking",
+      "source": "Bidaye et al. 2014; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "negative HybridTurningController descending (reserved; gait test unused)"
+    },
+    {
+      "malecns_body_id": 11332,
+      "neuron_type": "MDN",
+      "side": "R",
+      "biological_role": "backward walking",
+      "source": "Bidaye et al. 2014; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "negative HybridTurningController descending (reserved; gait test unused)"
+    },
+    {
+      "malecns_body_id": null,
+      "neuron_type": "DNg02",
+      "side": null,
+      "biological_role": "wingbeat / flight-related descending population",
+      "source": "Namiki DN catalogue; resolved from MaleCNS type annotations when present",
+      "decoded_signal": "flight_drive",
+      "locomotion_controller_input": "not connected; walking controller stays on the floor"
+    }
+  ],
+  "proprioception_back_to_cns": [
+    "joint_angles",
+    "joint_velocities",
+    "contact_state",
+    "actuator_force",
+    "body_orientation_quat",
+    "angular_velocity"
+  ],
+  "not_given_to_the_brain": [
+    "world_x",
+    "world_y",
+    "target_position",
+    "map_coordinates"
+  ]
+}

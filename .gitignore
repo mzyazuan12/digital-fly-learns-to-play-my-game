@@ -1,0 +1,28 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+outputs/
+checkpoints/
+.DS_Store
+.kilo/
+*.npz
+*.npy
+.coverage
+htmlcov/
+.env
+.env.*
+
+# MaleCNS / fly connectome binaries — too large for GitHub.
+# Download from https://male-cns.janelia.org/download/
+*.feather
+*.swc
+data/malecns_v1/*
+!data/malecns_v1/README.md
+syn-points-male-cns-*.feather
+syn-partners-male-cns-*.feather
+connectome-weights-*.feather
+body-annotations-*.feather
+body-neurotransmitters-*.feather
