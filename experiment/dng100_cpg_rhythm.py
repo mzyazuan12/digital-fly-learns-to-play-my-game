@@ -189,7 +189,7 @@ def run(
             if not lesion_report[name]["interpretable"]:
                 lesion_report[name]["note"] = (
                     "Intact network did not oscillate; lesion comparison is "
-                    "not a replication of the published necessity result."
+                    "not a replication of the preprint necessity result."
                 )
 
     anatomy = circuit.anatomy()
