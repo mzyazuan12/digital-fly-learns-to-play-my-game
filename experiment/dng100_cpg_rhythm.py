@@ -119,7 +119,9 @@ def _lesion_effect(intact: dict, lesioned: dict) -> dict:
             intact.get("any_leg_oscillatory") and not lesioned.get("any_leg_oscillatory")
         ),
         "score_drop": float(before - after),
-        "interpretable": bool(intact.get("any_leg_oscillatory")),
+        "interpretable": bool(
+            intact.get("any_leg_oscillatory") and not intact.get("any_exploding")
+        ),
     }
 
 
