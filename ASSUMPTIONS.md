@@ -117,16 +117,23 @@ This is **not** descending neuron → VNC CPG → motor neuron → muscle. The
 CPG is pretrained scaffolding. Rest vs walk follows a continuous
 `locomotor_drive` decoded from identified walking DNs (DNp09, DNg100,
 DNg97/oDN1), labeled `ENGINEERED_NEURAL_MOTOR_INTERFACE`. DNb08 is
-traced but not decoded as walking. The published VNC CPG (E1=IN17A001,
-E2=INXXX466, I1=IN16B036) is resolved and its synapses are counted; it
-does **not** yet move joints. There is **no** `walking_bout_s`
+traced but not decoded as walking. The published VNC CPG types
+(E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
+E4=IN03A006, E5=INXXX464) are resolved as **six per-leg copies**, not
+one pooled scalar. An older preprint passage appears to call E5
+`INXXX466`; canonical mapping is the published article (`INXXX464`).
+Those names tag cells for measurement/lesion; they never mean
+`if DNg100: walk()`. `MODE_NEURAL_CPG` records E1/E2/I1 timing and does
+**not** move joints yet. There is **no** `walking_bout_s`
 override on the default path. NO_SCAFFOLD **rejects** a timer, motor
 fallback, named gait command, or developer motor command rather than
 silently ignoring it. Standing is what happens when those DNs are
 silent, not `GAIT_COMMANDS["stand"]`.
 
 `MODE_HYBRID_VNC` logs motor-neuron activity beside the CPG.
-`MODE_NEURAL_MOTOR` is reserved until muscle actuation exists.
+`MODE_NEURAL_CPG` is the research path where phase should come from the
+identified VNC motif. `MODE_NEURAL_MOTOR` is reserved until muscle
+actuation exists.
 
 A `MotorNeuronMuscleMap` records, for every mapped motor neuron: MaleCNS
 body ID, MANC type, MN type, side, body part, muscle, joint/action, source,
