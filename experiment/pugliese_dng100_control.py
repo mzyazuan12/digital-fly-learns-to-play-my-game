@@ -133,21 +133,38 @@ def run(*, n_replicates: int = 1, T: float = 2.0, stim_current: float = 250.0) -
     if not active_mask.any():
         active_mask = mean_rate > 0.1
     osc_score, mean_hz = compute_oscillation_score(jnp.asarray(activity), jnp.asarray(active_mask), 0.05)
-    mn_score = mn_hz = None
-    if mn_mask.any():
-        mn_score, mn_hz = compute_oscillation_score(
-            jnp.asarray(activity[mn_mask]),
-            jnp.asarray(active_mask[mn_mask]),
+    e1_mask = type_series.eq("IN17A001").to_numpy()
+    e2_mask = type_series.eq("INXXX466").to_numpy()
+    i1_mask = type_series.eq("IN16B036").to_numpy()
+
+    def _score(mask):
+        if not mask.any():
+            return None, None, 0
+        sc, hz = compute_oscillation_score(
+            jnp.asarray(activity[mask]),
+            jnp.asarray(active_mask[mask]),
             0.05,
         )
+        return float(sc), float(hz), int(mask.sum())
+
+    e1_score, e1_hz, e1_n = _score(e1_mask)
+    e2_score, e2_hz, e2_n = _score(e2_mask)
+    i1_score, i1_hz, i1_n = _score(i1_mask)
+    mn_score = mn_hz = None
+    mn_n = int(mn_mask.sum())
+    if mn_mask.any():
+        mn_score, mn_hz, mn_n = _score(mn_mask)
     payload = {
         "ok": True,
         "source": "Pugliese et al. 2025 bioRxiv; github.com/smpuglie/Pugliese_2026",
-        "experiment": "DNg100_Stim / DNg100_test parameters on authors' code",
+        "experiment": "DNg100_Stim parameters on authors' JAX rate-ODE code",
         "n_neurons": n_neurons,
         "stim_index": int(stim_idx),
+        "stim_type": str(type_series.iloc[int(stim_idx)]),
+        "stim_body_id": int(table.iloc[int(stim_idx)]["bodyId"]) if "bodyId" in table.columns else None,
         "stim_current": stim_current,
         "dng100_rows_in_wtable": dng_rows[:8],
+        "note": "Authors' yaml stimulates index 31 only; the second DNg100 is index 132 and is commented out.",
         "type_col": type_col,
         "T_s": T,
         "dt": dt,
@@ -160,10 +177,23 @@ def run(*, n_replicates: int = 1, T: float = 2.0, stim_current: float = 250.0) -
         "mean_rate_active": float(mean_rate[active_mask].mean()) if active_mask.any() else 0.0,
         "oscillation_score_active": float(osc_score),
         "mean_frequency_active": float(mean_hz),
-        "mn_n": int(mn_mask.sum()),
-        "mn_oscillation_score": None if mn_score is None else float(mn_score),
-        "mn_mean_frequency": None if mn_hz is None else float(mn_hz),
-        "rhythm_reproduced": bool(float(osc_score) >= 0.5 or (mn_score is not None and float(mn_score) >= 0.5)),
+        "E1_n": e1_n,
+        "E1_oscillation_score": e1_score,
+        "E1_mean_frequency": e1_hz,
+        "E2_n": e2_n,
+        "E2_oscillation_score": e2_score,
+        "E2_mean_frequency": e2_hz,
+        "I1_n": i1_n,
+        "I1_oscillation_score": i1_score,
+        "I1_mean_frequency": i1_hz,
+        "mn_n": mn_n,
+        "mn_oscillation_score": mn_score,
+        "mn_mean_frequency": mn_hz,
+        "rhythm_reproduced": bool(
+            float(osc_score) >= 0.5
+            or (mn_score is not None and mn_score >= 0.5)
+            or (e1_score is not None and e1_score >= 0.5)
+        ),
         "jax_devices": [str(d) for d in jax.devices()],
         "repo": str(repo),
     }
