@@ -42,8 +42,7 @@ def _ensure_jax() -> None:
                 "diffrax==0.7.0",
                 "hydra-core>=1.3,<2.0",
                 "sparse>=0.17.0,<0.19",
-                "h5py",
-                "natsort",
+                "seaborn",
             ]
         )
 
