@@ -597,6 +597,55 @@ class WalkingCircuit:
             return np.zeros(0, dtype=np.int32)
         return np.unique(np.concatenate(chunks)).astype(np.int32)
 
+    def _assign_legs(self) -> dict[str, LegCPGCopy]:
+        connectome = self.connectome
+        soma = self.soma
+        e1_slots = _assign_e1_slots(connectome, self.indices("E1"), soma)
+        role_slots = {"E1": e1_slots}
+        for role in CPG_ROLES:
+            if role == "E1":
+                continue
+            role_slots[role] = _assign_role_to_e1(
+                connectome,
+                self.indices(role),
+                e1_slots,
+                soma,
+                SIDE_SLOTS,
+            )
+        assignment = (
+            "INFERRED somaLocation Z rank within side for E1, then MEASURED "
+            "reciprocal contacts onto that E1 for other CPG types"
+        )
+        if self.soma is None:
+            assignment = (
+                "INFERRED: no soma table; ipsilateral rank by body ID, then "
+                "MEASURED contacts onto E1"
+            )
+        legs: dict[str, LegCPGCopy] = {}
+        for slot in LEG_SLOTS:
+            side, neuromere = LEG_LAYOUT[slot]
+            cells = {role: role_slots[role].get(slot) for role in CPG_ROLES}
+            body_ids: dict[str, int | None] = {}
+            for role, idx in cells.items():
+                body_ids[role] = int(connectome.neuron_ids[idx]) if idx is not None else None
+            sources = [idx for idx in (cells.get("E1"), cells.get("E2"), cells.get("E3")) if idx is not None]
+            motor = _motor_targets(connectome, sources, self.vnc_motor, k=8)
+            e1, e2 = cells.get("E1"), cells.get("E2")
+            rec = 0
+            if e1 is not None and e2 is not None:
+                rec = contacts_pair(connectome, e1, e2) + contacts_pair(connectome, e2, e1)
+            legs[slot] = LegCPGCopy(
+                slot=slot,
+                side=side,
+                neuromere=neuromere,
+                cells=cells,
+                body_ids=body_ids,
+                motor_indices=motor,
+                assignment=assignment,
+                e1_e2_contacts=rec,
+            )
+        return legs
+
     def indices(self, name: str) -> np.ndarray:
         return self.pathways[name].indices
 
