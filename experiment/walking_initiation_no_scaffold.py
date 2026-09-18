@@ -368,10 +368,12 @@ def run(
         fly.restore_state(ckpt)
         if fly.body is None or fly.world is None:
             fly.inhabit(empty_arena(), spawn=Pose())
+        n_lesion = 0 if indices is None else int(indices.size)
         if indices is not None and indices.size:
             fly.net.lesion(indices, silent=True)
             if label == "DNp09_lesion":
                 fly.bridge.walk_trace = 0.0
+        print(f"trial {label}: steps={steps} lesion={n_lesion}", flush=True)
         summary = run_closed_loop(fly, steps=steps, label=label)
         trial_dir = ckpt / label
         trial_dir.mkdir(parents=True, exist_ok=True)

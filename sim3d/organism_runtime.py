@@ -453,6 +453,10 @@ class OrganismRuntime:
             eyes = [rec.left_eye, rec.right_eye]
         if pressed:
             sources.append("physical_key_contact")
+        trace = dict(self.fly.bridge.last_trace or {})
+        if trace:
+            trace["physical_speed_mm_s"] = float(self._speed_mm_s)
+            trace["text"] = format_walk_trace(trace)
         return {
             "ok": True,
             "fly_id": self.fly.identity.fly_id,
@@ -482,8 +486,10 @@ class OrganismRuntime:
             "policy": self.fly.policy.as_dict(),
             "motor_mode": self.fly.motor_mode.value,
             "motor_fidelity_level": self.fly.motor_fidelity_level,
-            "walk_initiation_trace": dict(self.fly.bridge.last_trace or {}),
-            "walk_trace_text": (self.fly.bridge.last_trace or {}).get("text", ""),
+            "walk_initiation_trace": trace,
+            "walk_trace_text": trace.get("text", ""),
+            "locomotor_drive": float(getattr(rec, "locomotor_drive", 0.0) or 0.0) if rec is not None else 0.0,
+            "steering_drive": float(getattr(rec, "steering_drive", 0.0) or 0.0) if rec is not None else 0.0,
             "consciousness_claimed": False,
             "gait_phase": float(getattr(self.fly.body, "gait_phase", 0.0)),
             "activity": self._activity_cache or self._activity(rec),

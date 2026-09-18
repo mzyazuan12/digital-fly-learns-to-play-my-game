@@ -57,6 +57,9 @@ def birth_fly(
         "files": sorted(p.name for p in path.iterdir()),
     }
     (path / "birth_report.json").write_text(json.dumps(report, indent=2) + "\n")
+    validation = path / "dataset_validation.txt"
+    if validation.exists():
+        print(validation.read_text(), flush=True)
     return report
 
 

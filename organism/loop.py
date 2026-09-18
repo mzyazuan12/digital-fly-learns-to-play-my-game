@@ -87,24 +87,20 @@ class SensorimotorLoop:
         counts = fly.net.step(self.brain_ticks)
         duration_s = self.brain_ticks * fly.net.params.dt / 1000.0
         self._duration_s = duration_s
-        command = self.bridge.read(
-            counts,
-            duration_s,
-            **(
-                {
-                    "walking_drive": self.physiology.state.walking_drive,
-                    "walking_bout_s": self.physiology.state.walking_bout_s,
-                    "grooming_drive": self.physiology.state.grooming_drive,
-                    "flight_drive": self.physiology.state.flight_drive,
-                }
-                if (fly.policy.allow_behavior_timers or fly.policy.allow_motor_fallbacks)
-                else {}
-            ),
-            graded_output=fly.net.graded_output,
-            net=fly.net,
-            external_command=external,
-            motor_mode=fly.motor_mode.value,
-        )
+        read_kwargs = {
+            "graded_output": fly.net.graded_output,
+            "net": fly.net,
+            "external_command": external,
+            "motor_mode": fly.motor_mode.value,
+        }
+        if fly.policy.allow_behavior_timers or fly.policy.allow_motor_fallbacks:
+            read_kwargs.update(
+                walking_drive=self.physiology.state.walking_drive,
+                walking_bout_s=self.physiology.state.walking_bout_s,
+                grooming_drive=self.physiology.state.grooming_drive,
+                flight_drive=self.physiology.state.flight_drive,
+            )
+        command = self.bridge.read(counts, duration_s, **read_kwargs)
         fly.physiology.state.walking_drive = float(command.locomotor_drive)
         fly.motor_report = command_for_mode(
             fly.motor_mode,
