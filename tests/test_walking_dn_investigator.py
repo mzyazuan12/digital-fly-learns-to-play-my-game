@@ -114,6 +114,6 @@ def test_investigator_toy_experiment(tmp_path):
     assert result["anatomy_checks"]["core CPG types present"]
     assert result["probes"]["DNg100"]["engineered_cpg_engaged"]
     assert result["probes"]["DNp09"]["engineered_cpg_engaged"]
-    assert result["probes"]["DNb08"]["driven"]["mode"] == "rest"
+    assert result["probes"]["DNb08"]["driven"]["scaffold_used"] is False
     assert "foxglove" in result["missing_types"]
     assert (tmp_path / "walking_dn_investigator.json").exists()

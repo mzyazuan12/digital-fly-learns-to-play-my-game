@@ -75,6 +75,7 @@ def test_motor_bridge_resolves_identified_types():
     assert bridge.notes["fallback"] == "identified_types"
     names = {p.name: p for p in bridge.pathways}
     assert "DNp09" in names["walk_initiation"].resolved_types
+    assert "DNg100" in names["walking_dng100"].resolved_types
     assert "DNa02" in names["steer_left"].resolved_types
     assert names["steer_left"].side == "L"
     assert names["steer_right"].side == "R"

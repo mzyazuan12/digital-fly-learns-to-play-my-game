@@ -345,6 +345,14 @@ class MotorBridge:
             for p in self.pathways
         ]
         self.notes["fallback"] = self._fallback_note()
+        self.notes["walking_circuit"] = {
+            "forward_walk_n": int(self.forward_walk_indices.size),
+            "dng100_n": int(self.dng100_indices.size),
+            "odn1_n": int(self.odn1_indices.size),
+            "cpg_e1_n": int(self.cpg_e1.size),
+            "engineered_cpg_still_executes_joints": True,
+            "neural_vnc_cpg_drives_joints": False,
+        }
         self._rate_cells = {
             f"{typename}_{side}": _side_filter(
                 self.connectome, _lookup_type(self.connectome, typename), side
