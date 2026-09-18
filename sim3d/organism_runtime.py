@@ -18,6 +18,8 @@ import numpy as np
 from organism.activity import BrainDisplay
 from organism.body import Pose
 from organism.fly import VirtualFly
+from flybrain.network import dataset_validation
+from organism.bridge import format_walk_trace
 from worlds.room import living_room, spawn_on_rug
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,6 +52,15 @@ class OrganismRuntime:
         )
         require_soma = self.fly.identity.connectome_dataset in {"malecns_v1", "malecns"}
         self.brain = BrainDisplay.from_fly(self.fly, require_soma=require_soma)
+        print(
+            dataset_validation(
+                self.fly.connectome,
+                models=self.fly.net.models,
+                policy_name=self.fly.policy.name,
+                net=self.fly.net,
+            )["text"],
+            flush=True,
+        )
         self.world = room
         self.live = live
         self.lock = threading.Lock()

@@ -392,9 +392,6 @@ class LIFNetwork:
             self.rng.bit_generator.state = data["rng_state"][0]
         self._rebuild_weights()
 
-    def dataset_validation(self, *, policy_name: str = "NO_SCAFFOLD") -> dict:
-        return dataset_validation(self.connectome, models=self.models, policy_name=policy_name, net=self)
-
 
 KNOWN_EXCITATORY_NT = frozenset({"acetylcholine"})
 KNOWN_INHIBITORY_NT = frozenset({"gaba", "glutamate", "histamine"})
@@ -413,13 +410,15 @@ def dataset_validation(
     n_spiking = int(np.count_nonzero(kind == NeuronKind.SPIKING_LIF.value))
     n_graded = int(np.count_nonzero(kind == NeuronKind.GRADED_RATE.value))
     n_unknown = int(connectome.n) - n_spiking - n_graded
-    degrees = np.diff(connectome.pre_ptr)
-    pre = np.repeat(np.arange(connectome.n, dtype=np.int32), degrees.astype(np.int32, copy=False))
-    nt = np.array([str(x or "").strip().lower() for x in connectome.neurotransmitter[pre]], dtype=object)
+    degrees = np.diff(connectome.pre_ptr).astype(np.int64)
+    neuron_nt = np.array([str(x or "").strip().lower() for x in connectome.neurotransmitter], dtype=object)
+    known = np.array(
+        [(t in KNOWN_EXCITATORY_NT) or (t in KNOWN_INHIBITORY_NT) for t in neuron_nt],
+        dtype=bool,
+    )
     excitatory = int(np.count_nonzero(connectome.sign > 0))
     inhibitory = int(np.count_nonzero(connectome.sign < 0))
-    known = np.array([t in KNOWN_EXCITATORY_NT or t in KNOWN_INHIBITORY_NT for t in nt], dtype=bool)
-    uncertain = int(nt.size) - int(known.sum())
+    uncertain = int((~known).astype(np.int64) @ degrees)
     dataset = str(connectome.report.get("dataset_id", "unknown"))
     malecns = "malecns" in dataset
     layers = {

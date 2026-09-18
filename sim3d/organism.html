@@ -9,7 +9,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=nmf31" />
+    <link rel="stylesheet" href="./styles.css?v=nmf32" />
     <script type="importmap">
       {
         "imports": {
@@ -42,8 +42,11 @@
       <div id="walk-trace" class="walk-trace">
         <p class="kicker">Walk initiation</p>
         <pre id="walk-trace-body">waiting…</pre>
-        <ul id="walk-why" hidden></ul>
-        <p class="hint">Click the trace to see why DNp09 is active.</p>
+        <p class="hint">Click <button type="button" id="btn-upstream" class="ghost">upstream input</button> to see why DNp09 is active.</p>
+        <div id="walk-causality" hidden>
+          <p class="kicker">Why did DNp09 become active?</p>
+          <pre id="walk-why-tree"></pre>
+        </div>
       </div>
       <div class="actions">
         <button id="btn-invite" type="button">Ask the fly to play</button>
@@ -121,6 +124,6 @@
       </dl>
       <p id="game-msg" class="hint">Ask the fly. One tap per key. Modes are on the monitor.</p>
     </aside>
-    <script type="module" src="./js/organism.js?v=nmf31"></script>
+    <script type="module" src="./js/organism.js?v=nmf32"></script>
   </body>
 </html>

@@ -43,12 +43,25 @@ labeled **ASSUMED**.
 | default `dt` | 0.1 ms | milestone-1 kernel |
 | organism `dt` | 1.0 ms | closed-loop speed, same topology |
 
-VNC premotor / local interneuron labels use **graded/rate** dynamics
+VNC premotor / local interneuron labels use **analog graded_release**
 (**LITERATURE_DERIVED**: many insect walking premotor neurons are
-nonspiking). Not every one of the 166k cells is an identical LIF unit.
+nonspiking). That output is not a firing rate. Graded cells emit every
+integration step from `V − V_rest`, whether or not anyone spiked.
 
 Small inspectable membrane noise (std 0.35) is **ASSUMED**. It is not fake
 visual firing and not a hidden walk timer. Drive sources are logged.
+
+`functional_gain` initializes to 1. That does **not** mean physiological
+weight = anatomical synapse count. Conversion from contact count to
+postsynaptic effect is **ASSUMED**. Telemetry layers:
+
+```text
+anatomy:            MEASURED
+transmitter:        PREDICTED/MEASURED-DERIVED
+functional_gain:    ASSUMED
+membrane_model:     ASSUMED/LITERATURE_DERIVED
+motor_interface:    ENGINEERED_NEURAL_MOTOR_INTERFACE
+```
 
 ## Synapse sign (policy, not receptors)
 
@@ -66,8 +79,11 @@ weight = anatomical_count × functional_gain × (1 + plastic_component) × sign 
 ```
 
 Anatomical counts are frozen. Learning writes `plastic_component` only, and
-only on identified KC→MBON edges by default. Functional gain is physiological
-efficacy, not a place to hide a behavior scheduler.
+only on identified KC→MBON edges by default. `plastic_factor` is clipped to
+`[0.05, 5]` so learning cannot reverse neurotransmitter identity.
+Functional gain is physiological efficacy, not a place to hide a behavior
+scheduler. `functional_gain = 1` at birth is an initialization, not a claim
+that the effectome equals the connectome.
 
 ## Graph inclusion
 
@@ -95,9 +111,12 @@ MaleCNS identified DNs (rates)
 ```
 
 This is **not** descending neuron → VNC CPG → motor neuron → muscle. The
-CPG is pretrained scaffolding. Rest vs walk follows whether identified
-walking DNs (DNp09) actually emit drive. There is **no** `walking_bout_s`
-override on the default path.
+CPG is pretrained scaffolding. Rest vs walk follows a continuous
+`locomotor_drive` decoded from identified walking DNs (DNp09), labeled
+`ENGINEERED_NEURAL_MOTOR_INTERFACE`. There is **no** `walking_bout_s`
+override on the default path. NO_SCAFFOLD **rejects** a timer, motor
+fallback, named gait command, or developer motor command rather than
+silently ignoring it.
 
 `MODE_HYBRID_VNC` logs motor-neuron activity beside the CPG.
 `MODE_NEURAL_MOTOR` is reserved until muscle actuation exists.

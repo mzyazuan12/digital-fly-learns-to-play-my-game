@@ -17,11 +17,15 @@ def test_dnp09_current_is_necessary_and_sufficient_for_cpg_walk():
     assert result["neural_authority"] is True
 
 
-def test_walking_drive_without_spikes_is_ignored():
+def test_walking_drive_without_spikes_is_rejected():
+    from organism.bridge import NonNeuralMotorAuthority
+
     graph = miniature_connectome(2)
     bridge = MotorBridge(graph, legacy_scaffold=False)
     counts = __import__("numpy").zeros(graph.n, dtype=__import__("numpy").int32)
-    cmd = bridge.read(counts, 0.04, walking_drive=1.0, walking_bout_s=5.0)
+    with __import__("pytest").raises(NonNeuralMotorAuthority):
+        bridge.read(counts, 0.04, walking_drive=1.0, walking_bout_s=5.0)
+    cmd = bridge.read(counts, 0.04)
     assert cmd.mode == "rest"
     assert cmd.scaffold_used is False
 

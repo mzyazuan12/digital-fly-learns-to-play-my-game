@@ -89,13 +89,17 @@ def test_motor_bridge_silent_dns_do_not_walk_without_scaffold():
     graph = miniature_connectome(1)
     neural = MotorBridge(graph, legacy_scaffold=False)
     counts = np.zeros(graph.n, dtype=np.int32)
-    rest = neural.read(
-        counts, 0.04, walking_drive=0.9, walking_bout_s=2.0, grooming_drive=0.9, flight_drive=0.9
-    )
+    rest = neural.read(counts, 0.04)
     assert rest.mode == "rest"
     assert rest.left + rest.right == 0.0
     assert rest.scaffold_used is False
     assert rest.neural_only is True
+    from organism.bridge import NonNeuralMotorAuthority
+
+    with pytest.raises(NonNeuralMotorAuthority):
+        neural.read(
+            counts, 0.04, walking_drive=0.9, walking_bout_s=2.0, grooming_drive=0.9, flight_drive=0.9
+        )
 
     legacy = MotorBridge(graph, legacy_scaffold=True)
     walk = legacy.read(

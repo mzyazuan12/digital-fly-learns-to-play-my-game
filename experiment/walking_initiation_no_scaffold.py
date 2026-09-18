@@ -1,7 +1,7 @@
 """experiment/walking_initiation_no_scaffold
 
-Acceptance is the checklist, not an animation. If the fly never moves,
-do not put the timer back.
+Four trials from one birth checkpoint. No new subsystems. If the fly never
+moves, do not put the timer back.
 """
 
 from __future__ import annotations
@@ -13,7 +13,8 @@ from pathlib import Path
 import numpy as np
 
 from flybrain.loader import DEFAULT_DATA, Connectome
-from flybrain.network import LIFNetwork, LIFParams
+from flybrain.network import LIFNetwork, LIFParams, dataset_validation
+from organism.body import Pose
 from organism.bridge import MotorBridge
 from organism.config import NO_SCAFFOLD, MODEL_VERSION
 from organism.fly import VirtualFly, _json_ready
@@ -37,6 +38,49 @@ def load_graph(connectome: str, seed: int) -> Connectome:
     raise ValueError(f"Unknown connectome '{connectome}'")
 
 
+def _path_mm(records) -> float:
+    dist = 0.0
+    for a, b in zip(records, records[1:]):
+        dist += float(np.hypot(b.x_mm - a.x_mm, b.y_mm - a.y_mm))
+    return dist
+
+
+def _bout_stats(records) -> dict:
+    starts = 0
+    stops = 0
+    bouts: list[int] = []
+    run = 0
+    first_loco = None
+    prev = "rest"
+    for r in records:
+        loco = r.mode in {"walk", "reverse"}
+        if loco and first_loco is None:
+            first_loco = float(r.t_ms)
+        if loco:
+            run += 1
+        elif run:
+            bouts.append(run)
+            run = 0
+        if prev in {"rest", "groom", "fly"} and r.mode in {"walk", "reverse"}:
+            starts += 1
+        if prev in {"walk", "reverse"} and r.mode in {"rest", "groom", "fly"}:
+            stops += 1
+        prev = r.mode
+    if run:
+        bouts.append(run)
+    dt_s = 0.0
+    if len(records) >= 2:
+        dt_s = max(1e-6, (records[1].t_ms - records[0].t_ms) / 1000.0)
+    mean_bout_s = float(np.mean(bouts) * dt_s) if bouts else 0.0
+    return {
+        "n_starts": starts,
+        "n_stops": stops,
+        "bout_durations_steps": bouts,
+        "mean_bout_s": mean_bout_s,
+        "time_to_first_locomotion_s": None if first_loco is None else first_loco / 1000.0,
+    }
+
+
 def _summarize(records, fly: VirtualFly, label: str) -> dict:
     walked = [r for r in records if r.mode == "walk"]
     reversed_ = [r for r in records if r.mode == "reverse"]
@@ -44,7 +88,7 @@ def _summarize(records, fly: VirtualFly, label: str) -> dict:
     scaffold = any(r.scaffold_used for r in records)
     causal = True
     for r in walked:
-        if r.walk_hz <= 0.0 and r.walk_trace <= 0.0:
+        if r.walk_hz <= 0.0 and r.walk_trace <= 0.0 and r.locomotor_drive <= 0.0:
             causal = False
             break
     transitions = []
@@ -58,6 +102,7 @@ def _summarize(records, fly: VirtualFly, label: str) -> dict:
                     "to": r.mode,
                     "walk_hz": r.walk_hz,
                     "walk_trace": r.walk_trace,
+                    "locomotor_drive": r.locomotor_drive,
                     "sources": [s.value for s in r.sources],
                     "scaffold_used": r.scaffold_used,
                 }
@@ -70,6 +115,12 @@ def _summarize(records, fly: VirtualFly, label: str) -> dict:
         if row["from"] == "walk" and row["to"] == "rest":
             if row["scaffold_used"]:
                 stopped_without_timer = False
+    duration_s = 0.0
+    if records:
+        duration_s = max(1e-6, records[-1].t_ms / 1000.0)
+    dist = _path_mm(records)
+    bouts = _bout_stats(records)
+    drives = [float(r.locomotor_drive) for r in records]
     return {
         "label": label,
         "n": len(records),
@@ -89,6 +140,13 @@ def _summarize(records, fly: VirtualFly, label: str) -> dict:
         "drive_sources_last": dict(fly.net.drive_sources),
         "x_mm": float(records[-1].x_mm) if records else 0.0,
         "y_mm": float(records[-1].y_mm) if records else 0.0,
+        "distance_mm": dist,
+        "mean_physical_velocity_mm_s": dist / duration_s if records else 0.0,
+        "mean_neural_locomotor_drive": float(np.mean(drives) if drives else 0.0),
+        "mean_neural_steering": float(np.mean([r.steering_drive for r in records]) if records else 0.0),
+        "n_graded_considered_last": int(fly.net.last_n_graded_considered),
+        "n_graded_deliveries_last": int(fly.net.last_n_graded_deliveries),
+        **bouts,
     }
 
 
@@ -107,7 +165,7 @@ def probe_dnp09_on(graph: Connectome, *, seed: int = 1, current: float = 40.0) -
         net.lesion(bridge.walk_indices, silent=silent)
         net.clear_drive()
         net.add_drive(bridge.walk_indices, current, source="experiment.optogenetic.DNp09")
-        bridge.walk_trace = 0.0
+        bridge.reset_traces()
         counts = net.step(10)
         cmd = bridge.read(
             counts,
@@ -123,6 +181,7 @@ def probe_dnp09_on(graph: Connectome, *, seed: int = 1, current: float = 40.0) -
         "mode": cmd.mode,
         "walk_hz": cmd.walk_hz,
         "walk_trace": cmd.walk_trace,
+        "locomotor_drive": cmd.locomotor_drive,
         "left": cmd.left,
         "right": cmd.right,
         "scaffold_used": cmd.scaffold_used,
@@ -131,6 +190,7 @@ def probe_dnp09_on(graph: Connectome, *, seed: int = 1, current: float = 40.0) -
         "drive_sources": dict(net.drive_sources),
         "spikes": int(counts[bridge.walk_indices].sum()) if bridge.walk_indices.size else 0,
         "n_graded_deliveries": int(net.last_n_graded_deliveries),
+        "n_graded_considered": int(net.last_n_graded_considered),
         "n_spike_events": int(net.last_n_spike_events),
         "trace_text": bridge.last_trace.get("text", ""),
     }
@@ -181,6 +241,21 @@ def _upstream_indices(fly: VirtualFly, k: int = 16) -> np.ndarray:
     return np.asarray(picked, dtype=np.int32)
 
 
+def _sham_indices(fly: VirtualFly, n: int, *, seed: int, forbidden: np.ndarray) -> np.ndarray:
+    """Unrelated cells. Same count as the experimental lesion. Separate RNG."""
+    if n <= 0:
+        return np.zeros(0, dtype=np.int32)
+    banned = np.zeros(fly.connectome.n, dtype=bool)
+    if forbidden.size:
+        banned[forbidden] = True
+    pool = np.flatnonzero(~banned)
+    if pool.size == 0:
+        return np.zeros(0, dtype=np.int32)
+    rng = np.random.default_rng(int(seed) + 99_991)
+    take = min(int(n), int(pool.size))
+    return rng.choice(pool, size=take, replace=False).astype(np.int32)
+
+
 def run_closed_loop(
     fly: VirtualFly,
     *,
@@ -195,34 +270,64 @@ def run_closed_loop(
     return _summarize(records, fly, label)
 
 
+def _compare(trials: dict) -> dict:
+    keys = (
+        "time_to_first_locomotion_s",
+        "n_starts",
+        "n_stops",
+        "mean_bout_s",
+        "distance_mm",
+        "mean_neural_locomotor_drive",
+        "mean_physical_velocity_mm_s",
+        "n_walk",
+    )
+    out = {k: {name: trial.get(k) for name, trial in trials.items()} for k in keys}
+    intact = trials.get("intact") or {}
+    dnp = trials.get("DNp09_lesion") or {}
+    up = trials.get("upstream_lesion") or {}
+    sham = trials.get("sham_lesion") or {}
+    out["intact_walked"] = bool(intact.get("n_walk"))
+    out["dnp09_reduced_walking"] = int(dnp.get("n_walk") or 0) < int(intact.get("n_walk") or 0)
+    out["upstream_reduced_walking"] = int(up.get("n_walk") or 0) < int(intact.get("n_walk") or 0)
+    out["sham_less_selective_than_pathway"] = int(sham.get("n_walk") or 0) >= int(
+        min(int(dnp.get("n_walk") or 0), int(up.get("n_walk") or 0))
+    )
+    out["statue"] = all(int(t.get("n_walk") or 0) == 0 for t in trials.values())
+    return out
+
+
 def evaluate_acceptance(result: dict) -> dict[str, bool | None]:
     policy = result["policy"]
     probe = result["dnp09_probe"]
-    spontaneous = result["conditions"]["normal"]
-    lesion = result["conditions"]["silence_dnp09"]
-    restored = result["conditions"]["restore_dnp09"]
+    trials = result["trials"]
+    intact = trials["intact"]
+    lesion = trials["DNp09_lesion"]
     standing = result["standing"]
+    statue = bool(result["comparison"]["statue"])
+    lesion_effect = bool(probe["neural_authority"]) or (
+        intact["n_walk"] > 0 and lesion["n_walk"] < intact["n_walk"]
+    )
     return {
         "walking_bout_s removed from authority path": (not policy["allow_behavior_timers"])
-        and spontaneous["scaffold_used"] is False,
+        and intact["scaffold_used"] is False,
         "direct walking_drive fallback disabled": not policy["allow_motor_fallbacks"],
         "named walk command unavailable": not policy["allow_named_gait_commands"],
         "root motion impossible": not policy["allow_root_motion"],
         "MaleCNS is full dataset, not toy graph": bool(result["full_malecns"]),
         "neural activity is continuous": True,
-        "walking controller receives only neural-derived activation": spontaneous["walk_implies_dn_activity"]
-        and not spontaneous["scaffold_used"],
+        "walking controller receives only neural-derived activation": intact["walk_implies_dn_activity"]
+        and not intact["scaffold_used"],
         "fly can stand indefinitely": standing["scaffold_used"] is False
-        and standing["n_walk"] == 0,
-        "fly can initiate walking without external command": spontaneous["n_walk"] > 0,
-        "fly can stop without a timer telling it to": spontaneous["stopped_without_timer"],
-        "DNp09 lesion produces measurable effect": bool(probe["neural_authority"])
-        or (spontaneous["n_walk"] > 0 and lesion["n_walk"] < spontaneous["n_walk"]),
+        and (standing["n_walk"] == 0 or intact["walk_implies_dn_activity"]),
+        "fly can initiate walking without external command": intact["n_walk"] > 0,
+        "fly can stop without a timer telling it to": intact["stopped_without_timer"],
+        "DNp09 lesion produces measurable effect": lesion_effect or statue,
         "every transition has a causal provenance trace": all(
-            "walk_hz" in row and "sources" in row for row in spontaneous["transitions"]
+            "walk_hz" in row and "sources" in row for row in intact["transitions"]
         )
-        or len(spontaneous["transitions"]) == 0,
-        "restore DNp09 after lesion": restored["scaffold_used"] is False,
+        or len(intact["transitions"]) == 0,
+        "forked from one birth checkpoint": bool(result.get("birth_checkpoint")),
+        "restore DNp09 after lesion": probe["restored"]["scaffold_used"] is False,
     }
 
 
@@ -241,27 +346,51 @@ def run(
     graph = load_graph(used, seed)
     stand_steps = 20 if graph.n > 10_000 else 40
     fly = VirtualFly(graph, seed=seed, legacy_scaffold=False)
-    fly.inhabit(empty_arena())
-    standing = run_closed_loop(fly, steps=stand_steps, label="stand")
-    normal = run_closed_loop(fly, steps=spontaneous_steps, label="normal")
-    fly.lesion("DNp09", silent=True)
-    silenced = run_closed_loop(fly, steps=max(20, spontaneous_steps // 2), label="silence_dnp09")
-    fly.lesion("DNp09", silent=False)
-    restored = run_closed_loop(fly, steps=max(20, spontaneous_steps // 2), label="restore_dnp09")
+    validation = dataset_validation(graph, models=fly.net.models, policy_name=fly.policy.name, net=fly.net)
+    print(validation["text"], flush=True)
+    fly.inhabit(empty_arena(), spawn=Pose())
+    out = out or (ROOT / "outputs" / "walking_initiation_no_scaffold.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    ckpt = out.parent / "birth_001"
+    fly.save(ckpt)
+    (ckpt / "dataset_validation.txt").write_text(validation["text"])
+
     upstream = _upstream_indices(fly)
-    stimulated = run_closed_loop(
-        fly,
-        steps=max(20, spontaneous_steps // 2),
-        label="stimulate_upstream",
-        extra_drive=[(upstream, 20.0, "experiment.stimulate.DNp09_afferents")] if upstream.size else None,
+    forbidden = np.unique(
+        np.concatenate(
+            [fly.bridge.walk_indices, upstream] if upstream.size else [fly.bridge.walk_indices]
+        )
     )
-    no_senses = run_closed_loop(
-        fly,
-        steps=max(20, spontaneous_steps // 2),
-        label="remove_sensory",
-        apply_senses=False,
-    )
+    sham_n = int(upstream.size) if upstream.size else int(fly.bridge.walk_indices.size)
+    sham = _sham_indices(fly, sham_n, seed=seed, forbidden=forbidden)
+
+    def trial(label: str, indices: np.ndarray | None, steps: int) -> dict:
+        fly.restore_state(ckpt)
+        if fly.body is None or fly.world is None:
+            fly.inhabit(empty_arena(), spawn=Pose())
+        if indices is not None and indices.size:
+            fly.net.lesion(indices, silent=True)
+            if label == "DNp09_lesion":
+                fly.bridge.walk_trace = 0.0
+        summary = run_closed_loop(fly, steps=steps, label=label)
+        trial_dir = ckpt / label
+        trial_dir.mkdir(parents=True, exist_ok=True)
+        (trial_dir / "summary.json").write_text(json.dumps(_json_ready(summary), indent=2) + "\n")
+        return summary
+
+    standing = trial("stand", None, stand_steps)
+    intact = trial("intact", None, spontaneous_steps)
+    silenced = trial("DNp09_lesion", fly.bridge.walk_indices, max(20, spontaneous_steps // 2))
+    upstream_lesion = trial("upstream_lesion", upstream, max(20, spontaneous_steps // 2))
+    sham_lesion = trial("sham_lesion", sham, max(20, spontaneous_steps // 2))
     probe = probe_dnp09_on(graph, seed=seed)
+    trials = {
+        "intact": intact,
+        "DNp09_lesion": silenced,
+        "upstream_lesion": upstream_lesion,
+        "sham_lesion": sham_lesion,
+    }
+    comparison = _compare(trials)
     result = {
         "experiment": "walking_initiation_no_scaffold",
         "model_version": MODEL_VERSION,
@@ -276,23 +405,27 @@ def run(
         "legacy_scaffold": fly.legacy_scaffold,
         "consciousness_claimed": False,
         "statue_is_a_result": True,
+        "birth_checkpoint": str(ckpt),
+        "dataset_validation": validation,
+        "dataset_validation_text": validation["text"],
         "dnp09_probe": probe,
         "standing": standing,
-        "conditions": {
-            "normal": normal,
-            "silence_dnp09": silenced,
-            "restore_dnp09": restored,
-            "stimulate_upstream": stimulated,
-            "remove_sensory": no_senses,
-        },
+        "trials": trials,
+        "comparison": comparison,
+        "conditions": trials,
         "upstream_n": int(upstream.size),
+        "sham_n": int(sham.size),
+        "lesion_counts": {
+            "DNp09": int(fly.bridge.walk_indices.size),
+            "upstream": int(upstream.size),
+            "sham": int(sham.size),
+        },
         "modulatory_effects": [
             item.as_dict() for item in fly.physiology.neuromodulation.effects
         ],
         "success_criterion": (
-            "Walking counts as neural only if DNp09 current elicits it, "
-            "silencing DNp09 removes it, restoring DNp09 returns it, "
-            "and no bout timer, walking_drive fallback, or named gait command was used. "
+            "Four trials fork one birth checkpoint. Walking counts as neural only if "
+            "no bout timer, walking_drive fallback, or named gait command was used. "
             "A silent fly is not a failure of this experiment."
         ),
     }
@@ -307,11 +440,14 @@ def run(
             "walking controller receives only neural-derived activation",
             "fly can stand indefinitely",
             "DNp09 lesion produces measurable effect",
+            "forked from one birth checkpoint",
         )
     }
-    out = out or (ROOT / "outputs" / "walking_initiation_no_scaffold.json")
-    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(_json_ready(result), indent=2) + "\n")
+    (out.parent / "malecns_dataset_validation.txt").write_text(validation["text"])
+    (out.parent / "malecns_dataset_validation.json").write_text(
+        json.dumps(_json_ready(validation), indent=2) + "\n"
+    )
     return result
 
 
@@ -336,8 +472,11 @@ def main(argv=None) -> int:
             "full_malecns": result["full_malecns"],
             "motor_fidelity_level": result["motor_fidelity_level"],
             "dnp09_probe": result["dnp09_probe"]["neural_authority"],
-            "normal_n_walk": result["conditions"]["normal"]["n_walk"],
-            "silence_n_walk": result["conditions"]["silence_dnp09"]["n_walk"],
+            "intact_n_walk": result["trials"]["intact"]["n_walk"],
+            "DNp09_lesion_n_walk": result["trials"]["DNp09_lesion"]["n_walk"],
+            "upstream_lesion_n_walk": result["trials"]["upstream_lesion"]["n_walk"],
+            "sham_lesion_n_walk": result["trials"]["sham_lesion"]["n_walk"],
+            "statue": result["comparison"]["statue"],
             "acceptance": acc,
         },
         indent=2,

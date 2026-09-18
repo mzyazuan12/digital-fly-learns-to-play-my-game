@@ -16,7 +16,8 @@ const hud = {
   source: document.getElementById("source"),
   fidelity: document.getElementById("fidelity"),
   walkTrace: document.getElementById("walk-trace-body"),
-  walkWhy: document.getElementById("walk-why"),
+  walkWhy: document.getElementById("walk-why-tree"),
+  walkCausality: document.getElementById("walk-causality"),
 };
 const game = {
   need: document.getElementById("need"),
@@ -37,6 +38,21 @@ try {
   if (followBtn) followBtn.textContent = "Free camera";
 } catch (err) {
   hud.status.textContent = `3D living room failed: ${err?.message || err}`;
+}
+
+function formatCausality(nodes, indent = 0) {
+  const pad = "  ".repeat(indent);
+  const lines = [];
+  for (const node of nodes || []) {
+    const label = node.label || node.pre_label || node.index;
+    const extra = node.contribution == null ? "" : `  ${Number(node.contribution) >= 0 ? "+" : ""}${Number(node.contribution).toFixed(3)}`;
+    lines.push(`${pad}${label}${extra}`);
+    if (node.inputs?.length) {
+      lines.push(`${pad}↑`);
+      lines.push(...formatCausality(node.inputs, indent + 1));
+    }
+  }
+  return lines;
 }
 
 function fmtHz(node) {
@@ -86,13 +102,16 @@ function syncFly(s) {
   if (hud.walkTrace && trace) hud.walkTrace.textContent = trace;
   if (hud.walkWhy) {
     const why = s.walk_initiation_trace?.why_dnp09 || {};
-    const rows = [
-      ...(why.afferents || []).map((row) => `← ${row.pre_label || row.pre_type || row.pre}`),
-      ...Object.keys(why.drive_sources || {}).map((name) => `← ${name}`),
+    const tree = why.causality || [];
+    const lines = [
+      "DNp09",
+      "↑",
+      "real incoming MaleCNS edges",
+      ...formatCausality(tree),
     ];
-    hud.walkWhy.innerHTML = rows.length
-      ? rows.map((line) => `<li>${line}</li>`).join("")
-      : "<li>No DNp09 afferents this window.</li>";
+    hud.walkWhy.textContent = tree.length
+      ? lines.join("\n")
+      : "No active incoming MaleCNS edges this window.";
   }
   hud.backend.textContent = `${s.dataset} · ${Number(s.neurons || 0).toLocaleString()} cells · ${s.body || "body"}`;
   if (room?.fly) {
@@ -210,10 +229,12 @@ document.getElementById("btn-em").onclick = () => {
   document.getElementById("btn-em").textContent = ng.hidden ? "Embed EM" : "Hide EM";
 };
 
-const walkTracePanel = document.getElementById("walk-trace");
-if (walkTracePanel && hud.walkWhy) {
-  walkTracePanel.onclick = () => {
-    hud.walkWhy.hidden = !hud.walkWhy.hidden;
+const upstreamBtn = document.getElementById("btn-upstream");
+if (upstreamBtn && hud.walkCausality) {
+  upstreamBtn.onclick = (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    hud.walkCausality.hidden = !hud.walkCausality.hidden;
   };
 }
 

@@ -47,6 +47,18 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
         used_by="flybrain.neurons.nt_sign",
     ),
     Assumption(
+        id="graded_analog_every_tick",
+        statement="Nonspiking cells emit analog graded_release every integration step from V−V_rest. That output is not a firing rate. last_n_graded_considered counts every graded cell every tick.",
+        used_by="flybrain.network.LIFNetwork._deliver_graded",
+        biological=True,
+    ),
+    Assumption(
+        id="plastic_factor_bounds",
+        statement="plastic_factor = clip(1+plastic_component, 0.05, 5.0). Learning cannot reverse neurotransmitter sign. Anatomical counts stay frozen.",
+        used_by="flybrain.network.LIFNetwork._rebuild_weights",
+        biological=True,
+    ),
+    Assumption(
         id="weight_factorization",
         statement="Anatomical synapse counts stay frozen. Functional gain is physiological efficacy. Plastic component is learned. Never overwrite anatomy.",
         used_by="flybrain.network.LIFNetwork",
@@ -74,8 +86,8 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
         used_by="organism.sensory.SensorySystem",
     ),
     Assumption(
-        id="identified_dn_bridge",
-        statement="MotorBridge reads DNp09/DNa02/DNa01/DNg13/DNb05/DNb06/MDN by type+side. Mapping rates onto the FlyGym CPG is engineered (MODE_ENGINEERED_CPG).",
+        id="engineered_neural_motor_interface",
+        statement="MotorBridge maps identified DN activity to a continuous locomotor_drive and steering_drive (ENGINEERED_NEURAL_MOTOR_INTERFACE). This is not a 18 Hz walk threshold and not a bout timer. NO_SCAFFOLD raises if a timer, fallback, named gait command, or developer motor command is supplied.",
         used_by="organism.bridge.MotorBridge",
         biological=True,
     ),

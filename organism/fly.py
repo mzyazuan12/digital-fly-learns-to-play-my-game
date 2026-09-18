@@ -21,7 +21,7 @@ import numpy as np
 
 from flybrain.loader import Connectome, load_connectome, synthetic_connectome
 from flybrain.mushroom_body import MushroomBodyLearning
-from flybrain.network import LIFNetwork, LIFParams
+from flybrain.network import LIFNetwork, LIFParams, dataset_validation
 from organism.assumptions import as_dict as assumption_dict
 from organism.body import Body, Pose, build_body
 from organism.bridge import MotorBridge
@@ -536,7 +536,9 @@ class VirtualFly:
             (path / "body_state.json").write_text(json.dumps(self.body.snapshot(), indent=2) + "\n")
         self._init_life_history()
         self.log_life("save", {"path": str(path)})
-        validation = self.net.dataset_validation(policy_name=self.policy.name)
+        validation = dataset_validation(
+            self.connectome, models=self.net.models, policy_name=self.policy.name, net=self.net
+        )
         (path / "dataset_validation.json").write_text(
             json.dumps(_json_ready(validation), indent=2) + "\n"
         )
