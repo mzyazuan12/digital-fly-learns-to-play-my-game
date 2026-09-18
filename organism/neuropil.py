@@ -26,7 +26,6 @@ ANN_PATH = DEFAULT_DATA / ANN_FILE
 if not ANN_PATH.exists():
     ANN_PATH = ROOT / ANN_FILE
 ROI_CACHE = DEFAULT_DATA / "normalized" / "cpg_leg_roi.json"
-NEUROMERE_CACHE = DEFAULT_DATA / "normalized" / "leg_neuropil.npz"
 
 LEG_SLOTS = ("FL", "FR", "ML", "MR", "HL", "HR")
 LEG_LAYOUT = {

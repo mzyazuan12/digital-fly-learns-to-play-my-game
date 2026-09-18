@@ -11,7 +11,8 @@ Literature (not a claim that our LIF model reproduces those recordings):
 - DNp09 / P9: forward walking with turning; strong activation can freeze
   (Bidaye et al. 2020; Zacarias et al. 2018).
 - DNg100 / BDN2: walking command that accesses a VNC rhythm generator even
-  in headless flies (Sapkal et al. 2024; Pugliese et al. 2025).
+  in headless flies (Sapkal et al. 2024; Pugliese et al. 2025 bioRxiv).
+  MaleCNS has one DNg100 per side (two neurons total), not six.
 - DNb08: rhythmic searching/flailing, not coordinated walking
   (Pugliese et al. 2025).
 - oDN1 / DNg97: bolt-related forward walking DN (Sapkal et al. 2024).
@@ -19,10 +20,11 @@ Literature (not a claim that our LIF model reproduces those recordings):
 - MDN: backward walking (Bidaye et al. 2014).
 - Halt: Foxglove/CB0890 walk-OFF, Bluebell/DNg60 walk-OFF, Brake/AN19A018
   (Sapkal et al. 2024). Foxglove is a FlyWire type; MaleCNS may not label it.
-- Core CPG, one copy per leg neuropil (Pugliese et al. 2025 published):
+- Core CPG, one copy per leg neuropil (Pugliese et al. 2025 bioRxiv preprint):
   E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
   E4=IN03A006, E5=INXXX464. An older preprint passage appears to call E5
-  INXXX466 (the E2 type); canonical mapping is the published article.
+  INXXX466 (the E2 type); canonical mapping is INXXX464. These names are
+  observation/lesion labels, not motor commands.
 """
 
 from __future__ import annotations
@@ -32,6 +34,13 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from flybrain.loader import Connectome
+from organism.neuropil import (
+    LEG_LAYOUT,
+    LEG_SLOTS,
+    assign_indices,
+    resolve_cpg_cells,
+    slot_of,
+)
 
 
 @dataclass(frozen=True)
