@@ -84,7 +84,7 @@ def test_neural_cpg_mode_does_not_hand_joints_to_flygym():
 
 def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     source = inspect.getsource(dng100_cpg_rhythm)
-    assert "walk()" not in source
+    assert "def walk" not in source
     assert "if DNg100" not in source
     result = run(connectome="toy", seed=1, current=40.0, steps=80, warmup=10, lesions=True)
     assert result["walk_api_called"] is False

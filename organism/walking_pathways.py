@@ -515,6 +515,10 @@ class LegCPGCopy:
     assignment: str
     e1_e2_contacts: int
 
+    @property
+    def filled(self) -> bool:
+        return self.cells.get("E1") is not None
+
     def as_dict(self) -> dict:
         return {
             "slot": self.slot,
