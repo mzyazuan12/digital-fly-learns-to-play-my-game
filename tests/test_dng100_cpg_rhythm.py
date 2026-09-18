@@ -107,3 +107,22 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert result["answer"] in {"yes", "no"}
     if not result["oscillation_reproduced"]:
         assert "Do not change the graph" in result["next_step"] or "do not change the graph" in result["next_step"].lower()
+    assert result["dng100_is_six_neurons"] is False
+    source = inspect.getsource(__import__("organism.walking_pathways", fromlist=["walking_pathways"]))
+    assert "somaLocation Z" not in source
+    assert "SOMA_Z" not in source
+
+
+def test_e1_annotation_covers_six_leg_neuropils():
+    cells = load_annotation_neuropil(types=("IN17A001",))
+    if not cells:
+        return
+    assert len(cells) == 6
+    for cell in cells.values():
+        assign_cell(cell)
+    assert {cell.assigned_slot for cell in cells.values()} == set(NEURO_SLOTS)
+    dng = load_annotation_neuropil(types=("DNg100",))
+    assert len(dng) == 2
+    sides = {cell.side for cell in dng.values()}
+    assert sides == {"L", "R"}
+    assert all(not cell.soma_neuromere for cell in dng.values())

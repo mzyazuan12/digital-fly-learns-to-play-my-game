@@ -121,7 +121,9 @@ traced but not decoded as walking. The published VNC CPG types
 (E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
 E4=IN03A006, E5=INXXX464) are resolved as **six per-leg copies**, not
 one pooled scalar. An older preprint passage appears to call E5
-`INXXX466`; canonical mapping is the published article (`INXXX464`).
+`INXXX466`; canonical mapping is `INXXX464`. The DNg100 CPG study is a
+bioRxiv preprint, not a peer-reviewed article. DNg100 itself is two
+neurons; the six-copy types are the downstream CPG cells.
 Those names tag cells for measurement/lesion; they never mean
 `if DNg100: walk()`. `MODE_NEURAL_CPG` records E1/E2/I1 timing and does
 **not** move joints yet. There is **no** `walking_bout_s`

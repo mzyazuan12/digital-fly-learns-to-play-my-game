@@ -21,6 +21,7 @@ htmlcov/
 # Download from https://male-cns.janelia.org/download/
 *.feather
 *.swc
+third_party/
 data/malecns_v1/*
 !data/malecns_v1/README.md
 syn-points-male-cns-*.feather
