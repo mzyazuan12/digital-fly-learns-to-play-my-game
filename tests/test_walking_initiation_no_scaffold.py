@@ -45,6 +45,7 @@ def test_no_scaffold_disables_timers_and_fallbacks():
 
 def test_motor_fidelity_level_is_identified_dns_to_cpg():
     assert motor_fidelity_level(MotorMode.ENGINEERED_CPG) == 1
+    assert motor_fidelity_level(MotorMode.NEURAL_CPG) == 2
 
 
 def test_graded_cell_delivers_without_spiking():

@@ -7,8 +7,9 @@ transfers are labeled as inference, not measurements from the MaleCNS
 specimen.
 
 This module does not by itself walk the fly. MODE_ENGINEERED_CPG still
-uses the FlyGym HybridTurningController. MODE_NEURAL_MOTOR is the
-research target.
+uses the FlyGym HybridTurningController. MODE_NEURAL_CPG records the
+identified VNC motif and does not actuate joints yet. MODE_NEURAL_MOTOR
+is the later muscle-actuation target.
 """
 
 from __future__ import annotations
