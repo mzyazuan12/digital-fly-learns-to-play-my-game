@@ -1,8 +1,10 @@
 """Identified walking DNs and the published VNC rhythm circuit.
 
 This module looks up real MaleCNS types. It does not call walk(), stand(),
-or groom(). Joint motion still comes from the engineered FlyGym CPG until
-MODE_NEURAL_MOTOR exists.
+or groom(). Names in WALKING_CIRCUIT_TYPES tag cells for measurement and
+lesion; they never mean `if DNg100: walk()`. Joint motion still comes from
+the engineered FlyGym CPG in MODE_ENGINEERED_CPG. MODE_NEURAL_CPG records
+timing from the per-leg E1/E2/I1 motif and does not actuate FlyBody yet.
 
 Literature (not a claim that our LIF model reproduces those recordings):
 
@@ -17,8 +19,10 @@ Literature (not a claim that our LIF model reproduces those recordings):
 - MDN: backward walking (Bidaye et al. 2014).
 - Halt: Foxglove/CB0890 walk-OFF, Bluebell/DNg60 walk-OFF, Brake/AN19A018
   (Sapkal et al. 2024). Foxglove is a FlyWire type; MaleCNS may not label it.
-- Core CPG per leg neuropil: E1=IN17A001, E2=INXXX466, I1=IN16B036
-  (Pugliese et al. 2025).
+- Core CPG, one copy per leg neuropil (Pugliese et al. 2025 published):
+  E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
+  E4=IN03A006, E5=INXXX464. An older preprint passage appears to call E5
+  INXXX466 (the E2 type); canonical mapping is the published article.
 """
 
 from __future__ import annotations
