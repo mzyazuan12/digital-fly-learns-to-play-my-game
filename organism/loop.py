@@ -52,6 +52,7 @@ class SensorimotorLoop:
             notes="paused",
             developer=True,
             motor_mode=fly.motor_mode.value,
+            motor_fidelity_level=fly.motor_fidelity_level,
         )
 
     def infer_command(

@@ -16,7 +16,7 @@ from flybrain.loader import DEFAULT_DATA, Connectome
 from flybrain.network import LIFNetwork, LIFParams
 from organism.bridge import MotorBridge
 from organism.config import NO_SCAFFOLD, MODEL_VERSION
-from organism.fly import VirtualFly
+from organism.fly import VirtualFly, _json_ready
 from organism.toy import miniature_connectome
 from worlds import empty_arena
 
@@ -314,7 +314,7 @@ def run(
     }
     out = out or (ROOT / "outputs" / "walking_initiation_no_scaffold.json")
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2) + "\n")
+    out.write_text(json.dumps(_json_ready(result), indent=2) + "\n")
     return result
 
 
