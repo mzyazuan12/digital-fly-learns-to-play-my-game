@@ -27,7 +27,7 @@ def _coo_to_csr(pre: np.ndarray, post: np.ndarray, weight: np.ndarray, n: int):
     return ptr, post, weight
 
 
-N = 96
+N = 104
 
 
 def miniature_connectome(seed: int = 0) -> Connectome:
@@ -66,65 +66,49 @@ def miniature_connectome(seed: int = 0) -> Connectome:
     # Published walking CPG (Pugliese 2025), miniature and labeled — not MaleCNS.
     # DNg100 → E1; E1↔E2; E1/E2→I1; I1⊣E1/E2; E1/E2→MN. DNp09 can recruit DNg100.
     dng100 = np.array([88, 89], dtype=np.uint32)
-    e1 = np.array([93], dtype=np.uint32)
-    e2 = np.array([94], dtype=np.uint32)
-    i1 = np.array([95], dtype=np.uint32)
     odn1 = np.array([90], dtype=np.uint32)
     dnb08 = np.array([91], dtype=np.uint32)
     bluebell = np.array([92], dtype=np.uint32)
-    brake = np.array([96, 97], dtype=np.uint32)
-    pre = np.concatenate(
+    e1 = np.array([93], dtype=np.uint32)
+    e2 = np.array([94], dtype=np.uint32)
+    i1 = np.array([95], dtype=np.uint32)
+    cpg_pre = np.array(
         [
-            pre,
-            np.array([32, 33], dtype=np.uint32),  # DNp09 → DNg100
-            np.repeat(dng100, 2),  # DNg100 → E1, E2
-            e1,
-            e2,  # E1 ↔ E2
-            e1,
-            e2,  # E1/E2 → I1
-            np.repeat(i1, 2),  # I1 ⊣ E1, E2
-            np.repeat(e1, 2),
-            np.repeat(e2, 2),  # CPG → MN
-            odn1,  # oDN1 → E1
-            dnb08,  # DNb08 weakly → E1
-            bluebell,  # Bluebell ⊣ oDN1
-            dng100,
-            dng100,  # local recurrence so tonic current spikes
-        ]
+            32, 33,  # DNp09 → DNg100
+            88, 88, 89, 89,  # DNg100 → E1, E2
+            93, 94,  # E1 ↔ E2
+            93, 94,  # E1/E2 → I1
+            95, 95,  # I1 ⊣ E1, E2
+            93, 93, 94, 94,  # CPG → MN
+            90,  # oDN1 → E1
+            91,  # DNb08 weakly → E1
+            92,  # Bluebell ⊣ oDN1
+            88, 89, 88, 89,  # DNg100 recurrence
+        ],
+        dtype=np.uint32,
     )
-    post = np.concatenate(
+    cpg_post = np.array(
         [
-            post,
-            dng100,
-            np.tile(np.array([93, 94], dtype=np.uint32), 2),
-            e2,
-            e1,
-            i1,
-            i1,
-            np.array([93, 94], dtype=np.uint32),
-            motor[:2],
-            motor[2:4],
-            e1,
-            e1,
-            odn1,
-            dng100,
-        ]
+            88, 89,
+            93, 94, 93, 94,
+            94, 93,
+            95, 95,
+            93, 94,
+            80, 81, 82, 83,
+            93,
+            93,
+            90,
+            88, 89, 89, 88,
+        ],
+        dtype=np.uint32,
     )
-    weight = np.concatenate(
-        [
-            weight,
-            np.full(2, 16, dtype=np.uint32),
-            np.full(4, 20, dtype=np.uint32),
-            np.full(2, 18, dtype=np.uint32),
-            np.full(2, 12, dtype=np.uint32),
-            np.full(2, 22, dtype=np.uint32),
-            np.full(4, 14, dtype=np.uint32),
-            np.full(1, 10, dtype=np.uint32),
-            np.full(1, 4, dtype=np.uint32),
-            np.full(1, 16, dtype=np.uint32),
-            np.full(2, 24, dtype=np.uint32),
-        ]
+    cpg_w = np.array(
+        [16, 16, 20, 20, 20, 20, 18, 18, 12, 12, 22, 22, 14, 14, 14, 14, 10, 4, 16, 24, 24, 24, 24],
+        dtype=np.uint32,
     )
+    pre = np.concatenate([pre, cpg_pre])
+    post = np.concatenate([post, cpg_post])
+    weight = np.concatenate([weight, cpg_w])
 
     ptr, post, weight = _coo_to_csr(pre, post, weight, n)
 
