@@ -127,7 +127,7 @@ def miniature_connectome(seed: int = 0) -> Connectome:
     superclasses[70:72] = "mbon"
     superclasses[72:80] = "vnc_premotor"
     superclasses[80:88] = "vnc_motor"
-    superclasses[88:96] = "cb_intrinsic"
+    superclasses[88:104] = "cb_intrinsic"
     sides[0:8] = "L"
     sides[8:16] = "R"
     sides[16:32] = np.array(["L", "R"] * 8)
@@ -169,9 +169,34 @@ def miniature_connectome(seed: int = 0) -> Connectome:
         cell_class[idx] = "motor"
         sides[idx] = "L" if i < 4 else "R"
     cell_class[0:32] = "sensory"
+    cell_type[88] = "DNg100"
+    cell_type[89] = "DNg100"
+    sides[88], sides[89] = "L", "R"
+    superclasses[88:90] = "descending_neuron"
+    cell_type[90] = "DNg97"
+    sides[90] = "L"
+    superclasses[90] = "descending_neuron"
+    cell_type[91] = "DNb08"
+    sides[91] = "L"
+    superclasses[91] = "descending_neuron"
+    cell_type[92] = "DNg60"
+    sides[92] = "L"
+    superclasses[92] = "descending_neuron"
+    cell_type[93] = "IN17A001"
+    cell_type[94] = "INXXX466"
+    cell_type[95] = "IN16B036"
+    superclasses[93:96] = "vnc_intrinsic"
+    cell_class[93:96] = "premotor"
+    sides[93], sides[94], sides[95] = "L", "L", "L"
+    cell_type[96] = "AN19A018"
+    cell_type[97] = "AN19A018"
+    superclasses[96:98] = "ascending_neuron"
+    sides[96], sides[97] = "L", "R"
 
     transmitters = np.array(["acetylcholine"] * n, dtype=object)
     transmitters[68:70] = "dopamine"
+    transmitters[92] = "gaba"
+    transmitters[95] = "gaba"
     neuron_sign = np.array([nt_sign(name) for name in transmitters], dtype=np.int8)
     sign = np.empty(len(post), dtype=np.int8)
     for i in range(n):
