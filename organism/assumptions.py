@@ -113,7 +113,11 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
         used_by="organism.neuromodulation.Neuromodulation",
     ),
     Assumption(
-        id="hybrid_turning_controller",
+        id="vnc_walking_cpg_traced_not_executed",
+        statement="MaleCNS contains DNg100, DNb08, DNg97/oDN1, and the published E1/E2/I1 walking CPG types (Pugliese 2025). Their anatomy is traced. Joint trajectories still come from FlyGym HybridTurningController until MODE_NEURAL_MOTOR exists. Standing is silent locomotor DNs, not a stand() command.",
+        used_by="organism.walking_pathways / organism.bridge.MotorBridge",
+        biological=True,
+    ),
         statement="In MODE_ENGINEERED_CPG, leg trajectories come from FlyGym HybridTurningController. Engineered VNC/muscle surrogate, not recovered motor circuitry.",
         used_by="organism.gait / organism.physics",
     ),

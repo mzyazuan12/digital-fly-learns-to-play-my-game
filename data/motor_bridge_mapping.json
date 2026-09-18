@@ -161,6 +161,96 @@
       "locomotion_controller_input": "negative HybridTurningController descending (reserved; gait test unused)"
     },
     {
+      "malecns_body_id": 10045,
+      "neuron_type": "DNg100",
+      "side": "L",
+      "biological_role": "walking command accessing the VNC rhythm circuit (BDN2)",
+      "source": "Pugliese et al. 2025; Sapkal et al. 2024; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "HybridTurningController descending mean amplitude. VNC CPG is traced, not executed."
+    },
+    {
+      "malecns_body_id": 10056,
+      "neuron_type": "DNg100",
+      "side": "R",
+      "biological_role": "walking command accessing the VNC rhythm circuit (BDN2)",
+      "source": "Pugliese et al. 2025; Sapkal et al. 2024; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "HybridTurningController descending mean amplitude. VNC CPG is traced, not executed."
+    },
+    {
+      "malecns_body_id": 13805,
+      "neuron_type": "DNg97",
+      "side": "L",
+      "biological_role": "oDN1 bolt-related forward walking",
+      "source": "Sapkal et al. 2024; FlyBase DNg97; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "HybridTurningController descending mean amplitude"
+    },
+    {
+      "malecns_body_id": 230783,
+      "neuron_type": "DNg97",
+      "side": "R",
+      "biological_role": "oDN1 bolt-related forward walking",
+      "source": "Sapkal et al. 2024; FlyBase DNg97; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "forward_locomotor_drive",
+      "locomotion_controller_input": "HybridTurningController descending mean amplitude"
+    },
+    {
+      "malecns_body_id": 12189,
+      "neuron_type": "DNb08",
+      "side": "L",
+      "biological_role": "rhythmic searching/flailing, not coordinated walking",
+      "source": "Pugliese et al. 2025; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "observe_only",
+      "locomotion_controller_input": "not decoded as walking"
+    },
+    {
+      "malecns_body_id": 11374,
+      "neuron_type": "DNg60",
+      "side": "L",
+      "biological_role": "Bluebell walk-OFF halt",
+      "source": "Sapkal et al. 2024; Janelia MaleCNS v1.0 body ID",
+      "decoded_signal": "halt_observe",
+      "locomotion_controller_input": "not decoded as a stand() command; halt is circuit inhibition"
+    },
+    {
+      "malecns_body_id": null,
+      "neuron_type": "AN19A018",
+      "side": null,
+      "biological_role": "Brake (BRK) ascending halt neurons",
+      "source": "Sapkal et al. 2024; FlyBase AN19A018",
+      "decoded_signal": "halt_observe",
+      "locomotion_controller_input": "not decoded as a stand() command"
+    },
+    {
+      "malecns_body_id": null,
+      "neuron_type": "IN17A001",
+      "side": null,
+      "biological_role": "E1 excitatory core of the published walking CPG",
+      "source": "Pugliese et al. 2025",
+      "decoded_signal": "observe_only",
+      "locomotion_controller_input": "not connected to joints; FlyGym CPG still executes"
+    },
+    {
+      "malecns_body_id": null,
+      "neuron_type": "INXXX466",
+      "side": null,
+      "biological_role": "E2 excitatory core of the published walking CPG",
+      "source": "Pugliese et al. 2025",
+      "decoded_signal": "observe_only",
+      "locomotion_controller_input": "not connected to joints; FlyGym CPG still executes"
+    },
+    {
+      "malecns_body_id": null,
+      "neuron_type": "IN16B036",
+      "side": null,
+      "biological_role": "I1 inhibitory core of the published walking CPG",
+      "source": "Pugliese et al. 2025",
+      "decoded_signal": "observe_only",
+      "locomotion_controller_input": "not connected to joints; FlyGym CPG still executes"
+    },
+    {
       "malecns_body_id": null,
       "neuron_type": "DNg02",
       "side": null,

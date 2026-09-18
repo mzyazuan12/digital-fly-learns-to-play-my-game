@@ -15,7 +15,7 @@ import os
 from dataclasses import asdict, dataclass
 from enum import Enum
 
-MODEL_VERSION = "0.3.3"
+MODEL_VERSION = "0.3.4"
 
 # Birth means: instantiate a NEW persistent digital individual from measured
 # anatomy, initialize uncertain physiology explicitly, and let subsequent

@@ -26,6 +26,7 @@ fly-eval = "training.evaluate:main"
 virtual-fly = "organism.first_goal:main"
 birth-fly = "organism.birth:main"
 walk-initiation = "experiment.walking_initiation_no_scaffold:main"
+walk-dn-investigator = "experiment.walking_dn_investigator:main"
 
 [tool.setuptools.packages.find]
 include = ["flybrain*", "shiritori*", "training*", "sim3d*", "organism*", "worlds*", "experiment*"]
