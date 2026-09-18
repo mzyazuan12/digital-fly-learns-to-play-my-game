@@ -661,14 +661,23 @@ class WalkingCircuit:
         e2 = self.indices("E2")
         i1 = self.indices("I1")
         e4 = self.indices("E4")
+        e5 = self.indices("E5")
+        i2 = self.indices("I2")
+        e3 = self.indices("E3")
         bb = self.indices("bluebell")
         brk = self.indices("brake")
         fg = self.indices("foxglove")
         mn = self.vnc_motor
         dng100_to_e1 = contacts_between(self.connectome, dng, e1)
+        filled_legs = [slot for slot, copy in self.legs.items() if copy.filled]
         return {
             "engineered_cpg_still_executes_joints": ENGINEERED_CPG_STILL_EXECUTES,
-            "neural_vnc_cpg_drives_joints": False,
+            "neural_vnc_cpg_drives_joints": NEURAL_CPG_DRIVES_JOINTS,
+            "walking_circuit_types": dict(WALKING_CIRCUIT_TYPES),
+            "e5_type_provenance": dict(E5_TYPE_PROVENANCE),
+            "type_level_rates_pool_leg_copies": True,
+            "leg_copies": {slot: copy.as_dict() for slot, copy in self.legs.items()},
+            "n_leg_copies_with_E1": len(filled_legs),
             "dng100_present": int(dng.size) > 0,
             "core_cpg_present": bool(e1.size and e2.size and i1.size),
             "dng100_to_E1": dng100_to_e1,
@@ -677,6 +686,12 @@ class WalkingCircuit:
             "dng100_to_vnc_motor": contacts_between(self.connectome, dng, mn),
             "dnb08_to_E1": contacts_between(self.connectome, dnb, e1),
             "dnb08_to_E4": contacts_between(self.connectome, dnb, e4),
+            "dnb08_to_E5": contacts_between(self.connectome, dnb, e5),
+            "E4_to_E1": contacts_between(self.connectome, e4, e1),
+            "E5_to_E1": contacts_between(self.connectome, e5, e1),
+            "E2_to_I2": contacts_between(self.connectome, e2, i2),
+            "I2_to_E1": contacts_between(self.connectome, i2, e1),
+            "I2_to_E2": contacts_between(self.connectome, i2, e2),
             "odn1_to_E1": contacts_between(self.connectome, odn, e1),
             "dnp09_to_E1": contacts_between(self.connectome, dnp, e1),
             "dnp09_to_dng100": contacts_between(self.connectome, dnp, dng),
@@ -690,13 +705,16 @@ class WalkingCircuit:
             "E2_to_I1": contacts_between(self.connectome, e2, i1),
             "I1_to_E1": contacts_between(self.connectome, i1, e1),
             "I1_to_E2": contacts_between(self.connectome, i1, e2),
+            "E3_n": int(e3.size),
             "cpg_core_to_vnc_motor": contacts_between(self.connectome, self.cpg_core_indices, mn),
             "dng100_top_partners": top_partners(self.connectome, dng, k=12),
             "notes": [
                 "Anatomy is MEASURED synapse counts. Oscillation is not implied.",
                 "Pugliese et al. 2025: DNg100 → E1 is the main walking-CPG entry.",
+                "Do not pool all IN17A001/INXXX466/IN16B036 into one CPG state; there are six leg copies.",
                 "DNp09 does not have to synapse on E1; it can recruit DNg100.",
-                "DNb08 is weakly onto E1 and stronger onto E4.",
+                "DNb08 enters via E4 (IN03A006) and E5 (INXXX464), then E1.",
+                "Published E5 is INXXX464. An older preprint passage used INXXX466; that alias is rejected.",
                 "Foxglove (CB0890) may be absent from MaleCNS type labels.",
             ],
         }
@@ -719,4 +737,40 @@ class WalkingCircuit:
             "analog": _mean_analog(analog, self.forward_walk_indices),
             "n": int(self.forward_walk_indices.size),
         }
+        return out
+
+    def leg_activity(
+        self,
+        counts: np.ndarray,
+        duration_s: float,
+        analog: np.ndarray | None = None,
+    ) -> dict[str, dict]:
+        """Per-leg CPG state. Do not use type-pooled rates() as a CPG scalar."""
+        out: dict[str, dict] = {}
+        for slot, copy in self.legs.items():
+            row: dict = {
+                "slot": slot,
+                "side": copy.side,
+                "neuromere": copy.neuromere,
+                "filled": copy.filled,
+                "e1_e2_contacts": copy.e1_e2_contacts,
+            }
+            for role, idx in copy.cells.items():
+                if idx is None:
+                    row[role] = {"hz": 0.0, "analog": 0.0, "index": None, "body_id": None}
+                    continue
+                ids = np.asarray([idx], dtype=np.int32)
+                row[role] = {
+                    "hz": _group_rate(counts, ids, duration_s),
+                    "analog": _mean_analog(analog, ids),
+                    "index": int(idx),
+                    "body_id": copy.body_ids.get(role),
+                }
+            mn = copy.motor_indices
+            row["MN"] = {
+                "hz": _group_rate(counts, mn, duration_s),
+                "analog": _mean_analog(analog, mn),
+                "n": int(mn.size),
+            }
+            out[slot] = row
         return out
