@@ -15,7 +15,7 @@ import os
 from dataclasses import asdict, dataclass
 from enum import Enum
 
-MODEL_VERSION = "0.3.4"
+MODEL_VERSION = "0.3.5"
 
 # Birth means: instantiate a NEW persistent digital individual from measured
 # anatomy, initialize uncertain physiology explicitly, and let subsequent
@@ -170,6 +170,8 @@ def motor_fidelity_level(mode: MotorMode | str, *, identified_dns: bool = True) 
         mode = MotorMode(mode)
     if mode is MotorMode.NEURAL_MOTOR:
         return 3
+    if mode is MotorMode.NEURAL_CPG:
+        return 2
     if mode is MotorMode.HYBRID_VNC:
         return 2
     return 1 if identified_dns else 0
