@@ -12,6 +12,7 @@ from organism.cpg_rhythm import rhythmicity_score
 from organism.motor_map import command_for_mode
 from organism.toy import miniature_connectome
 from organism.walking_pathways import (
+    CPG_INTERNEURONS,
     E5_TYPE_PROVENANCE,
     WALKING_CIRCUIT_TYPES,
     WalkingCircuit,
@@ -30,7 +31,8 @@ def test_walking_circuit_types_use_published_e5():
     assert WALKING_CIRCUIT_TYPES["E5"] == "INXXX464"
     assert E5_TYPE_PROVENANCE["canonical"] == "INXXX464"
     assert E5_TYPE_PROVENANCE["rejected_alias"] == "INXXX466"
-    e2 = next(p for p in WalkingCircuit.__init__.__globals__["CPG_INTERNEURONS"] if p.name == "E2")
+    e2 = next(p for p in CPG_INTERNEURONS if p.name == "E2")
+    e5 = next(p for p in CPG_INTERNEURONS if p.name == "E5")
     assert "E5" not in e2.aliases
     assert e2.types == ("INXXX466",)
 
