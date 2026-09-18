@@ -155,6 +155,10 @@ class RhythmRecording:
     t_ms: np.ndarray
     dng100: np.ndarray
     dng100_v: np.ndarray
+    dng100_l: np.ndarray
+    dng100_r: np.ndarray
+    dng100_l_v: np.ndarray
+    dng100_r_v: np.ndarray
     legs: dict[str, dict[str, np.ndarray]]
 
     def summary(self, dt_ms: float, stim_onset_ms: float) -> dict:
@@ -163,16 +167,23 @@ class RhythmRecording:
         dng_v = self.dng100_v[stim] if stim.size == self.dng100_v.size and np.any(stim) else self.dng100_v
         report = {
             "DNg100": dng_spikes,
+            "DNg100_L": _window_score(self.dng100_l, stim, dt_ms),
+            "DNg100_R": _window_score(self.dng100_r, stim, dt_ms),
             "DNg100_v": {
                 "mean": float(dng_v.mean()) if dng_v.size else 0.0,
                 "std": float(dng_v.std()) if dng_v.size else 0.0,
                 "min": float(dng_v.min()) if dng_v.size else 0.0,
                 "max": float(dng_v.max()) if dng_v.size else 0.0,
+                "exploding": bool(
+                    dng_v.size
+                    and (abs(float(dng_v.min())) >= EXPLOSION_ABS_MV or abs(float(dng_v.max())) >= EXPLOSION_ABS_MV)
+                ),
             },
             "legs": {},
         }
         any_osc = False
         any_tonic = False
+        any_explode = bool(report["DNg100"].get("exploding") or report["DNg100_v"]["exploding"])
         n_osc_legs = 0
         for slot in LEG_SLOTS:
             traces = self.legs.get(slot) or {}
@@ -181,6 +192,8 @@ class RhythmRecording:
             for role, trace in traces.items():
                 scored = _window_score(trace, stim, dt_ms)
                 row[role] = scored
+                if scored.get("exploding"):
+                    any_explode = True
                 if role in {"E1", "E2", "I1", "I2", "MN"} and scored.get("oscillatory"):
                     leg_osc = True
                 if role in {"E1", "E2", "I1"} and scored.get("tonic_plateau"):
@@ -192,13 +205,16 @@ class RhythmRecording:
             report["legs"][slot] = row
         report["n_oscillatory_legs"] = n_osc_legs
         report["any_leg_oscillatory"] = any_osc
-        report["core_tonic_plateau"] = bool(any_tonic and not any_osc)
+        report["any_exploding"] = any_explode
+        report["core_tonic_plateau"] = bool(any_tonic and not any_osc and not any_explode)
         return report
 
     def previews(self) -> dict:
         out = {
             "DNg100": downsample_preview(self.dng100),
             "DNg100_v": downsample_preview(self.dng100_v),
+            "DNg100_L": downsample_preview(self.dng100_l),
+            "DNg100_R": downsample_preview(self.dng100_r),
             "legs": {},
         }
         for slot, traces in self.legs.items():
@@ -221,7 +237,27 @@ def allocate_traces(circuit: WalkingCircuit, n_steps: int) -> RhythmRecording:
     roles = list(CPG_ROLES) + ["MN"]
     for slot in LEG_SLOTS:
         legs[slot] = {role: np.zeros(n_steps, dtype=np.float64) for role in roles}
-    return RhythmRecording(t_ms=t, dng100=dng, dng100_v=dng_v, legs=legs)
+    return RhythmRecording(
+        t_ms=t,
+        dng100=dng,
+        dng100_v=dng_v,
+        dng100_l=np.zeros(n_steps, dtype=np.float64),
+        dng100_r=np.zeros(n_steps, dtype=np.float64),
+        dng100_l_v=np.zeros(n_steps, dtype=np.float64),
+        dng100_r_v=np.zeros(n_steps, dtype=np.float64),
+        legs=legs,
+    )
+
+
+def _dng100_by_side(circuit: WalkingCircuit) -> dict[str, np.ndarray]:
+    connectome = circuit.connectome
+    idx = circuit.indices("DNg100")
+    left = [int(i) for i in idx.tolist() if str(connectome.side[int(i)]).upper().startswith("L")]
+    right = [int(i) for i in idx.tolist() if str(connectome.side[int(i)]).upper().startswith("R")]
+    return {
+        "L": np.asarray(left, dtype=np.int32),
+        "R": np.asarray(right, dtype=np.int32),
+    }
 
 
 def record_tick(rec: RhythmRecording, net, circuit: WalkingCircuit, t: int, t_ms: float) -> None:
@@ -229,6 +265,11 @@ def record_tick(rec: RhythmRecording, net, circuit: WalkingCircuit, t: int, t_ms
     dng_idx = circuit.indices("DNg100")
     rec.dng100[t] = population_signal(net, dng_idx)
     rec.dng100_v[t] = float(np.mean(net.v[dng_idx])) if dng_idx.size else 0.0
+    sides = _dng100_by_side(circuit)
+    rec.dng100_l[t] = population_signal(net, sides["L"])
+    rec.dng100_r[t] = population_signal(net, sides["R"])
+    rec.dng100_l_v[t] = float(np.mean(net.v[sides["L"]])) if sides["L"].size else 0.0
+    rec.dng100_r_v[t] = float(np.mean(net.v[sides["R"]])) if sides["R"].size else 0.0
     for slot, copy in circuit.legs.items():
         for role, idx in copy.cells.items():
             rec.legs[slot][role][t] = 0.0 if idx is None else cell_signal(net, idx)
@@ -238,25 +279,35 @@ def record_tick(rec: RhythmRecording, net, circuit: WalkingCircuit, t: int, t_ms
 def interpret_intact(summary: dict) -> dict:
     n_osc = int(summary.get("n_oscillatory_legs") or 0)
     tonic = bool(summary.get("core_tonic_plateau"))
-    reproduced = n_osc >= 1
-    if reproduced:
+    exploding = bool(summary.get("any_exploding"))
+    reproduced = n_osc >= 1 and not exploding
+    if exploding:
+        answer = "no"
+        next_step = (
+            "DNg100 stimulation produced an unstable explosion or "
+            "non-physiological voltage, not a 7–15 Hz rhythm. Do not change "
+            "the graph. Compare MixedDynamicsNetwork equations/gains to the "
+            "authors' MANC rate-ODE VNC simulator."
+        )
+    elif reproduced:
         answer = "yes"
         next_step = (
             "Oscillation is present under DNg100 current. Compare E1/E2/I1 "
-            "lesions to Pugliese et al. 2025, then consider MN→FlyBody."
+            "lesions to Pugliese et al. 2025 bioRxiv, then consider MN→FlyBody."
         )
     elif tonic:
         answer = "no"
         next_step = (
             "Sustained DNg100 produced a tonic plateau, not a 7–15 Hz rhythm. "
             "Do not change the graph. Investigate assumed dynamics, time "
-            "constants, and gains."
+            "constants, and gains against the authors' working VNC simulator."
         )
     else:
         answer = "no"
         next_step = (
             "DNg100 stimulation did not produce oscillatory CPG/MN activity. "
-            "Do not change the graph. Investigate assumed dynamics."
+            "Do not change the graph. Compare neuron equations/parameters to "
+            "the authors' DNg100_Stim simulator instead of retuning functional_gain."
         )
     return {
         "question": (
