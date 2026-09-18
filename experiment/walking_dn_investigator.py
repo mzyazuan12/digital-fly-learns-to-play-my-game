@@ -23,7 +23,7 @@ from organism.bridge import MotorBridge
 from organism.config import NO_SCAFFOLD, MODEL_VERSION, format_policy_banner
 from organism.fly import VirtualFly, _json_ready
 from organism.toy import miniature_connectome
-from organism.walking_pathways import WalkingCircuit, ENGINEERED_CPG_STILL_EXECUTES
+from organism.walking_pathways import ENGINEERED_CPG_STILL_EXECUTES
 
 ROOT = Path(__file__).resolve().parents[1]
 
