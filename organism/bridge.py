@@ -26,6 +26,10 @@ Janelia MaleCNS v1.0 body IDs we resolve when present:
 - DNb05  L=10118  R=10065
 - DNb06  L=10888  R=11067
 - DNp09  L=10783  R=11177
+- DNg100 L=10045  R=10056
+- DNg97  L=13805  R=230783  (oDN1)
+- DNb08  L=12189,12550 R=12044,12075
+- DNg60  L=11374  R=188947  (Bluebell)
 - MDN    L=11288,12348  R=10763,11332
 """
 
@@ -38,6 +42,7 @@ import json
 import numpy as np
 
 from flybrain.loader import Connectome
+from organism.walking_pathways import WalkingCircuit
 from organism.config import (
     LEGACY_SCAFFOLD,
     MOTOR_FIDELITY_LEVEL,
@@ -65,6 +70,10 @@ EXPECTED_BODY_IDS = {
     "DNb05": {"L": (10118,), "R": (10065,)},
     "DNb06": {"L": (10888,), "R": (11067,)},
     "DNp09": {"L": (10783,), "R": (11177,)},
+    "DNg100": {"L": (10045,), "R": (10056,)},
+    "DNg97": {"L": (13805,), "R": (230783,)},
+    "DNb08": {"L": (12189, 12550), "R": (12044, 12075)},
+    "DNg60": {"L": (11374,), "R": (188947,)},
     "MDN": {"L": (11288, 12348), "R": (10763, 11332)},
 }
 
