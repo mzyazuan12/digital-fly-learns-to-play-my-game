@@ -286,7 +286,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--connectome", default="toy", choices=("toy", "synthetic", "malecns"))
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--current", type=float, default=40.0)
-    parser.add_argument("--steps", type=int, default=0, help="0 = toy 300 / MaleCNS 180")
+    parser.add_argument("--steps", type=int, default=0, help="0 = toy 300 / MaleCNS 500")
     parser.add_argument("--warmup", type=int, default=0)
     parser.add_argument("--no-lesions", action="store_true")
     parser.add_argument("--out", default=str(OUT))
@@ -317,9 +317,13 @@ def main(argv: list[str] | None = None) -> int:
     dng_v = intact.get("DNg100_v") or {}
     print(
         f"DNg100 spikes mean={intact['DNg100'].get('mean'):.3f} "
-        f"V mean={dng_v.get('mean')} min={dng_v.get('min')} max={dng_v.get('max')}"
+        f"V mean={dng_v.get('mean')} min={dng_v.get('min')} max={dng_v.get('max')} "
+        f"exploding={dng_v.get('exploding') or intact.get('any_exploding')}"
     )
-    print(f"oscillatory legs: {intact.get('n_oscillatory_legs')} tonic_core: {intact.get('core_tonic_plateau')}")
+    print(
+        f"oscillatory legs: {intact.get('n_oscillatory_legs')} "
+        f"tonic_core: {intact.get('core_tonic_plateau')} exploding={intact.get('any_exploding')}"
+    )
     for slot in LEG_SLOTS:
         row = (intact.get("legs") or {}).get(slot) or {}
         e1 = row.get("E1") or {}
