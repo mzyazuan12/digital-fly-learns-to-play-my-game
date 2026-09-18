@@ -35,6 +35,7 @@ def test_walking_circuit_types_use_published_e5():
     e5 = next(p for p in CPG_INTERNEURONS if p.name == "E5")
     assert "E5" not in e2.aliases
     assert e2.types == ("INXXX466",)
+    assert e5.types == ("INXXX464",)
 
 
 def test_toy_has_six_leg_slots_and_fills_front_left():
