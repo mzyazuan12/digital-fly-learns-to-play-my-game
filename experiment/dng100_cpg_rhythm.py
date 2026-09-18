@@ -234,7 +234,11 @@ def run(
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(_json_ready(payload), indent=2))
-    arrays = {"t_ms": intact["recording"].t_ms, "DNg100": intact["recording"].dng100}
+    arrays = {
+        "t_ms": intact["recording"].t_ms,
+        "DNg100": intact["recording"].dng100,
+        "DNg100_v": intact["recording"].dng100_v,
+    }
     for slot, traces in intact["recording"].legs.items():
         for role, tr in traces.items():
             arrays[f"{slot}.{role}"] = tr

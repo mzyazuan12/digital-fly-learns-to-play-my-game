@@ -203,17 +203,19 @@ def _window_score(trace: np.ndarray, stim: np.ndarray, dt_ms: float) -> dict:
 def allocate_traces(circuit: WalkingCircuit, n_steps: int) -> RhythmRecording:
     t = np.zeros(n_steps, dtype=np.float64)
     dng = np.zeros(n_steps, dtype=np.float64)
+    dng_v = np.zeros(n_steps, dtype=np.float64)
     legs: dict[str, dict[str, np.ndarray]] = {}
     roles = list(CPG_ROLES) + ["MN"]
     for slot in LEG_SLOTS:
         legs[slot] = {role: np.zeros(n_steps, dtype=np.float64) for role in roles}
-    return RhythmRecording(t_ms=t, dng100=dng, legs=legs)
+    return RhythmRecording(t_ms=t, dng100=dng, dng100_v=dng_v, legs=legs)
 
 
 def record_tick(rec: RhythmRecording, net, circuit: WalkingCircuit, t: int, t_ms: float) -> None:
     rec.t_ms[t] = t_ms
     dng_idx = circuit.indices("DNg100")
     rec.dng100[t] = population_signal(net, dng_idx)
+    rec.dng100_v[t] = float(np.mean(net.v[dng_idx])) if dng_idx.size else 0.0
     for slot, copy in circuit.legs.items():
         for role, idx in copy.cells.items():
             rec.legs[slot][role][t] = 0.0 if idx is None else cell_signal(net, idx)
