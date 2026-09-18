@@ -42,8 +42,14 @@ First experiment: DNp09 current should initiate walking through the CPG;
 silencing DNp09 should stop it. If spontaneous walking does not emerge
 without a timer, that is a result.
 
+Next experiment: keep DNp09, and ask whether DNg100 / DNb08 / oDN1 and
+the published VNC walking CPG (E1=IN17A001, E2=INXXX466, I1=IN16B036)
+exist and respond. Joints still use FlyGym until that circuit actually
+drives motor neurons.
+
 ```sh
-python -m pytest tests/test_neural_walk.py -q
+python -m pytest tests/test_neural_walk.py tests/test_walking_dn_investigator.py -q
+python -m experiment.walking_dn_investigator --connectome malecns
 ```
 
 ## Body (optional)

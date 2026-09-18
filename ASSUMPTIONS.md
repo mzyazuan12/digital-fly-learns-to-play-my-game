@@ -205,6 +205,9 @@ A behavior is neural/autonomous only if:
 6. provenance identifies the biological/model pathway
 
 Immediate experiment: DNp09 current initiates walking via the CPG;
-silencing DNp09 abolishes it; restoring DNp09 restores it. If spontaneous
-walking does not emerge without a timer, record that and look for the
-missing physiological mechanism. Do not add another timer.
+silencing DNp09 abolishes it; restoring DNp09 restores it. Next
+experiment: resolve DNg100 / DNb08 / oDN1 / halt DNs and the published
+VNC CPG (E1–E2–I1), and test whether driving DNg100 changes CPG/MN
+activity. If spontaneous walking does not emerge without a timer, record
+that and look for the missing physiological mechanism. Do not add
+another timer.

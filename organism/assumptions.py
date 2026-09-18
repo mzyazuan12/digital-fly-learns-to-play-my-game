@@ -141,7 +141,7 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
     ),
     Assumption(
         id="no_toy_behavior_wiring",
-        statement="The miniature graph has MaleCNS-like type names. Extra edges are random except documented DN recurrence, KC→MBON, chemo→KC, and DNp09→VNC premotor.",
+        statement="The miniature graph has MaleCNS-like type names. Extra edges are random except documented DN recurrence, KC→MBON, chemo→KC, DNp09→VNC premotor, and a labeled miniature DNg100→E1/E2/I1 motif.",
         used_by="organism.toy.miniature_connectome",
     ),
     Assumption(
