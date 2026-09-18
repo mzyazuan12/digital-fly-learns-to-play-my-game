@@ -10,8 +10,12 @@ Literature (not a claim that our LIF model reproduces those recordings):
   R−L DNa02 difference tracks rotational velocity
   (Rayshubskiy et al.; Yang et al. 2023; Feng et al. 2024).
 - DNb06: contraversive steering (Yang et al. 2023).
-- DNp09 (P9): walking initiation (Bidaye et al. 2020).
+- DNp09 (P9): walking initiation (Bidaye et al. 2020); freeze at strong activation.
+- DNg100 (BDN2): walking command onto the VNC rhythm circuit (Pugliese 2025).
+- DNb08: rhythmic searching/flailing, not coordinated walking (Pugliese 2025).
+- oDN1 / DNg97: bolt-related forward walking (Sapkal et al. 2024).
 - MDN: backward walking (Bidaye et al. 2014).
+- Halt: Bluebell/DNg60, Brake/AN19A018, Foxglove/CB0890 (Sapkal et al. 2024).
 - DNg02: wingbeat / flight-related descending population (Namiki catalogue).
 
 Janelia MaleCNS v1.0 body IDs we resolve when present:
