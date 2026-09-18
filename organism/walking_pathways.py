@@ -253,9 +253,10 @@ LEG_LAYOUT = {
     "HL": ("L", "T3"),
     "HR": ("R", "T3"),
 }
-CPG_ROLES = ("E1", "E2", "I1", "I2", "E3", "E4", "E5")
-# High somaLocation Z within a side is treated as anterior (T1). INFERRED.
-SOMA_Z_ANTERIOR_IS_HIGH = True
+SIDE_SLOTS = {
+    "L": ("FL", "ML", "HL"),
+    "R": ("FR", "MR", "HR"),
+}
 
 # Documented MaleCNS v1.0 body IDs (uint64). Lookup is still by type.
 EXPECTED_WALKING_BODY_IDS = {
