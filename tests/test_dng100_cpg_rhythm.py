@@ -17,6 +17,8 @@ from organism.walking_pathways import (
     WALKING_CIRCUIT_TYPES,
     WalkingCircuit,
 )
+from organism.neuropil import LEG_SLOTS as NEURO_SLOTS
+from organism.neuropil import assign_cell, load_annotation_neuropil
 from experiment.dng100_cpg_rhythm import run
 from experiment import dng100_cpg_rhythm
 
