@@ -154,10 +154,10 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
     PathwaySpec(
         name="E2",
         types=("INXXX466",),
-        aliases=("E2", "E5"),
+        aliases=("E2",),
         role="cpg_excitatory",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025: E2 (INXXX466)",
+        literature="Pugliese et al. 2025 published: E2 (INXXX466). Not E5.",
         family="cpg",
     ),
     PathwaySpec(
@@ -182,9 +182,23 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
         name="E4",
         types=("IN03A006",),
         aliases=("E4",),
-        role="dnb08_excitatory",
+        role="dnb08_relay",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025: E4 postsynaptic to DNb08, feeds E1",
+        literature="Pugliese et al. 2025: E4 (IN03A006) DNb08 relay onto E1",
+        family="cpg",
+    ),
+    PathwaySpec(
+        name="E5",
+        types=("INXXX464",),
+        aliases=("E5",),
+        role="dnb08_relay",
+        maps_to="observe_only",
+        literature=(
+            "Pugliese et al. 2025 published article: E5 = INXXX464. "
+            "An older preprint passage appears to identify E5 as INXXX466 "
+            "(published E2). Canonical mapping is INXXX464; the discrepancy "
+            "is recorded, not used to pick whichever cell oscillates."
+        ),
         family="cpg",
     ),
     PathwaySpec(
@@ -193,7 +207,7 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
         aliases=("I2",),
         role="cpg_inhibitory_alt",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025: I2 in FANC / DNb08 screens",
+        literature="Pugliese et al. 2025: I2 (IN19A007) in the DNb08 five-cell motif",
         family="cpg",
     ),
 )
