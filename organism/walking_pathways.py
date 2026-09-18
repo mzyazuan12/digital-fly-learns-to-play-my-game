@@ -257,6 +257,9 @@ SIDE_SLOTS = {
     "L": ("FL", "ML", "HL"),
     "R": ("FR", "MR", "HR"),
 }
+CPG_ROLES = ("E1", "E2", "I1", "I2", "E3", "E4", "E5")
+# High somaLocation Z within a side is treated as anterior (T1). INFERRED.
+SOMA_Z_ANTERIOR_IS_HIGH = True
 
 # Documented MaleCNS v1.0 body IDs (uint64). Lookup is still by type.
 EXPECTED_WALKING_BODY_IDS = {
@@ -339,7 +342,7 @@ def contacts_pair(connectome: Connectome, pre_i: int, post_i: int) -> int:
     if end <= start:
         return 0
     posts = connectome.post[start:end]
-    mask = posts == np.int64(post_i)
+    mask = posts == posts.dtype.type(post_i)
     if not np.any(mask):
         return 0
     return int(connectome.anatomical[start:end][mask].sum())
