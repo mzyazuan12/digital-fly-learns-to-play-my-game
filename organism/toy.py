@@ -99,9 +99,13 @@ def miniature_connectome(seed: int = 0) -> Connectome:
         [16, 16, 20, 20, 20, 20, 18, 18, 12, 12, 22, 22, 14, 14, 14, 14, 10, 4, 16, 24, 24, 24, 24],
         dtype=np.uint32,
     )
-    pre = np.concatenate([pre, cpg_pre])
-    post = np.concatenate([post, cpg_post])
-    weight = np.concatenate([weight, cpg_w])
+    # DNb08 → E4/E5 → E1; E2 → I2; I2 ⊣ E1/E2. Published five-cell motif, miniature.
+    dnb_pre = np.array([91, 91, 99, 98, 94, 100, 100], dtype=np.uint32)
+    dnb_post = np.array([99, 98, 93, 93, 100, 93, 94], dtype=np.uint32)
+    dnb_w = np.array([18, 18, 16, 16, 12, 20, 20], dtype=np.uint32)
+    pre = np.concatenate([pre, dnb_pre])
+    post = np.concatenate([post, dnb_post])
+    weight = np.concatenate([weight, dnb_w])
 
     ptr, post, weight = _coo_to_csr(pre, post, weight, n)
 
@@ -185,11 +189,19 @@ def miniature_connectome(seed: int = 0) -> Connectome:
     cell_type[97] = "AN19A018"
     superclasses[96:98] = "ascending_neuron"
     sides[96], sides[97] = "L", "R"
+    cell_type[98] = "INXXX464"
+    cell_type[99] = "IN03A006"
+    cell_type[100] = "IN19A007"
+    cell_type[101] = "IN19B012"
+    superclasses[98:102] = "vnc_intrinsic"
+    cell_class[98:102] = "premotor"
+    sides[98:102] = "L"
 
     transmitters = np.array(["acetylcholine"] * n, dtype=object)
     transmitters[68:70] = "dopamine"
     transmitters[92] = "gaba"
     transmitters[95] = "gaba"
+    transmitters[100] = "gaba"
     neuron_sign = np.array([nt_sign(name) for name in transmitters], dtype=np.int8)
     sign = np.empty(len(post), dtype=np.int8)
     for i in range(n):
