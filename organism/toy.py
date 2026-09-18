@@ -99,6 +99,9 @@ def miniature_connectome(seed: int = 0) -> Connectome:
         [16, 16, 20, 20, 20, 20, 18, 18, 12, 12, 22, 22, 14, 14, 14, 14, 10, 4, 16, 24, 24, 24, 24],
         dtype=np.uint32,
     )
+    pre = np.concatenate([pre, cpg_pre])
+    post = np.concatenate([post, cpg_post])
+    weight = np.concatenate([weight, cpg_w])
     # DNb08 → E4/E5 → E1; E2 → I2; I2 ⊣ E1/E2. Published five-cell motif, miniature.
     dnb_pre = np.array([91, 91, 99, 98, 94, 100, 100], dtype=np.uint32)
     dnb_post = np.array([99, 98, 93, 93, 100, 93, 94], dtype=np.uint32)
