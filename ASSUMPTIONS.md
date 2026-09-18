@@ -75,15 +75,18 @@ is a choice, copied from DoomFly, not a measurement.
 ## Connectome vs effectome
 
 ```text
-weight = anatomical_count × functional_gain × (1 + plastic_component) × sign × contact_gain
+weight = anatomical_count × functional_gain × plastic_factor × synaptic_effect_sign × contact_gain
 ```
 
 Anatomical counts are frozen. Learning writes `plastic_component` only, and
 only on identified KC→MBON edges by default. `plastic_factor` is clipped to
-`[0.05, 5]` so learning cannot reverse neurotransmitter identity.
-Functional gain is physiological efficacy, not a place to hide a behavior
-scheduler. `functional_gain = 1` at birth is an initialization, not a claim
-that the effectome equals the connectome.
+`[0.05, 5]` so `1 + plastic_component` cannot reverse `synaptic_effect_sign`.
+Neurotransmitter identity and postsynaptic effect are not the same concept;
+the multiplier is the effect sign. Functional gain is physiological
+efficacy, not a place to hide a behavior scheduler. `functional_gain = 1`
+at birth is an initialization, not a claim that the effectome equals the
+connectome. Graded current is this tick's `graded_release(V)` written into
+`g_graded`; it does not ride the decaying spike kernel.
 
 ## Graph inclusion
 

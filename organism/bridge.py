@@ -38,6 +38,7 @@ from organism.config import (
     LEGACY_SCAFFOLD,
     MOTOR_FIDELITY_LEVEL,
     ModelPolicy,
+    ScaffoldViolation,
     active_policy,
     motor_fidelity_level,
 )
@@ -47,7 +48,7 @@ ENGINEERED_NEURAL_MOTOR_INTERFACE = "ENGINEERED_NEURAL_MOTOR_INTERFACE"
 SPIKE_HZ_TO_DRIVE = 0.08
 
 
-class NonNeuralMotorAuthority(RuntimeError):
+class NonNeuralMotorAuthority(ScaffoldViolation):
     """NO_SCAFFOLD forbids timers, fallbacks, named gait commands, and developer motor commands."""
 
 

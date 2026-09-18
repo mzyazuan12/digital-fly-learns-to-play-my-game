@@ -13,7 +13,7 @@ from dataclasses import dataclass, asdict
 
 import numpy as np
 
-from organism.config import LEGACY_SCAFFOLD
+from organism.config import LEGACY_SCAFFOLD, ScaffoldViolation
 from organism.neuromodulation import Neuromodulation
 
 
@@ -117,6 +117,8 @@ class Physiology:
 
     def _legacy_bouts(self, dt_s: float, n) -> None:
         """Comparison-only personality scheduler. Not the default organism."""
+        if not self.legacy_scaffold:
+            raise ScaffoldViolation("bout scheduler is LEGACY_SCAFFOLD only")
         s = self.state
         was_walking_bout = s.walking_bout_s > 0.0
         if s.flight_bout_s > 0.0:

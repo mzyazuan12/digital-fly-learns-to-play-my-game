@@ -12,7 +12,7 @@ from dataclasses import replace
 
 import numpy as np
 
-from organism.config import MotorMode
+from organism.config import MotorMode, assert_neural_drive_source
 from organism.motor_map import command_for_mode
 from organism.provenance import BehaviorSource, StepRecord
 from organism.sensory import SensoryObservation, SensorySystem
@@ -81,6 +81,7 @@ class SensorimotorLoop:
         external = "NONE"
         if extra_drive:
             for indices, current, source in extra_drive:
+                assert_neural_drive_source(fly.policy, str(source))
                 fly.net.add_drive(indices, float(current), source=str(source))
                 if str(source).startswith("experiment."):
                     external = str(source)

@@ -12,11 +12,11 @@ from pathlib import Path
 
 import numpy as np
 
-from flybrain.loader import DEFAULT_DATA, Connectome
+from flybrain.loader import DEFAULT_DATA, Connectome, computational_graph_manifest
 from flybrain.network import LIFNetwork, LIFParams, dataset_validation
 from organism.body import Pose
 from organism.bridge import MotorBridge
-from organism.config import NO_SCAFFOLD, MODEL_VERSION
+from organism.config import NO_SCAFFOLD, MODEL_VERSION, format_policy_banner
 from organism.fly import VirtualFly, _json_ready
 from organism.toy import miniature_connectome
 from worlds import empty_arena
@@ -347,7 +347,22 @@ def run(
         spontaneous_steps = 60 if used.startswith("male") else 120
     graph = load_graph(used, seed)
     stand_steps = 20 if graph.n > 10_000 else 40
+    manifest = computational_graph_manifest()
+    if used in {"malecns", "malecns_v1", "full"}:
+        if not manifest["computational_graph_exists"]:
+            raise FileNotFoundError(
+                "Walking experiment needs data/malecns_v1/normalized/graph.npz. "
+                "That is not data/malecns_v1/*.npz, and it must not load "
+                "syn-points / syn-partners."
+            )
+        print(
+            f"computational graph: {manifest['computational_graph']} "
+            f"({manifest['computational_graph_bytes'] / 1e6:.1f} MB)\n"
+            "synapse coordinate tables loaded: False",
+            flush=True,
+        )
     fly = VirtualFly(graph, seed=seed, legacy_scaffold=False)
+    print(format_policy_banner(fly.policy), flush=True)
     validation = dataset_validation(graph, models=fly.net.models, policy_name=fly.policy.name, net=fly.net)
     print(validation["text"], flush=True)
     fly.inhabit(empty_arena(), spawn=SPAWN)
@@ -412,6 +427,8 @@ def run(
         "birth_checkpoint": str(ckpt),
         "dataset_validation": validation,
         "dataset_validation_text": validation["text"],
+        "computational_graph": manifest,
+        "synapse_coordinate_tables_loaded": False,
         "dnp09_probe": probe,
         "standing": standing,
         "trials": trials,

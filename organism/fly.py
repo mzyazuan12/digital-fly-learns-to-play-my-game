@@ -33,6 +33,7 @@ from organism.config import (
     MODEL_VERSION,
     MotorMode,
     active_policy,
+    format_policy_banner,
     motor_fidelity_level,
 )
 from organism.developer import DeveloperControls
@@ -180,6 +181,8 @@ class VirtualFly:
                 "birth": BIRTH_DEFINITION,
             }
         )
+        if connectome.n >= 10_000:
+            print(format_policy_banner(self.policy), flush=True)
         if self.save_dir is not None:
             self._init_life_history()
 

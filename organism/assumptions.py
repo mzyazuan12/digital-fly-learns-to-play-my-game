@@ -33,7 +33,7 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
     Assumption(
         id="lif_dynamics",
         statement="Unlabeled cells are current-based LIF proxies (Shiu/DoomFly constants). This is ASSUMED, not a MaleCNS measurement.",
-        used_by="flybrain.network.LIFNetwork",
+        used_by="flybrain.network.MixedDynamicsNetwork",
     ),
     Assumption(
         id="graded_vnc_premotor",
@@ -48,20 +48,20 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
     ),
     Assumption(
         id="graded_analog_every_tick",
-        statement="Nonspiking cells emit analog graded_release every integration step from V−V_rest. That output is not a firing rate. last_n_graded_considered counts every graded cell every tick.",
-        used_by="flybrain.network.LIFNetwork._deliver_graded",
+        statement="Nonspiking cells emit analog graded_release every integration step from V−V_rest, independent of a live/spiking mask. Graded current is recomputed into g_graded each tick and does not accumulate on the decaying spike kernel. That output is not a firing rate.",
+        used_by="flybrain.network.MixedDynamicsNetwork._deliver_graded",
         biological=True,
     ),
     Assumption(
         id="plastic_factor_bounds",
-        statement="plastic_factor = clip(1+plastic_component, 0.05, 5.0). Learning cannot reverse neurotransmitter sign. Anatomical counts stay frozen.",
-        used_by="flybrain.network.LIFNetwork._rebuild_weights",
+        statement="plastic_factor = clip(1+plastic_component, 0.05, 5.0). Learning cannot reverse synaptic_effect_sign. Anatomical counts stay frozen.",
+        used_by="flybrain.network.MixedDynamicsNetwork._rebuild_weights",
         biological=True,
     ),
     Assumption(
         id="weight_factorization",
-        statement="Anatomical synapse counts stay frozen. Functional gain is physiological efficacy. Plastic component is learned. Never overwrite anatomy.",
-        used_by="flybrain.network.LIFNetwork",
+        statement="Anatomical synapse counts stay frozen. Functional gain is physiological efficacy. Plastic component is learned. synaptic_effect_sign is a transmitter/effect assumption, not overwritten by 1+plastic_component going negative.",
+        used_by="flybrain.network.MixedDynamicsNetwork",
         biological=True,
     ),
     Assumption(
@@ -152,7 +152,7 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
     Assumption(
         id="intrinsic_noise",
         statement="Small membrane noise (std 0.35, ASSUMED) is an inspectable drive source. It is not a hidden walk timer and is not fake visual firing.",
-        used_by="flybrain.network.LIFNetwork",
+        used_by="flybrain.network.MixedDynamicsNetwork",
     ),
     Assumption(
         id="flight_wingbeat_bridge",

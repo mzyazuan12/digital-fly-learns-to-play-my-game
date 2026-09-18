@@ -40,6 +40,12 @@ EXPECTED_RETAINED = 166_700
 EXPECTED_EDGES = 25_582_938
 EXPECTED_CONTACTS = 124_177_617
 
+# Inspector tables. Not loaded by walking dynamics.
+SYNAPSE_COORDINATE_TABLES = (
+    "syn-points-male-cns-v1.0-minconf-0.5.feather",
+    "syn-partners-male-cns-v1.0-minconf-0.5.feather",
+)
+
 
 def _file_digest(path: Path) -> str:
     digest = hashlib.sha256()
@@ -395,7 +401,11 @@ def load_connectome(
     rebuild: bool = False,
     progress: bool = True,
 ) -> Connectome:
-    """Load the normalized cache, importing from Feather files if needed."""
+    """Load the normalized cache, importing from Feather files if needed.
+
+    Dynamics use `normalized/graph.npz` (~229 MB), never the 18 GB
+    syn-points / syn-partners inspector tables.
+    """
     data_dir = Path(data_dir or DEFAULT_DATA)
     cache = data_dir / "normalized" / "graph.npz"
     if rebuild or not cache.exists():
@@ -403,6 +413,28 @@ def load_connectome(
     if progress:
         print(f"loading normalized graph from {cache} …")
     return Connectome.from_normalized(cache.parent)
+
+
+def computational_graph_manifest(data_dir: Path | None = None) -> dict:
+    """What walking experiments are allowed to load."""
+    data_dir = Path(data_dir or DEFAULT_DATA)
+    cache = data_dir / "normalized" / "graph.npz"
+    soma = data_dir / "normalized" / "soma_xyz.npz"
+    return {
+        "computational_graph": str(cache),
+        "computational_graph_exists": cache.exists(),
+        "computational_graph_bytes": int(cache.stat().st_size) if cache.exists() else 0,
+        "soma_xyz": str(soma),
+        "synapse_coordinate_tables_loaded": False,
+        "synapse_coordinate_tables_on_disk": {
+            name: (data_dir / name).exists() for name in SYNAPSE_COORDINATE_TABLES
+        },
+        "note": (
+            "Walking experiments load data/malecns_v1/normalized/graph.npz. "
+            "syn-points and syn-partners are inspector tables, not dynamics. "
+            "zsh 'no matches found: data/malecns_v1/*.npz' is the parent glob, not a missing graph."
+        ),
+    }
 
 
 def shuffled_connectome(connectome: Connectome, rng: np.random.Generator) -> Connectome:

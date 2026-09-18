@@ -1,4 +1,4 @@
-"""Sparse current-based dynamics on a fixed MaleCNS topology.
+"""Sparse mixed dynamics on a fixed MaleCNS topology.
 
 Connectivity is biological. Dynamics are an engineering model.
 
@@ -6,21 +6,36 @@ Weights are factored so learning cannot overwrite anatomy:
 
     effective_weight =
         anatomical_weight
-        * baseline_physiological_gain   # functional_gain; not learned
+        * functional_gain               # physiology/model; not learned
         * plastic_factor                # 1 + plastic_component; learned
-        * sign
-        * contact_gain
+        * synaptic_effect_sign          # transmitter/effect assumption
+        * contact_gain                  # model/calibration
+
+plastic_factor is clipped strictly positive so experience cannot reverse
+synaptic_effect_sign. Sign-changing plasticity would be a separate
+explicit mechanism, not a negative multiplier.
 
 Two propagation paths. Event-driven spike delivery is not enough:
 
-    SPIKING  membrane → threshold → spike → synapses
+    SPIKING  membrane → threshold → spike → delayed synaptic events
     GRADED   membrane → analog graded_release → synapses every tick
 
 A graded cell that never sets spiked=True must still influence downstream
-cells, otherwise mixed neuron types are computationally dead. Graded
-output is analog_output / graded_release, not a firing rate.
+cells. Membership is is_graded & ~silent, not a 'live/spiking' mask.
+Output amount is graded_transfer(V), not whether the cell was included.
 
-plastic_factor is clipped so learning cannot reverse neurotransmitter sign.
+Each tick:
+
+    decay spike kernel / zero this tick's graded current
+    deliver due spike events
+    compute current graded_release(V)
+    deliver current graded_release
+    integrate membranes
+    detect new spikes
+    schedule their future spike events
+
+Graded current is recomputed, never accumulated onto the decaying spike
+kernel. Graded output is analog_output / graded_release, not a firing rate.
 
 Injected current is tagged by source so spontaneous activity is inspectable.
 """
@@ -36,15 +51,19 @@ from flybrain.loader import Connectome
 from flybrain.neuron_model import NeuronKind, NeuronModelTable, ParameterProvenance, assign_neuron_models
 from flybrain.neurons import LIFParams, shiu_coupling
 
-# Learning may scale a synapse, not invert it. Sign stays with transmitter identity.
+# Learning may scale a synapse, not invert it. Sign stays with synaptic_effect_sign.
 MIN_PLASTIC_FACTOR = 0.05
 MAX_PLASTIC_FACTOR = 5.0
+if MIN_PLASTIC_FACTOR <= 0:
+    raise RuntimeError(
+        "MIN_PLASTIC_FACTOR must be > 0 so plasticity cannot reverse synaptic_effect_sign"
+    )
 # mV of depolarization that saturates analog release. ASSUMED squash, not a rate.
 GRADED_RELEASE_SCALE_MV = 4.0
 GRADED_RELEASE_EPS = 1e-3
 
 
-class LIFNetwork:
+class MixedDynamicsNetwork:
     def __init__(
         self,
         connectome: Connectome,
@@ -62,7 +81,9 @@ class LIFNetwork:
         self.ptr = connectome.pre_ptr
         self.post = connectome.post.astype(np.int32, copy=False)
         self.anatomical = connectome.anatomical.astype(np.float32)
-        self.edge_sign = connectome.sign.astype(np.float32)
+        # Postsynaptic effect assumption. Not the same as neurotransmitter identity.
+        self.synaptic_effect_sign = connectome.sign.astype(np.float32)
+        self.edge_sign = self.synaptic_effect_sign
         # Physiological efficacy. Not overwritten by learning.
         self.functional_gain = np.ones(connectome.n_edges, dtype=np.float32)
         # Associative / experience-dependent delta. Anatomical weights stay frozen.
@@ -81,6 +102,9 @@ class LIFNetwork:
             np.float32(p.v_rest)
             + np.float32(self.v_init_noise_std) * self.rng.standard_normal(n).astype(np.float32)
         )
+        # Spike kernel decays (tau_g). Graded current is this tick only.
+        self.g_spike = np.zeros(n, dtype=np.float32)
+        self.g_graded = np.zeros(n, dtype=np.float32)
         self.g = np.zeros(n, dtype=np.float32)
         self.drive = np.zeros(n, dtype=np.float32)
         self.refractory = np.zeros(n, dtype=np.int16)
@@ -128,17 +152,40 @@ class LIFNetwork:
         return np.clip(1.0 + self.plastic_component, MIN_PLASTIC_FACTOR, MAX_PLASTIC_FACTOR)
 
     def _rebuild_weights(self) -> None:
+        if np.any(self.functional_gain < 0):
+            raise RuntimeError(
+                "functional_gain must be >= 0; it cannot reverse synaptic_effect_sign"
+            )
         gain = np.float32(self.params.contact_gain)
         lo = np.float32(MIN_PLASTIC_FACTOR - 1.0)
         hi = np.float32(MAX_PLASTIC_FACTOR - 1.0)
         np.clip(self.plastic_component, lo, hi, out=self.plastic_component)
-        plastic = np.clip(1.0 + self.plastic_component, MIN_PLASTIC_FACTOR, MAX_PLASTIC_FACTOR)
-        self.efficacy = self.functional_gain * plastic.astype(np.float32)
-        self.weight = self.anatomical * self.efficacy * self.edge_sign * gain
+        plastic_factor = np.clip(
+            1.0 + self.plastic_component,
+            MIN_PLASTIC_FACTOR,
+            MAX_PLASTIC_FACTOR,
+        )
+        if not np.all(plastic_factor > 0):
+            raise RuntimeError("plastic_factor must stay strictly positive")
+        self.efficacy = self.functional_gain * plastic_factor.astype(np.float32)
+        self.weight = (
+            self.anatomical
+            * self.functional_gain
+            * plastic_factor.astype(np.float32)
+            * self.synaptic_effect_sign
+            * gain
+        )
+        nonzero = self.weight != 0
+        if np.any(nonzero) and not np.all(
+            np.sign(self.weight[nonzero]) == np.sign(self.synaptic_effect_sign[nonzero])
+        ):
+            raise RuntimeError("plasticity reversed synaptic_effect_sign")
 
     def reset(self, clear_plasticity: bool = False) -> None:
         p = self.params
         self.v.fill(p.v_rest)
+        self.g_spike.fill(0)
+        self.g_graded.fill(0)
         self.g.fill(0)
         self.drive.fill(0)
         self.refractory.fill(0)
@@ -172,7 +219,10 @@ class LIFNetwork:
             return
         self.silent[idx] = bool(silent)
         self.v[idx] = self.v_rest
+        self.g_spike[idx] = 0
+        self.g_graded[idx] = 0
         self.g[idx] = 0
+        self.graded_output[idx] = 0
         self.refractory[idx] = 0
 
     def inject(self, indices, current: float, source: str = "inject") -> None:
@@ -213,11 +263,29 @@ class LIFNetwork:
 
     def _tick(self) -> None:
         p = self.params
-        live = (~self.silent) & (self.refractory == 0)
+        silent = self.silent
+        is_graded = self.is_graded
+        # Graded cells are not gated by refractory / 'currently spiking'.
+        spiking_integrable = (~silent) & (~is_graded) & (self.refractory == 0)
+        graded_integrable = (~silent) & is_graded
+        integrable = spiking_integrable | graded_integrable
         if np.any(self.refractory > 0):
             self.refractory[self.refractory > 0] -= 1
-        if np.any(self.silent):
-            dead = self.silent
+
+        self.g_spike *= self.alpha_g
+        self.g_graded.fill(0)
+
+        due = self.queue[self.cursor % self.queue_len]
+        self.last_n_spike_events = len(due)
+        if due:
+            self._deliver(due)
+            self.queue[self.cursor % self.queue_len] = []
+
+        self._deliver_graded(np.flatnonzero(is_graded))
+        np.add(self.g_spike, self.g_graded, out=self.g)
+
+        if np.any(silent):
+            dead = silent
             self.v[dead] = self.v_rest + (self.v[dead] - self.v_rest) * self.alpha_v
         drive = self.drive
         if self.intrinsic_noise_std > 0:
@@ -227,15 +295,14 @@ class LIFNetwork:
             )
             drive = drive + noise
             self.drive_sources["intrinsic.membrane_noise"] = float(self.intrinsic_noise_std)
-        self.v[live] = (
+        self.v[integrable] = (
             self.v_rest
-            + (self.v[live] - self.v_rest) * self.alpha_v
-            + drive[live] * self.one_minus_av
-            + self.g[live] * self.coupling
+            + (self.v[integrable] - self.v_rest) * self.alpha_v
+            + drive[integrable] * self.one_minus_av
+            + self.g[integrable] * self.coupling
         )
-        self.g *= self.alpha_g
-        spiking = live & (~self.is_graded)
-        spiked = np.flatnonzero(spiking & (self.v > self.v_th)).astype(np.int32)
+
+        spiked = np.flatnonzero(spiking_integrable & (self.v > self.v_th)).astype(np.int32)
         self.last_spikes.fill(False)
         if spiked.size:
             self.last_spikes[spiked] = True
@@ -244,32 +311,30 @@ class LIFNetwork:
             self.queue[(self.cursor + self.delay_slots) % self.queue_len].extend(
                 spiked.tolist()
             )
-        due = self.queue[self.cursor % self.queue_len]
-        self.last_n_spike_events = len(due)
-        if due:
-            self._deliver(due)
-            self.queue[self.cursor % self.queue_len] = []
-        # Analog cells emit every integration step from membrane voltage,
-        # whether or not anyone spiked this tick.
-        self._deliver_graded()
-        graded = np.flatnonzero((~self.silent) & self.is_graded)
-        if spiked.size:
             self.v[spiked] = self.v_rest
+            self.g_spike[spiked] = 0
+            self.g_graded[spiked] = 0
             self.g[spiked] = 0
             self.refractory[spiked] = self.ref_steps
+
         decay = np.float32(math.exp(-p.dt / 20.0))
         self.pre_trace *= decay
         self.post_trace *= decay
         if spiked.size:
             self.pre_trace[spiked] += np.float32(1.0)
             self.post_trace[spiked] += np.float32(1.0)
-        if graded.size:
-            self.pre_trace[graded] = np.maximum(self.pre_trace[graded], self.graded_output[graded])
-            self.post_trace[graded] = np.maximum(self.post_trace[graded], self.graded_output[graded])
+        analog_cells = np.flatnonzero(graded_integrable)
+        if analog_cells.size:
+            self.pre_trace[analog_cells] = np.maximum(
+                self.pre_trace[analog_cells], self.graded_output[analog_cells]
+            )
+            self.post_trace[analog_cells] = np.maximum(
+                self.post_trace[analog_cells], self.graded_output[analog_cells]
+            )
         self.cursor += 1
 
     def _deliver(self, presynaptic: list[int]) -> None:
-        g = self.g
+        g = self.g_spike
         post = self.post
         weight = self.weight
         ptr = self.ptr
@@ -288,15 +353,17 @@ class LIFNetwork:
             if np.any(live):
                 np.add.at(g, targets[live], w[live])
 
-    def _deliver_graded(self) -> None:
+    def _deliver_graded(self, cells: np.ndarray) -> None:
         """Analog synaptic output from nonspiking cells, every tick.
 
+        `cells` is the analog population. Do not pass a live/spiking mask —
+        a healthy graded cell is evaluated from V whether or not it spiked.
+        Lesioned/silent cells are considered, then emit 0.
+
         graded_release = clip((V − V_rest) / scale, 0, 1). This is not a
-        firing rate. Zero at rest so a resting graded neuron does not leak
-        0.5×weight every tick. LITERATURE_DERIVED as a class (insect VNC
-        premotor); the numeric squash is ASSUMED.
+        firing rate. Written into g_graded for this tick only.
         """
-        cells = np.flatnonzero(self.is_graded)
+        cells = np.asarray(cells, dtype=np.int32)
         self.last_n_graded_considered = int(cells.size)
         self.graded_output.fill(0)
         if not cells.size:
@@ -313,7 +380,7 @@ class LIFNetwork:
         cells = cells[active]
         analog = analog[active]
         self.last_n_graded_deliveries = int(cells.size)
-        g = self.g
+        g = self.g_graded
         post = self.post
         weight = self.weight
         ptr = self.ptr
@@ -326,9 +393,9 @@ class LIFNetwork:
             if start == end:
                 continue
             targets = post[start:end]
-            live = ~silent[targets]
-            if np.any(live):
-                np.add.at(g, targets[live], weight[start:end][live] * np.float32(amp))
+            alive = ~silent[targets]
+            if np.any(alive):
+                np.add.at(g, targets[alive], weight[start:end][alive] * np.float32(amp))
 
     def save(self, path: Path) -> None:
         path = Path(path)
@@ -337,6 +404,8 @@ class LIFNetwork:
             path,
             v=self.v,
             g=self.g,
+            g_spike=self.g_spike,
+            g_graded=self.g_graded,
             drive=self.drive,
             refractory=self.refractory,
             functional_gain=self.functional_gain,
@@ -361,6 +430,12 @@ class LIFNetwork:
     def load(self, path: Path) -> None:
         data = np.load(path, allow_pickle=True)
         self.v = data["v"]
+        if "g_spike" in data.files:
+            self.g_spike = data["g_spike"]
+            self.g_graded = data["g_graded"]
+        else:
+            self.g_spike = data["g"].copy()
+            self.g_graded = np.zeros_like(data["g"])
         self.g = data["g"]
         self.drive = data["drive"]
         self.refractory = data["refractory"]
@@ -393,6 +468,10 @@ class LIFNetwork:
         self._rebuild_weights()
 
 
+# Historical name. The network is mixed spiking / graded, not LIF-only.
+LIFNetwork = MixedDynamicsNetwork
+
+
 KNOWN_EXCITATORY_NT = frozenset({"acetylcholine"})
 KNOWN_INHIBITORY_NT = frozenset({"gaba", "glutamate", "histamine"})
 
@@ -402,7 +481,7 @@ def dataset_validation(
     *,
     models: NeuronModelTable | None = None,
     policy_name: str = "NO_SCAFFOLD",
-    net: LIFNetwork | None = None,
+    net: MixedDynamicsNetwork | None = None,
 ) -> dict:
     """Startup accounting. File size is not the verification."""
     models = models or (net.models if net is not None else assign_neuron_models(connectome))

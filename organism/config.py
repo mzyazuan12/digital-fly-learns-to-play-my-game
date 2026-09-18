@@ -15,7 +15,7 @@ import os
 from dataclasses import asdict, dataclass
 from enum import Enum
 
-MODEL_VERSION = "0.3.2"
+MODEL_VERSION = "0.3.3"
 
 # Birth means: instantiate a NEW persistent digital individual from measured
 # anatomy, initialize uncertain physiology explicitly, and let subsequent
@@ -65,6 +65,76 @@ class ModelPolicy:
 
     def as_dict(self) -> dict:
         return asdict(self)
+
+    @property
+    def no_scaffold(self) -> bool:
+        return (
+            not self.allow_behavior_timers
+            and not self.allow_motor_fallbacks
+            and not self.allow_named_gait_commands
+            and not self.allow_root_motion
+            and not self.allow_privileged_world_state
+        )
+
+
+class ScaffoldViolation(RuntimeError):
+    """NO_SCAFFOLD forbids this path. Silent no-ops hide timers."""
+
+
+FORBIDDEN_DRIVE_SOURCES = frozenset(
+    {
+        "walking_timer",
+        "legacy.walking_drive",
+        "legacy.steer_L",
+        "legacy.steer_R",
+        "legacy.flight_drive",
+        "legacy.hunger",
+        "legacy.threat",
+        "legacy.grooming_drive",
+        "legacy.groom_suppress_walk",
+    }
+)
+
+
+def assert_neural_drive_source(policy: ModelPolicy, source: str) -> None:
+    if not policy.no_scaffold:
+        return
+    key = str(source).strip()
+    lowered = key.lower()
+    if (
+        key in FORBIDDEN_DRIVE_SOURCES
+        or lowered == "walking_timer"
+        or lowered.startswith("legacy.")
+        or "gait_command" in lowered
+    ):
+        raise ScaffoldViolation(f"NO_SCAFFOLD forbids drive source {key!r}")
+
+
+def format_policy_banner(policy: ModelPolicy) -> str:
+    def flag(allowed: bool) -> str:
+        return "ON " if allowed else "OFF"
+
+    inner = 26
+
+    def row(text: str) -> str:
+        return "║" + text.ljust(inner)[:inner] + "║"
+
+    title = f"{policy.name} MODE"
+    lines = [
+        "╔" + "═" * inner + "╗",
+        row(f" {title}"),
+        row(""),
+        row(f" timers            {flag(policy.allow_behavior_timers)}"),
+        row(f" named gait cmds   {flag(policy.allow_named_gait_commands)}"),
+        row(f" walk fallback     {flag(policy.allow_motor_fallbacks)}"),
+        row(f" root motion       {flag(policy.allow_root_motion)}"),
+        row(f" target coords     {flag(policy.allow_privileged_world_state)}"),
+        row(" developer motor   OFF"),
+        row(""),
+        row(f" low-level gait    {flag(policy.allow_pretrained_low_level_gait)}"),
+        "╚" + "═" * inner + "╝",
+    ]
+    return "\n".join(lines)
 
 
 NO_SCAFFOLD = ModelPolicy()
@@ -117,6 +187,10 @@ __all__ = [
     "NO_SCAFFOLD",
     "LEGACY_POLICY",
     "active_policy",
+    "ScaffoldViolation",
+    "FORBIDDEN_DRIVE_SOURCES",
+    "assert_neural_drive_source",
+    "format_policy_banner",
     "MOTOR_FIDELITY_LEVEL",
     "motor_fidelity_level",
     "MotorMode",
