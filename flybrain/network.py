@@ -14,10 +14,13 @@ Weights are factored so learning cannot overwrite anatomy:
 Two propagation paths. Event-driven spike delivery is not enough:
 
     SPIKING  membrane → threshold → spike → synapses
-    GRADED   membrane → continuous output → synapses
+    GRADED   membrane → analog graded_release → synapses every tick
 
 A graded cell that never sets spiked=True must still influence downstream
-cells, otherwise mixed neuron types are computationally dead.
+cells, otherwise mixed neuron types are computationally dead. Graded
+output is analog_output / graded_release, not a firing rate.
+
+plastic_factor is clipped so learning cannot reverse neurotransmitter sign.
 
 Injected current is tagged by source so spontaneous activity is inspectable.
 """
@@ -30,8 +33,15 @@ from pathlib import Path
 import numpy as np
 
 from flybrain.loader import Connectome
-from flybrain.neuron_model import NeuronModelTable, ParameterProvenance, assign_neuron_models
+from flybrain.neuron_model import NeuronKind, NeuronModelTable, ParameterProvenance, assign_neuron_models
 from flybrain.neurons import LIFParams, shiu_coupling
+
+# Learning may scale a synapse, not invert it. Sign stays with transmitter identity.
+MIN_PLASTIC_FACTOR = 0.05
+MAX_PLASTIC_FACTOR = 5.0
+# mV of depolarization that saturates analog release. ASSUMED squash, not a rate.
+GRADED_RELEASE_SCALE_MV = 4.0
+GRADED_RELEASE_EPS = 1e-3
 
 
 class LIFNetwork:
@@ -102,16 +112,28 @@ class LIFNetwork:
         self.intrinsic_noise_provenance = ParameterProvenance.ASSUMED.value
 
     @property
+    def analog_output(self) -> np.ndarray:
+        return self.graded_output
+
+    @property
+    def graded_release(self) -> np.ndarray:
+        return self.graded_output
+
+    @property
     def baseline_physiological_gain(self) -> np.ndarray:
         return self.functional_gain
 
     @property
     def plastic_factor(self) -> np.ndarray:
-        return 1.0 + self.plastic_component
+        return np.clip(1.0 + self.plastic_component, MIN_PLASTIC_FACTOR, MAX_PLASTIC_FACTOR)
 
     def _rebuild_weights(self) -> None:
         gain = np.float32(self.params.contact_gain)
-        self.efficacy = self.functional_gain * (1.0 + self.plastic_component)
+        lo = np.float32(MIN_PLASTIC_FACTOR - 1.0)
+        hi = np.float32(MAX_PLASTIC_FACTOR - 1.0)
+        np.clip(self.plastic_component, lo, hi, out=self.plastic_component)
+        plastic = np.clip(1.0 + self.plastic_component, MIN_PLASTIC_FACTOR, MAX_PLASTIC_FACTOR)
+        self.efficacy = self.functional_gain * plastic.astype(np.float32)
         self.weight = self.anatomical * self.efficacy * self.edge_sign * gain
 
     def reset(self, clear_plasticity: bool = False) -> None:
@@ -227,13 +249,10 @@ class LIFNetwork:
         if due:
             self._deliver(due)
             self.queue[self.cursor % self.queue_len] = []
-        graded = np.flatnonzero(live & self.is_graded)
-        if graded.size:
-            self._deliver_graded(graded)
-        else:
-            self.graded_output.fill(0)
-            self.last_n_graded_deliveries = 0
-            self.last_n_graded_considered = 0
+        # Analog cells emit every integration step from membrane voltage,
+        # whether or not anyone spiked this tick.
+        self._deliver_graded()
+        graded = np.flatnonzero((~self.silent) & self.is_graded)
         if spiked.size:
             self.v[spiked] = self.v_rest
             self.g[spiked] = 0
