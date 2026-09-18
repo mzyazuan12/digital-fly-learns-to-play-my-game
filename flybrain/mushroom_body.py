@@ -87,7 +87,7 @@ class MushroomBodyLearning:
             "n_mbon": int(self.mbon.size),
             "n_dan": int(self.dan.size),
             "n_plastic_edges": int(self.edge_mask.sum()),
-            "missing_circuit": self.edge_mask.sum() == 0,
+            "missing_circuit": bool(self.edge_mask.sum() == 0),
         }
 
     def _kc_mbon_mask(self) -> np.ndarray:

@@ -41,6 +41,22 @@ from organism.provenance import ProvenanceLog
 from organism.toy import locomotor_connectome
 
 
+def _json_ready(value):
+    if isinstance(value, dict):
+        return {str(k): _json_ready(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_ready(v) for v in value]
+    if isinstance(value, np.ndarray):
+        return _json_ready(value.tolist())
+    if isinstance(value, (np.bool_,)):
+        return bool(value)
+    if isinstance(value, (np.integer,)):
+        return int(value)
+    if isinstance(value, (np.floating,)):
+        return float(value)
+    return value
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -319,7 +335,7 @@ class VirtualFly:
         conn = sqlite3.connect(db)
         conn.execute(
             "INSERT INTO events(at, t_ms, kind, payload) VALUES (?, ?, ?, ?)",
-            (_utc_now(), float(self.net.sim_ms), kind, json.dumps(payload or {})),
+            (_utc_now(), float(self.net.sim_ms), kind, json.dumps(_json_ready(payload or {}))),
         )
         conn.commit()
         conn.close()
@@ -332,7 +348,8 @@ class VirtualFly:
         self.save_dir = path
         (path / "genome_config.json").write_text(
             json.dumps(
-                {
+                _json_ready(
+                    {
                     "individual_id": self.identity.fly_id,
                     "seed": self.identity.seed,
                     "model_version": MODEL_VERSION,
@@ -352,7 +369,8 @@ class VirtualFly:
                         "delay": self.net.params.delay,
                         "contact_gain": self.net.params.contact_gain,
                     },
-                },
+                    }
+                ),
                 indent=2,
             )
             + "\n"
@@ -374,7 +392,8 @@ class VirtualFly:
         )
         (path / "identity.json").write_text(
             json.dumps(
-                {
+                _json_ready(
+                    {
                     **self.identity.to_json(),
                     "lif": {
                         "dt": self.net.params.dt,
@@ -396,16 +415,17 @@ class VirtualFly:
                     "history": self.history,
                     "provenance_summary": self.provenance.summary(),
                     "legacy_scaffold": self.legacy_scaffold,
-                },
+                    }
+                ),
                 indent=2,
             )
             + "\n"
         )
         (path / "metabolic_state.json").write_text(
-            json.dumps(self.physiology.state.snapshot(), indent=2) + "\n"
+            json.dumps(_json_ready(self.physiology.state.snapshot()), indent=2) + "\n"
         )
         (path / "neuromodulatory_state.json").write_text(
-            json.dumps(self.physiology.neuromodulation.state.snapshot(), indent=2) + "\n"
+            json.dumps(_json_ready(self.physiology.neuromodulation.state.snapshot()), indent=2) + "\n"
         )
         (path / "channels.json").write_text(json.dumps(self.channels.to_jsonable()) + "\n")
         self.net.save(path / "neural_state.npz")

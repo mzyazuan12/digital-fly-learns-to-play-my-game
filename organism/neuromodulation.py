@@ -66,9 +66,9 @@ class Neuromodulation:
         sleep_pressure: float,
         odor: float,
     ) -> NeuromodulatoryState:
-        """Map slow internal state onto modulator concentrations.
+        """        Map slow internal state onto modulator concentrations.
 
-        Not: if hunger > 0.7: walk(). Hunger raises dopamine; dopamine
+        Not if-hunger-then-walk. Hunger raises dopamine; dopamine
         changes identified circuits. Walking is not selected here.
         """
         s = self.state

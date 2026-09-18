@@ -13,7 +13,7 @@ def test_mushroom_body_finds_kc_dan_mbon():
     assert mb.mbon.size >= 1
     assert mb.dan.size >= 1
     assert mb.edge_mask.sum() >= 1
-    assert mb.notes["missing_circuit"] is False
+    assert not mb.notes["missing_circuit"]
 
 
 def test_learning_does_not_overwrite_anatomy():

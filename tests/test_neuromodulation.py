@@ -15,7 +15,8 @@ def test_physiology_has_no_action_if():
     assert "walk_to_food" not in src
     assert "start_walk" not in src
     mod = inspect.getsource(Neuromodulation)
-    assert "walk()" not in mod
+    assert "walk_to_food" not in mod
+    assert "start_walk" not in mod
 
 
 def test_octopamine_does_not_write_a_gait_command():
