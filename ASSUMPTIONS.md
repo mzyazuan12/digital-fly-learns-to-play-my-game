@@ -115,11 +115,15 @@ MaleCNS identified DNs (rates)
 
 This is **not** descending neuron → VNC CPG → motor neuron → muscle. The
 CPG is pretrained scaffolding. Rest vs walk follows a continuous
-`locomotor_drive` decoded from identified walking DNs (DNp09), labeled
-`ENGINEERED_NEURAL_MOTOR_INTERFACE`. There is **no** `walking_bout_s`
+`locomotor_drive` decoded from identified walking DNs (DNp09, DNg100,
+DNg97/oDN1), labeled `ENGINEERED_NEURAL_MOTOR_INTERFACE`. DNb08 is
+traced but not decoded as walking. The published VNC CPG (E1=IN17A001,
+E2=INXXX466, I1=IN16B036) is resolved and its synapses are counted; it
+does **not** yet move joints. There is **no** `walking_bout_s`
 override on the default path. NO_SCAFFOLD **rejects** a timer, motor
 fallback, named gait command, or developer motor command rather than
-silently ignoring it.
+silently ignoring it. Standing is what happens when those DNs are
+silent, not `GAIT_COMMANDS["stand"]`.
 
 `MODE_HYBRID_VNC` logs motor-neuron activity beside the CPG.
 `MODE_NEURAL_MOTOR` is reserved until muscle actuation exists.

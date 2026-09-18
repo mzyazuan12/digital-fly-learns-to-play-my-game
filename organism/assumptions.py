@@ -118,6 +118,8 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
         used_by="organism.walking_pathways / organism.bridge.MotorBridge",
         biological=True,
     ),
+    Assumption(
+        id="hybrid_turning_controller",
         statement="In MODE_ENGINEERED_CPG, leg trajectories come from FlyGym HybridTurningController. Engineered VNC/muscle surrogate, not recovered motor circuitry.",
         used_by="organism.gait / organism.physics",
     ),
