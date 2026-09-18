@@ -491,7 +491,62 @@ class ResolvedPathway:
             "body_ids": body_ids,
             "sides": sides,
             "superclasses": superclasses,
+            "never_means_walk": self.spec.maps_to == "observe_only" or self.spec.family == "cpg",
         }
+
+
+@dataclass
+class LegCPGCopy:
+    """One neuropil copy of the walking motif. Not a pooled type average."""
+
+    slot: str
+    side: str
+    neuromere: str
+    cells: dict[str, int | None]
+    body_ids: dict[str, int | None]
+    motor_indices: np.ndarray
+    assignment: str
+    e1_e2_contacts: int
+
+    def as_dict(self) -> dict:
+        return {
+            "slot": self.slot,
+            "side": self.side,
+            "neuromere": self.neuromere,
+            "cells": self.cells,
+            "body_ids": self.body_ids,
+            "motor_n": int(self.motor_indices.size),
+            "motor_indices": [int(i) for i in self.motor_indices.tolist()],
+            "assignment": self.assignment,
+            "e1_e2_contacts": int(self.e1_e2_contacts),
+            "filled": self.cells.get("E1") is not None,
+        }
+
+    def index(self, role: str) -> int | None:
+        return self.cells.get(role)
+
+
+def _motor_targets(connectome: Connectome, sources: list[int], motor: np.ndarray, k: int = 8) -> np.ndarray:
+    motor = np.asarray(motor, dtype=np.int32)
+    if motor.size == 0 or not sources:
+        return np.zeros(0, dtype=np.int32)
+    want = np.zeros(connectome.n, dtype=bool)
+    want[motor] = True
+    weights = np.zeros(connectome.n, dtype=np.int64)
+    for src in sources:
+        start = int(connectome.pre_ptr[int(src)])
+        end = int(connectome.pre_ptr[int(src) + 1])
+        if end <= start:
+            continue
+        posts = connectome.post[start:end]
+        mask = want[posts]
+        if not np.any(mask):
+            continue
+        np.add.at(weights, posts[mask], connectome.anatomical[start:end][mask].astype(np.int64))
+    scored = [(int(weights[i]), int(i)) for i in motor.tolist() if weights[i] > 0]
+    scored.sort(reverse=True)
+    picked = [idx for _, idx in scored[:k]]
+    return np.asarray(picked, dtype=np.int32)
 
 
 class WalkingCircuit:
@@ -509,6 +564,9 @@ class WalkingCircuit:
         self.forward_walk_indices = self._union(FORWARD_WALK_NAMES)
         self.halt_indices = self._union(("foxglove", "bluebell", "brake"))
         self.cpg_core_indices = self._union(("E1", "E2", "I1"))
+        self.dnb08_motif_indices = self._union(("E4", "E5", "E1", "E2", "I2"))
+        self.soma = _try_soma_xyz()
+        self.legs = self._assign_legs()
 
     def _union(self, names: tuple[str, ...]) -> np.ndarray:
         chunks = [self.pathways[name].indices for name in names if self.pathways[name].n]
