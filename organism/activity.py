@@ -81,6 +81,12 @@ def _pick_display(
                 keep.append(idx)
 
     add(bridge.walk_indices)
+    add(getattr(bridge, "dng100_indices", np.zeros(0, np.int32)))
+    add(getattr(bridge, "odn1_indices", np.zeros(0, np.int32)))
+    add(getattr(bridge, "dnb08_indices", np.zeros(0, np.int32)))
+    add(getattr(bridge, "cpg_e1", np.zeros(0, np.int32)))
+    add(getattr(bridge, "cpg_e2", np.zeros(0, np.int32)))
+    add(getattr(bridge, "cpg_i1", np.zeros(0, np.int32)))
     add(bridge.steer_left)
     add(bridge.steer_right)
     add(bridge.reverse_indices)

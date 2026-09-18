@@ -314,6 +314,18 @@ class VirtualFly:
             "walk": self.bridge.walk_indices,
             "walk_initiation": self.bridge.walk_indices,
             "DNp09": self.bridge.walk_indices,
+            "forward_walk": self.bridge.forward_walk_indices,
+            "DNg100": self.bridge.dng100_indices,
+            "oDN1": self.bridge.odn1_indices,
+            "DNg97": self.bridge.odn1_indices,
+            "DNb08": self.bridge.dnb08_indices,
+            "halt": self.bridge.halt_indices,
+            "bluebell": self.bridge.halt_bluebell,
+            "foxglove": self.bridge.halt_foxglove,
+            "brake": self.bridge.halt_brake,
+            "E1": self.bridge.cpg_e1,
+            "E2": self.bridge.cpg_e2,
+            "I1": self.bridge.cpg_i1,
             "steer_left": self.bridge.steer_left,
             "steer_right": self.bridge.steer_right,
         }
@@ -326,8 +338,9 @@ class VirtualFly:
             idx = np.asarray(pathway, dtype=np.int32)
             name = "indices"
         self.net.lesion(idx, silent=silent)
-        if silent and name in {"walk", "walk_initiation", "DNp09"}:
+        if silent and name in {"walk", "walk_initiation", "DNp09", "forward_walk", "DNg100", "oDN1", "DNg97"}:
             self.bridge.walk_trace = 0.0
+            self.bridge.forward_trace = 0.0
         self.log_life("lesion", {"pathway": name, "silent": silent, "n": int(idx.size)})
         return idx
 
