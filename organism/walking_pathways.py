@@ -216,6 +216,46 @@ ALL_WALKING_SPECS: tuple[PathwaySpec, ...] = WALKING_DNS + HALT_PATHWAYS + CPG_I
 
 FORWARD_WALK_NAMES = ("DNp09", "DNg100", "oDN1")
 ENGINEERED_CPG_STILL_EXECUTES = True
+NEURAL_CPG_DRIVES_JOINTS = False
+
+# Names only. Never `if DNg100: walk()`.
+WALKING_CIRCUIT_TYPES = {
+    "DNg100": "DNg100",
+    "DNb08": "DNb08",
+    "E1": "IN17A001",
+    "E2": "INXXX466",
+    "I1": "IN16B036",
+    "I2": "IN19A007",
+    "E3": "IN19B012",
+    "E4": "IN03A006",
+    "E5": "INXXX464",
+}
+
+E5_TYPE_PROVENANCE = {
+    "canonical": "INXXX464",
+    "source": "Pugliese et al. 2025 published article (PMC13142387)",
+    "older_preprint_discrepancy": (
+        "An older PDF/preprint passage appears to identify E5 as INXXX466, "
+        "which is the published E2 type. Canonical mapping uses the published "
+        "article (E5 = INXXX464). The discrepancy is recorded rather than "
+        "silently picking whichever type makes a simulation oscillate."
+    ),
+    "rejected_alias": "INXXX466",
+}
+
+# One motif copy per leg neuropil. Do not average all E1 into one scalar.
+LEG_SLOTS = ("FL", "FR", "ML", "MR", "HL", "HR")
+LEG_LAYOUT = {
+    "FL": ("L", "T1"),
+    "FR": ("R", "T1"),
+    "ML": ("L", "T2"),
+    "MR": ("R", "T2"),
+    "HL": ("L", "T3"),
+    "HR": ("R", "T3"),
+}
+CPG_ROLES = ("E1", "E2", "I1", "I2", "E3", "E4", "E5")
+# High somaLocation Z within a side is treated as anterior (T1). INFERRED.
+SOMA_Z_ANTERIOR_IS_HIGH = True
 
 # Documented MaleCNS v1.0 body IDs (uint64). Lookup is still by type.
 EXPECTED_WALKING_BODY_IDS = {
@@ -290,6 +330,103 @@ def contacts_between(connectome: Connectome, pre: np.ndarray, post: np.ndarray) 
         "n_pre": int(pre.size),
         "n_post": int(post.size),
     }
+
+
+def contacts_pair(connectome: Connectome, pre_i: int, post_i: int) -> int:
+    start = int(connectome.pre_ptr[int(pre_i)])
+    end = int(connectome.pre_ptr[int(pre_i) + 1])
+    if end <= start:
+        return 0
+    posts = connectome.post[start:end]
+    mask = posts == np.int64(post_i)
+    if not np.any(mask):
+        return 0
+    return int(connectome.anatomical[start:end][mask].sum())
+
+
+def _try_soma_xyz() -> dict | None:
+    try:
+        from organism.soma import load_soma_xyz
+
+        return load_soma_xyz()
+    except (FileNotFoundError, RuntimeError, OSError, ValueError):
+        return None
+
+
+def _soma_z(connectome: Connectome, indices: list[int], soma: dict | None) -> np.ndarray:
+    from organism.soma import lookup_xyz
+
+    if soma is None or not indices:
+        return np.full(len(indices), np.nan, dtype=np.float32)
+    xyz = lookup_xyz(connectome.neuron_ids[np.asarray(indices, dtype=np.int32)], soma)
+    return xyz[:, 2]
+
+
+def _side_of(connectome: Connectome, index: int) -> str:
+    return _norm_side(connectome.side[int(index)])
+
+
+def _rank_ipsilateral(
+    connectome: Connectome,
+    indices: np.ndarray,
+    side: str,
+    soma: dict | None,
+) -> list[int]:
+    members = [int(i) for i in np.asarray(indices, dtype=np.int32).tolist() if _side_of(connectome, int(i)) == side]
+    if not members:
+        return []
+    z = _soma_z(connectome, members, soma)
+    if np.isfinite(z).all():
+        order = np.argsort(-z) if SOMA_Z_ANTERIOR_IS_HIGH else np.argsort(z)
+        return [members[int(i)] for i in order.tolist()]
+    ids = [int(connectome.neuron_ids[i]) for i in members]
+    return [m for _, m in sorted(zip(ids, members))]
+
+
+def _assign_e1_slots(connectome: Connectome, e1: np.ndarray, soma: dict | None) -> dict[str, int | None]:
+    slots: dict[str, int | None] = {name: None for name in LEG_SLOTS}
+    for side, front, mid, hind in (("L", "FL", "ML", "HL"), ("R", "FR", "MR", "HR")):
+        ranked = _rank_ipsilateral(connectome, e1, side, soma)
+        for slot, idx in zip((front, mid, hind), ranked):
+            slots[slot] = int(idx)
+    return slots
+
+
+def _assign_role_to_e1(
+    connectome: Connectome,
+    cells: np.ndarray,
+    e1_by_slot: dict[str, int | None],
+    soma: dict | None,
+    side_slots: dict[str, tuple[str, ...]],
+) -> dict[str, int | None]:
+    assigned: dict[str, int | None] = {name: None for name in LEG_SLOTS}
+    remaining = [int(i) for i in np.asarray(cells, dtype=np.int32).tolist()]
+    scores: list[tuple[int, int, str]] = []
+    for cell in remaining:
+        for slot, e1 in e1_by_slot.items():
+            if e1 is None:
+                continue
+            w = contacts_pair(connectome, cell, e1) + contacts_pair(connectome, e1, cell)
+            if w > 0:
+                scores.append((w, cell, slot))
+    scores.sort(key=lambda row: row[0], reverse=True)
+    used_cells: set[int] = set()
+    used_slots: set[str] = set()
+    for weight, cell, slot in scores:
+        if cell in used_cells or slot in used_slots:
+            continue
+        assigned[slot] = cell
+        used_cells.add(cell)
+        used_slots.add(slot)
+    leftovers = [c for c in remaining if c not in used_cells]
+    if leftovers:
+        for side, slots in side_slots.items():
+            ranked = _rank_ipsilateral(connectome, np.asarray(leftovers, dtype=np.int32), side, soma)
+            empty = [s for s in slots if assigned[s] is None]
+            for slot, idx in zip(empty, ranked):
+                assigned[slot] = int(idx)
+                leftovers = [c for c in leftovers if c != idx]
+    return assigned
 
 
 def top_partners(connectome: Connectome, pre: np.ndarray, *, k: int = 12, min_contacts: int = 1) -> list[dict]:
