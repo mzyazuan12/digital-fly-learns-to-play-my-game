@@ -203,9 +203,9 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
         role="dnb08_relay",
         maps_to="observe_only",
         literature=(
-            "Pugliese et al. 2025 published article: E5 = INXXX464. "
+            "Pugliese et al. 2025 bioRxiv preprint: E5 = INXXX464. "
             "An older preprint passage appears to identify E5 as INXXX466 "
-            "(published E2). Canonical mapping is INXXX464; the discrepancy "
+            "(E2). Canonical mapping is INXXX464; the discrepancy "
             "is recorded, not used to pick whichever cell oscillates."
         ),
         family="cpg",
@@ -242,33 +242,24 @@ WALKING_CIRCUIT_TYPES = {
 
 E5_TYPE_PROVENANCE = {
     "canonical": "INXXX464",
-    "source": "Pugliese et al. 2025 published article (PMC13142387)",
+    "source": "Pugliese et al. 2025 bioRxiv preprint (PMC13142387)",
     "older_preprint_discrepancy": (
         "An older PDF/preprint passage appears to identify E5 as INXXX466, "
-        "which is the published E2 type. Canonical mapping uses the published "
-        "article (E5 = INXXX464). The discrepancy is recorded rather than "
-        "silently picking whichever type makes a simulation oscillate."
+        "which is the E2 type. Canonical mapping uses INXXX464. The "
+        "discrepancy is recorded rather than silently picking whichever type "
+        "makes a simulation oscillate. The DNg100 CPG study is a bioRxiv "
+        "preprint, not a peer-reviewed article, as of the cited source."
     ),
     "rejected_alias": "INXXX466",
 }
 
 # One motif copy per leg neuropil. Do not average all E1 into one scalar.
-LEG_SLOTS = ("FL", "FR", "ML", "MR", "HL", "HR")
-LEG_LAYOUT = {
-    "FL": ("L", "T1"),
-    "FR": ("R", "T1"),
-    "ML": ("L", "T2"),
-    "MR": ("R", "T2"),
-    "HL": ("L", "T3"),
-    "HR": ("R", "T3"),
-}
+# LEG_SLOTS / LEG_LAYOUT come from organism.neuropil (T1/T2/T3 × L/R).
 SIDE_SLOTS = {
     "L": ("FL", "ML", "HL"),
     "R": ("FR", "MR", "HR"),
 }
 CPG_ROLES = ("E1", "E2", "I1", "I2", "E3", "E4", "E5")
-# High somaLocation Z within a side is treated as anterior (T1). INFERRED.
-SOMA_Z_ANTERIOR_IS_HIGH = True
 
 # Documented MaleCNS v1.0 body IDs (uint64). Lookup is still by type.
 EXPECTED_WALKING_BODY_IDS = {
