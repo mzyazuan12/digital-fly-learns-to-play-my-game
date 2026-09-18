@@ -1,12 +1,15 @@
 """Sustained DNg100 current → per-leg VNC CPG traces.
 
-Question: does MixedDynamicsNetwork on this connectome reproduce the
-published DNg100 → E1/E2/inhibition → motor rhythm (Pugliese et al. 2025)?
+Question: does MixedDynamicsNetwork on this MaleCNS graph reproduce the
+bioRxiv DNg100 → E1/E2/inhibition → motor rhythm (Pugliese et al. 2025)?
 
-This experiment does not call walk(). It does not drive FlyBody. It does
-not retune the graph if the trace is tonic. Use the project interpreter
-(`.venv/bin/python` or `python -m experiment.dng100_cpg_rhythm`), not
-macOS system Python.
+Stimulate the two real DNg100 body IDs. Let ordinary MaleCNS edges
+propagate. Record each E1/E2/I1 copy in its T1/T2/T3 × L/R slot.
+Do not hand-wire pairwise gains. Do not retune the graph. Do not drive
+FlyBody.
+
+Use the project interpreter (`.venv/bin/python` or
+`python -m experiment.dng100_cpg_rhythm`), not macOS system Python.
 """
 
 from __future__ import annotations
@@ -18,7 +21,7 @@ from pathlib import Path
 import numpy as np
 
 from flybrain.loader import DEFAULT_DATA, computational_graph_manifest
-from flybrain.network import LIFNetwork, LIFParams, dataset_validation
+from flybrain.network import MixedDynamicsNetwork, LIFParams, dataset_validation
 from organism.config import MODEL_VERSION, MotorMode, NO_SCAFFOLD, format_policy_banner
 from organism.cpg_rhythm import (
     RHYTHMICITY_THRESHOLD,
@@ -132,11 +135,11 @@ def run(
 ) -> dict:
     graph = load_graph(connectome, seed)
     if steps is None:
-        steps = 300 if graph.n < 1000 else 180
+        steps = 300 if graph.n < 1000 else 500
     if warmup is None:
-        warmup = min(40, max(10, steps // 8))
+        warmup = min(50, max(10, steps // 8))
     params = LIFParams(dt=1.0)
-    net = LIFNetwork(graph, params=params, seed=seed)
+    net = MixedDynamicsNetwork(graph, params=params, seed=seed)
     circuit = WalkingCircuit(graph)
     dng100 = circuit.indices("DNg100")
     source = "experiment.optogenetic.DNg100"
