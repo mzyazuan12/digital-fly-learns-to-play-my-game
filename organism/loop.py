@@ -102,6 +102,11 @@ class SensorimotorLoop:
                 flight_drive=self.physiology.state.flight_drive,
             )
         command = self.bridge.read(counts, duration_s, **read_kwargs)
+        if fly.motor_mode is MotorMode.NEURAL_CPG:
+            # Phase/timing is VNC CPG observation. Do not run PreprogrammedSteps.
+            command.left = 0.0
+            command.right = 0.0
+            command.mode = "rest"
         fly.physiology.state.walking_drive = float(command.locomotor_drive)
         fly.motor_report = command_for_mode(
             fly.motor_mode,

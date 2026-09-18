@@ -318,6 +318,34 @@ class MotorBridge:
             maps_to="observe_only",
             literature="Pugliese et al. 2025: I1 (IN16B036)",
         )
+        self.cpg_i2 = self._resolve(
+            "cpg_I2",
+            ("IN19A007",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025: I2 (IN19A007)",
+        )
+        self.cpg_e3 = self._resolve(
+            "cpg_E3",
+            ("IN19B012",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025: E3 (IN19B012)",
+        )
+        self.cpg_e4 = self._resolve(
+            "cpg_E4",
+            ("IN03A006",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025: E4 (IN03A006) DNb08 relay",
+        )
+        self.cpg_e5 = self._resolve(
+            "cpg_E5",
+            ("INXXX464",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025 published: E5 (INXXX464)",
+        )
         self.forward_walk_indices = self.circuit.forward_walk_indices
         if self.forward_walk_indices.size == 0:
             self.forward_walk_indices = self.walk_indices

@@ -326,6 +326,10 @@ class VirtualFly:
             "E1": self.bridge.cpg_e1,
             "E2": self.bridge.cpg_e2,
             "I1": self.bridge.cpg_i1,
+            "I2": self.bridge.cpg_i2,
+            "E3": self.bridge.cpg_e3,
+            "E4": self.bridge.cpg_e4,
+            "E5": self.bridge.cpg_e5,
             "steer_left": self.bridge.steer_left,
             "steer_right": self.bridge.steer_right,
         }

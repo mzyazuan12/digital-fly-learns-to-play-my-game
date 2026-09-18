@@ -175,8 +175,13 @@ def command_for_mode(
 
     MODE_ENGINEERED_CPG: FlyGym CPG amplitudes from descending rates.
     MODE_HYBRID_VNC: CPG still executes; MN rates are logged beside it.
-    MODE_NEURAL_MOTOR: reserved; still uses CPG until muscle actuation exists.
+    MODE_NEURAL_CPG: timing is the per-leg E1/E2/I1 motif; joints are not
+    actuated from that motif yet, and FlyGym PreprogrammedSteps is not the
+    walk generator.
+    MODE_NEURAL_MOTOR: reserved; muscle actuation does not exist yet.
     """
+    neural_cpg = mode is MotorMode.NEURAL_CPG
+    neural_motor = mode is MotorMode.NEURAL_MOTOR
     return {
         "motor_mode": mode.value,
         "motor_fidelity_level": motor_fidelity_level(mode),
@@ -185,6 +190,8 @@ def command_for_mode(
         "body_mode": walk_mode,
         "mn_n": len(mn_activity),
         "mn_active": int(sum(1 for row in mn_activity if row.get("hz", 0) > 0.2)),
-        "legs_still_cpg": mode != MotorMode.NEURAL_MOTOR,
+        "legs_still_cpg": mode in (MotorMode.ENGINEERED_CPG, MotorMode.HYBRID_VNC),
+        "neural_cpg_timing": neural_cpg or neural_motor,
+        "joints_from_neural_cpg": False,
         "neural_motor_ready": False,
     }
