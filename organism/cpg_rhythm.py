@@ -141,12 +141,21 @@ def population_signal(net, indices: np.ndarray) -> float:
 class RhythmRecording:
     t_ms: np.ndarray
     dng100: np.ndarray
+    dng100_v: np.ndarray
     legs: dict[str, dict[str, np.ndarray]]
 
     def summary(self, dt_ms: float, stim_onset_ms: float) -> dict:
         stim = self.t_ms >= stim_onset_ms
+        dng_spikes = _window_score(self.dng100, stim, dt_ms)
+        dng_v = self.dng100_v[stim] if stim.size == self.dng100_v.size and np.any(stim) else self.dng100_v
         report = {
-            "DNg100": _window_score(self.dng100, stim, dt_ms),
+            "DNg100": dng_spikes,
+            "DNg100_v": {
+                "mean": float(dng_v.mean()) if dng_v.size else 0.0,
+                "std": float(dng_v.std()) if dng_v.size else 0.0,
+                "min": float(dng_v.min()) if dng_v.size else 0.0,
+                "max": float(dng_v.max()) if dng_v.size else 0.0,
+            },
             "legs": {},
         }
         any_osc = False
@@ -174,7 +183,11 @@ class RhythmRecording:
         return report
 
     def previews(self) -> dict:
-        out = {"DNg100": downsample_preview(self.dng100), "legs": {}}
+        out = {
+            "DNg100": downsample_preview(self.dng100),
+            "DNg100_v": downsample_preview(self.dng100_v),
+            "legs": {},
+        }
         for slot, traces in self.legs.items():
             out["legs"][slot] = {role: downsample_preview(tr) for role, tr in traces.items()}
         return out
