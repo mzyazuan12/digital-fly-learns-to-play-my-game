@@ -1,8 +1,8 @@
 """Measure whether identified VNC CPG cells oscillate.
 
 This is a readout. It does not retune weights, time constants, or the
-graph when the trace is tonic. Published walking rhythms are ~7–15 Hz
-(Pugliese et al. 2025). The score is compared to that paper's 0.5
+graph when the trace is tonic. The Pugliese et al. 2025 bioRxiv walking
+rhythms are ~7–15 Hz. The score is compared to that preprint's 0.5
 threshold; failing it is a dynamics result, not a reason to edit anatomy.
 """
 
