@@ -34,7 +34,13 @@ import json
 import numpy as np
 
 from flybrain.loader import Connectome
-from organism.config import LEGACY_SCAFFOLD
+from organism.config import (
+    LEGACY_SCAFFOLD,
+    MOTOR_FIDELITY_LEVEL,
+    ModelPolicy,
+    active_policy,
+    motor_fidelity_level,
+)
 
 
 # Documented expected body IDs in MaleCNS v1.0 (uint64). Used for provenance,
@@ -76,6 +82,10 @@ class MotorCommand:
     scaffold_used: bool = False
     walk_trace: float = 0.0
     neural_only: bool = True
+    walking_gate: float = 0.0
+    previous_gate: float = 0.0
+    controller_activation: float = 0.0
+    motor_fidelity_level: int = MOTOR_FIDELITY_LEVEL
 
 
 def _norm_side(value: object) -> str:
@@ -124,14 +134,27 @@ class MotorBridge:
     # timescale — not a 2–5 s walking-bout scheduler.
     RATE_TAU_S = 0.08
 
-    def __init__(self, connectome: Connectome, *, legacy_scaffold: bool | None = None):
+    def __init__(
+        self,
+        connectome: Connectome,
+        *,
+        legacy_scaffold: bool | None = None,
+        policy: ModelPolicy | None = None,
+    ):
         self.connectome = connectome
         self.legacy_scaffold = LEGACY_SCAFFOLD if legacy_scaffold is None else bool(legacy_scaffold)
+        self.policy = policy or active_policy(legacy_scaffold=self.legacy_scaffold)
         self.pathways: list[Pathway] = []
+        self.last_trace: dict = {}
+        self._walk_afferent_ready = False
+        self._walk_pre = np.zeros(0, dtype=np.int32)
+        self._walk_post = np.zeros(0, dtype=np.int32)
+        self._walk_edge = np.zeros(0, dtype=np.int32)
         self.notes: dict = {
             "engineered_gain": True,
             "not_motor_neuron_control": True,
             "legacy_scaffold": self.legacy_scaffold,
+            "policy": self.policy.as_dict(),
             "walk_authority": "legacy_bout_timer" if self.legacy_scaffold else "identified_dn_rates",
         }
         self.walk_trace = 0.0
@@ -277,7 +300,20 @@ class MotorBridge:
         grooming_drive: float = 0.0,
         flight_drive: float = 0.0,
         graded_output: np.ndarray | None = None,
+        net=None,
+        *,
+        external_command: str = "NONE",
+        developer_override: str = "NONE",
+        privileged_observation: str = "NONE",
+        motor_mode: str = "MODE_ENGINEERED_CPG",
     ) -> MotorCommand:
+        if not self.policy.allow_behavior_timers:
+            walking_bout_s = 0.0
+        if not self.policy.allow_motor_fallbacks:
+            walking_drive = 0.0
+            grooming_drive = 0.0
+            flight_drive = 0.0
+
         walk_hz = _group_rate(counts, self.walk_indices, duration_s)
         left_hz = _group_rate(counts, self.steer_left, duration_s)
         right_hz = _group_rate(counts, self.steer_right, duration_s)
@@ -289,6 +325,7 @@ class MotorBridge:
         if graded_output is not None and self.walk_indices.size:
             walk_hz = max(walk_hz, 40.0 * float(np.mean(graded_output[self.walk_indices])))
 
+        previous_gate = float(np.clip(0.08 * self.walk_trace, 0.0, 1.0))
         dt = max(float(duration_s), 1e-4)
         alpha = float(1.0 - np.exp(-dt / self.RATE_TAU_S))
         self.walk_trace += alpha * (walk_hz - self.walk_trace)
@@ -300,7 +337,7 @@ class MotorBridge:
         speed = float(np.clip(0.08 * self.walk_trace, 0.0, 1.2))
         if self.reverse_trace > self.walk_trace and self.reverse_trace > 2.0:
             speed = -float(np.clip(0.15 * self.reverse_trace, 0.0, 0.8))
-        elif self.legacy_scaffold and walking_bout_s > 0.05:
+        elif self.legacy_scaffold and self.policy.allow_behavior_timers and walking_bout_s > 0.05:
             speed = max(float(speed), float(np.clip(0.85 * walking_drive, 0.0, 1.15)))
             scaffold_used = True
         steer = float(np.clip(0.08 * (self.steer_r_trace - self.steer_l_trace), -0.8, 0.8))
@@ -309,7 +346,7 @@ class MotorBridge:
 
         want_fly = False
         want_groom = False
-        if self.legacy_scaffold:
+        if self.legacy_scaffold and self.policy.allow_motor_fallbacks:
             want_fly = flight_drive > 0.55 and walking_bout_s <= 0.05 and walking_drive < 0.42
             want_groom = grooming_drive > 0.55 and walking_bout_s <= 0.05 and walking_drive < 0.35
             if want_fly or want_groom:
@@ -331,6 +368,10 @@ class MotorBridge:
         used = tuple(
             p.name for p in self.pathways if p.indices.size and _group_rate(counts, p.indices, duration_s) > 0.2
         )
+        gate = float(np.clip(abs(speed), 0.0, 1.0))
+        fidelity = motor_fidelity_level(
+            motor_mode, identified_dns=self.notes.get("fallback") == "identified_types"
+        )
         cmd = MotorCommand(
             left=left,
             right=right,
@@ -344,6 +385,194 @@ class MotorBridge:
             scaffold_used=scaffold_used,
             walk_trace=float(self.walk_trace),
             neural_only=not scaffold_used,
+            walking_gate=gate,
+            previous_gate=previous_gate,
+            controller_activation=gate,
+            motor_fidelity_level=fidelity,
         )
         self.last_command = cmd
+        self.last_trace = self.build_trace(
+            cmd,
+            counts=counts,
+            duration_s=duration_s,
+            net=net,
+            walking_bout_s=walking_bout_s,
+            external_command=external_command,
+            developer_override=developer_override,
+            privileged_observation=privileged_observation,
+        )
         return cmd
+
+    def cell_label(self, index: int) -> str:
+        ct = str(self.connectome.cell_type[index] or "") or f"body{int(self.connectome.neuron_ids[index])}"
+        side = _norm_side(self.connectome.side[index])
+        return f"{ct}_{side}" if side else ct
+
+    def identified_rates(self, counts: np.ndarray, duration_s: float) -> dict[str, float]:
+        keys = (
+            ("DNp09", "L"),
+            ("DNp09", "R"),
+            ("DNa01", "L"),
+            ("DNa01", "R"),
+            ("DNa02", "L"),
+            ("DNa02", "R"),
+        )
+        out: dict[str, float] = {}
+        for typename, side in keys:
+            idx = _side_filter(self.connectome, _lookup_type(self.connectome, typename), side)
+            out[f"{typename}_{side}"] = _group_rate(counts, idx, duration_s)
+        return out
+
+    def _ensure_walk_afferents(self) -> None:
+        if self._walk_afferent_ready:
+            return
+        self._walk_afferent_ready = True
+        if not self.walk_indices.size:
+            return
+        n = self.connectome.n
+        walk_set = np.zeros(n, dtype=bool)
+        walk_set[self.walk_indices] = True
+        mask = walk_set[self.connectome.post]
+        if not np.any(mask):
+            return
+        degrees = np.diff(self.connectome.pre_ptr).astype(np.int32)
+        pre = np.repeat(np.arange(n, dtype=np.int32), degrees)
+        self._walk_pre = pre[mask]
+        self._walk_post = self.connectome.post[mask].astype(np.int32)
+        self._walk_edge = np.flatnonzero(mask).astype(np.int32)
+
+    def why_walk_active(self, net, top_k: int = 8) -> dict:
+        """Presynaptic / modulatory contributors onto DNp09 this window."""
+        cells = []
+        for i in self.walk_indices.tolist():
+            cells.append(
+                {
+                    "index": int(i),
+                    "label": self.cell_label(i),
+                    "body_id": int(self.connectome.neuron_ids[i]),
+                    "v": float(net.v[i]),
+                    "g": float(net.g[i]),
+                    "drive": float(net.drive[i]),
+                    "spiked": bool(net.last_spikes[i]),
+                    "graded_output": float(net.graded_output[i]),
+                    "silent": bool(net.silent[i]),
+                }
+            )
+        afferents: list[dict] = []
+        if net is not None:
+            self._ensure_walk_afferents()
+            if self._walk_pre.size:
+                activity = net.last_spikes.astype(np.float32)
+                activity = np.maximum(activity, net.graded_output)
+                contrib = activity[self._walk_pre] * net.weight[self._walk_edge]
+                order = np.argsort(np.abs(contrib))[::-1]
+                kept = 0
+                for j in order.tolist():
+                    amp = float(contrib[j])
+                    if abs(amp) < 1e-6:
+                        break
+                    pre = int(self._walk_pre[j])
+                    afferents.append(
+                        {
+                            "pre": pre,
+                            "pre_label": self.cell_label(pre),
+                            "pre_type": str(self.connectome.cell_type[pre] or ""),
+                            "pre_superclass": str(self.connectome.superclass[pre] or ""),
+                            "post": int(self._walk_post[j]),
+                            "post_label": self.cell_label(int(self._walk_post[j])),
+                            "contribution": amp,
+                            "pre_spiked": bool(net.last_spikes[pre]),
+                            "pre_graded": float(net.graded_output[pre]),
+                            "pre_drive": float(net.drive[pre]),
+                        }
+                    )
+                    kept += 1
+                    if kept >= top_k:
+                        break
+        return {
+            "cells": cells,
+            "afferents": afferents,
+            "drive_sources": dict(getattr(net, "drive_sources", {}) or {}),
+        }
+
+    def build_trace(
+        self,
+        cmd: MotorCommand,
+        *,
+        counts: np.ndarray,
+        duration_s: float,
+        net=None,
+        walking_bout_s: float = 0.0,
+        external_command: str = "NONE",
+        developer_override: str = "NONE",
+        privileged_observation: str = "NONE",
+    ) -> dict:
+        rates = self.identified_rates(counts, duration_s)
+        t_s = float(getattr(net, "sim_ms", 0.0) or 0.0) / 1000.0
+        bout = "NONE" if (not self.policy.allow_behavior_timers or walking_bout_s <= 0.0) else f"{walking_bout_s:.3f} s"
+        why = self.why_walk_active(net) if net is not None else {"cells": [], "afferents": [], "drive_sources": {}}
+        result = {
+            "t_s": t_s,
+            "external_command": external_command,
+            "behavior_timer": bout,
+            "developer_override": developer_override,
+            "privileged_observation": privileged_observation,
+            "rates_hz": rates,
+            "walking_gate": cmd.walking_gate,
+            "previous_gate": cmd.previous_gate,
+            "controller_activation": cmd.controller_activation,
+            "mode": cmd.mode,
+            "scaffold_used": cmd.scaffold_used,
+            "neural_only": cmd.neural_only,
+            "motor_fidelity_level": cmd.motor_fidelity_level,
+            "policy": self.policy.name,
+            "n_spike_events": int(getattr(net, "last_n_spike_events", 0) or 0),
+            "n_graded_deliveries": int(getattr(net, "last_n_graded_deliveries", 0) or 0),
+            "why_dnp09": why,
+        }
+        result["text"] = format_walk_trace(result)
+        return result
+
+
+def format_walk_trace(trace: dict) -> str:
+    rates = trace.get("rates_hz") or {}
+
+    def hz(name: str) -> str:
+        return f"{float(rates.get(name, 0.0)):6.1f} Hz"
+
+    lines = [
+        "WALK INITIATION TRACE",
+        "",
+        f"t = {float(trace.get('t_s', 0.0)):.3f} s",
+        "",
+        f"External command:       {trace.get('external_command', 'NONE')}",
+        f"Behavior timer:         {trace.get('behavior_timer', 'NONE')}",
+        f"Developer override:     {trace.get('developer_override', 'NONE')}",
+        f"Privileged observation: {trace.get('privileged_observation', 'NONE')}",
+        "",
+        f"DNp09_L:       {hz('DNp09_L').strip()}",
+        f"DNp09_R:       {hz('DNp09_R').strip()}",
+        f"DNa01_L:       {hz('DNa01_L').strip()}",
+        f"DNa01_R:       {hz('DNa01_R').strip()}",
+        "",
+        f"Walking gate:           {float(trace.get('walking_gate', 0.0)):.2f}",
+        f"Previous gate:          {float(trace.get('previous_gate', 0.0)):.2f}",
+        "",
+        f"Controller activation:  {float(trace.get('controller_activation', 0.0)):.2f}",
+        f"Motor fidelity:         level {int(trace.get('motor_fidelity_level', 1))}",
+        "",
+        "Result:",
+        str(trace.get("mode", "rest")).upper(),
+    ]
+    why = trace.get("why_dnp09") or {}
+    afferents = why.get("afferents") or []
+    if afferents:
+        lines += ["", "Why is DNp09 active?"]
+        for row in afferents:
+            lines.append(f"← {row.get('pre_label') or row.get('pre_type') or row.get('pre')}")
+    sources = why.get("drive_sources") or {}
+    if sources:
+        lines += ["", "Drive sources:"]
+        for name in sources:
+            lines.append(f"← {name}")
+    return "\n".join(lines) + "\n"

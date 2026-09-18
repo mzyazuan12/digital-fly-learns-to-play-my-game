@@ -4,11 +4,20 @@ Connectivity is biological. Dynamics are an engineering model.
 
 Weights are factored so learning cannot overwrite anatomy:
 
-    weight = anatomical * functional_gain * (1 + plastic_component) * sign * contact_gain
+    effective_weight =
+        anatomical_weight
+        * baseline_physiological_gain   # functional_gain; not learned
+        * plastic_factor                # 1 + plastic_component; learned
+        * sign
+        * contact_gain
 
-Many VNC walking premotor neurons are nonspiking in insects. Those cells
-use graded/rate output; the rest use current-based LIF (ASSUMED identical
-constants unless a class-specific table says otherwise).
+Two propagation paths. Event-driven spike delivery is not enough:
+
+    SPIKING  membrane → threshold → spike → synapses
+    GRADED   membrane → continuous output → synapses
+
+A graded cell that never sets spiked=True must still influence downstream
+cells, otherwise mixed neuron types are computationally dead.
 
 Injected current is tagged by source so spontaneous activity is inspectable.
 """
@@ -46,14 +55,22 @@ class LIFNetwork:
         self.edge_sign = connectome.sign.astype(np.float32)
         # Physiological efficacy. Not overwritten by learning.
         self.functional_gain = np.ones(connectome.n_edges, dtype=np.float32)
-        # Associative / experience-dependent component. Starts at 0.
+        # Associative / experience-dependent delta. Anatomical weights stay frozen.
+        # plastic_factor = 1 + plastic_component (starts at 1.0).
         self.plastic_component = np.zeros(connectome.n_edges, dtype=np.float32)
         self.is_graded = self.models.graded_mask().astype(bool)
         self.silent = np.zeros(n, dtype=bool)
         self.kind_provenance = self.models.provenance
         self.efficacy = np.ones(connectome.n_edges, dtype=np.float32)
         self._rebuild_weights()
-        self.v = np.full(n, p.v_rest, dtype=np.float32)
+        # Birth scatter. ASSUMED. ±1.5 mV is well below (v_th − v_rest) = 7 mV,
+        # so this desynchronizes the network; it is not a walk initiator.
+        self.v_init_noise_std = 1.5
+        self.v_init_noise_provenance = ParameterProvenance.ASSUMED.value
+        self.v = (
+            np.float32(p.v_rest)
+            + np.float32(self.v_init_noise_std) * self.rng.standard_normal(n).astype(np.float32)
+        )
         self.g = np.zeros(n, dtype=np.float32)
         self.drive = np.zeros(n, dtype=np.float32)
         self.refractory = np.zeros(n, dtype=np.int16)
@@ -76,10 +93,21 @@ class LIFNetwork:
         self.post_trace = np.zeros(n, dtype=np.float32)
         self.graded_output = np.zeros(n, dtype=np.float32)
         self.drive_sources: dict[str, float] = {}
+        self.last_n_spike_events = 0
+        self.last_n_graded_deliveries = 0
+        self.last_n_graded_considered = 0
         # Small membrane noise. ASSUMED; purpose: documented channel noise,
         # not a hidden walk timer. Inspectable via drive_sources.
         self.intrinsic_noise_std = 0.35
         self.intrinsic_noise_provenance = ParameterProvenance.ASSUMED.value
+
+    @property
+    def baseline_physiological_gain(self) -> np.ndarray:
+        return self.functional_gain
+
+    @property
+    def plastic_factor(self) -> np.ndarray:
+        return 1.0 + self.plastic_component
 
     def _rebuild_weights(self) -> None:
         gain = np.float32(self.params.contact_gain)
@@ -102,6 +130,9 @@ class LIFNetwork:
         self.post_trace.fill(0)
         self.graded_output.fill(0)
         self.drive_sources = {}
+        self.last_n_spike_events = 0
+        self.last_n_graded_deliveries = 0
+        self.last_n_graded_considered = 0
         if clear_plasticity:
             self.plastic_component.fill(0.0)
             self._rebuild_weights()
@@ -179,6 +210,7 @@ class LIFNetwork:
                 spiked.tolist()
             )
         due = self.queue[self.cursor % self.queue_len]
+        self.last_n_spike_events = len(due)
         if due:
             self._deliver(due)
             self.queue[self.cursor % self.queue_len] = []
@@ -187,6 +219,8 @@ class LIFNetwork:
             self._deliver_graded(graded)
         else:
             self.graded_output.fill(0)
+            self.last_n_graded_deliveries = 0
+            self.last_n_graded_considered = 0
         if spiked.size:
             self.v[spiked] = self.v_rest
             self.g[spiked] = 0
@@ -223,20 +257,31 @@ class LIFNetwork:
                 np.add.at(g, targets[live], w[live])
 
     def _deliver_graded(self, cells: np.ndarray) -> None:
-        """Analog output from nonspiking cells. LITERATURE_DERIVED for VNC premotor."""
-        # Squashing around rest: subthreshold depolarization becomes a rate.
+        """Continuous synaptic output from nonspiking cells.
+
+        Zero at rest so a silent graded neuron does not leak 0.5×weight every
+        tick. Depolarization maps linearly onto (0, 1]. LITERATURE_DERIVED
+        as a class (insect VNC premotor), ASSUMED as a numeric squash.
+        """
         scale = np.float32(4.0)
-        raw = (self.v[cells] - self.v_rest) / scale
-        out = 1.0 / (1.0 + np.exp(-raw))
+        out = np.clip((self.v[cells] - self.v_rest) / scale, 0.0, 1.0)
         self.graded_output.fill(0)
         self.graded_output[cells] = out.astype(np.float32)
+        self.last_n_graded_considered = int(cells.size)
+        active = out >= np.float32(1e-3)
+        if not np.any(active):
+            self.last_n_graded_deliveries = 0
+            return
+        cells = cells[active]
+        out = out[active]
+        self.last_n_graded_deliveries = int(cells.size)
         g = self.g
         post = self.post
         weight = self.weight
         ptr = self.ptr
         silent = self.silent
         for i, amp in zip(cells.tolist(), out.tolist()):
-            if silent[i] or amp < 1e-3:
+            if silent[i]:
                 continue
             start = int(ptr[i])
             end = int(ptr[i + 1])

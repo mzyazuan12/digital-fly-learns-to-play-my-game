@@ -12,9 +12,10 @@ rescue a silent fly.
 from __future__ import annotations
 
 import os
+from dataclasses import asdict, dataclass
 from enum import Enum
 
-MODEL_VERSION = "0.3.0"
+MODEL_VERSION = "0.3.1"
 
 # Birth means: instantiate a NEW persistent digital individual from measured
 # anatomy, initialize uncertain physiology explicitly, and let subsequent
@@ -47,16 +48,80 @@ class MotorMode(str, Enum):
     NEURAL_MOTOR = "MODE_NEURAL_MOTOR"
 
 
+@dataclass(frozen=True)
+class ModelPolicy:
+    """What the organism is allowed to use to produce behavior.
+
+    The CPG leg controller is scaffolding. The decision to engage it is not.
+    """
+
+    allow_behavior_timers: bool = False
+    allow_motor_fallbacks: bool = False
+    allow_named_gait_commands: bool = False
+    allow_root_motion: bool = False
+    allow_privileged_world_state: bool = False
+    allow_pretrained_low_level_gait: bool = True
+    name: str = "NO_SCAFFOLD"
+
+    def as_dict(self) -> dict:
+        return asdict(self)
+
+
+NO_SCAFFOLD = ModelPolicy()
+LEGACY_POLICY = ModelPolicy(
+    allow_behavior_timers=True,
+    allow_motor_fallbacks=True,
+    allow_named_gait_commands=True,
+    allow_root_motion=False,
+    allow_privileged_world_state=True,
+    allow_pretrained_low_level_gait=True,
+    name="LEGACY_SCAFFOLD",
+)
+
+
+def active_policy(*, legacy_scaffold: bool | None = None) -> ModelPolicy:
+    if legacy_scaffold is None:
+        legacy_scaffold = LEGACY_SCAFFOLD
+    return LEGACY_POLICY if legacy_scaffold else NO_SCAFFOLD
+
+
+# How far descending activity is from muscles.
+#   0  handwritten left/right → CPG
+#   1  identified descending neurons → CPG          ← current default
+#   2  DN → VNC populations → CPG
+#   3  VNC → identified motor neurons → muscle groups
+#   4  MNs → individual muscle dynamics → FlyBody
+MOTOR_FIDELITY_LEVEL = 1
+
+
+def motor_fidelity_level(mode: MotorMode | str, *, identified_dns: bool = True) -> int:
+    if isinstance(mode, str):
+        mode = MotorMode(mode)
+    if mode is MotorMode.NEURAL_MOTOR:
+        return 3
+    if mode is MotorMode.HYBRID_VNC:
+        return 2
+    return 1 if identified_dns else 0
+
+
 from flybrain.neuron_model import NeuronKind, ParameterProvenance
 
 DEFAULT_MOTOR_MODE = MotorMode.ENGINEERED_CPG
+DEFAULT_POLICY = NO_SCAFFOLD
 
 __all__ = [
     "MODEL_VERSION",
     "BIRTH_DEFINITION",
     "LEGACY_SCAFFOLD",
+    "ModelPolicy",
+    "NO_SCAFFOLD",
+    "LEGACY_POLICY",
+    "active_policy",
+    "MOTOR_FIDELITY_LEVEL",
+    "motor_fidelity_level",
     "MotorMode",
     "ParameterProvenance",
     "NeuronKind",
     "DEFAULT_MOTOR_MODE",
+    "DEFAULT_POLICY",
 ]
