@@ -348,7 +348,11 @@ def contacts_pair(connectome: Connectome, pre_i: int, post_i: int) -> int:
     return int(connectome.anatomical[start:end][mask].sum())
 
 
-def _try_soma_xyz() -> dict | None:
+def _try_soma_xyz(connectome: Connectome | None = None) -> dict | None:
+    if connectome is not None:
+        dataset = str((connectome.report or {}).get("dataset_id", "")).lower()
+        if connectome.n < 10_000 and "malecns" not in dataset:
+            return None
     try:
         from organism.soma import load_soma_xyz
 
@@ -568,7 +572,7 @@ class WalkingCircuit:
         self.halt_indices = self._union(("foxglove", "bluebell", "brake"))
         self.cpg_core_indices = self._union(("E1", "E2", "I1"))
         self.dnb08_motif_indices = self._union(("E4", "E5", "E1", "E2", "I2"))
-        self.soma = _try_soma_xyz()
+        self.soma = _try_soma_xyz(connectome)
         self.legs = self._assign_legs()
 
     def _union(self, names: tuple[str, ...]) -> np.ndarray:
