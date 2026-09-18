@@ -61,8 +61,10 @@ The anatomically detailed body is FlyGym 2.x `FlyBody`. There is no
 decorative-mesh fallback for walking. Mock unicycle trajectories are not
 FlyBody results. The HybridTurningController is an engineered VNC/muscle
 surrogate (`MODE_ENGINEERED_CPG`), not recovered motor circuitry.
-`MODE_HYBRID_VNC` and `MODE_NEURAL_MOTOR` exist so we can replace CPG
-outputs with motor-neuron activity without doing it all at once.
+`MODE_HYBRID_VNC`, `MODE_NEURAL_CPG`, and `MODE_NEURAL_MOTOR` exist so we
+can replace FlyGym CPG outputs with identified VNC rhythm and then
+motor-neuron activity without doing it all at once. `MODE_NEURAL_CPG`
+does not move joints yet.
 
 ## MaleCNS files
 

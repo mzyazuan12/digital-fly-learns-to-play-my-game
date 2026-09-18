@@ -18,7 +18,7 @@ def test_toy_resolves_walking_command_dns_and_cpg():
     graph = miniature_connectome(1)
     circuit = WalkingCircuit(graph)
     catalog = circuit.catalog()
-    for name in ("DNp09", "DNg100", "DNb08", "oDN1", "DNa01", "DNa02", "bluebell", "brake", "E1", "E2", "I1"):
+    for name in ("DNp09", "DNg100", "DNb08", "oDN1", "DNa01", "DNa02", "bluebell", "brake", "E1", "E2", "I1", "E5"):
         assert catalog[name]["resolved"], name
     assert catalog["foxglove"]["resolved"] is False
     assert catalog["MDN"]["resolved"] is False
