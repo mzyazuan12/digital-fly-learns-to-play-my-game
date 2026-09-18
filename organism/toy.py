@@ -63,6 +63,68 @@ def miniature_connectome(seed: int = 0) -> Connectome:
     pre = np.concatenate([pre, premotor])
     post = np.concatenate([post, motor])
     weight = np.concatenate([weight, np.full(premotor.size, 12, dtype=np.uint32)])
+    # Published walking CPG (Pugliese 2025), miniature and labeled — not MaleCNS.
+    # DNg100 → E1; E1↔E2; E1/E2→I1; I1⊣E1/E2; E1/E2→MN. DNp09 can recruit DNg100.
+    dng100 = np.array([88, 89], dtype=np.uint32)
+    e1 = np.array([93], dtype=np.uint32)
+    e2 = np.array([94], dtype=np.uint32)
+    i1 = np.array([95], dtype=np.uint32)
+    odn1 = np.array([90], dtype=np.uint32)
+    dnb08 = np.array([91], dtype=np.uint32)
+    bluebell = np.array([92], dtype=np.uint32)
+    brake = np.array([96, 97], dtype=np.uint32)
+    pre = np.concatenate(
+        [
+            pre,
+            np.array([32, 33], dtype=np.uint32),  # DNp09 → DNg100
+            np.repeat(dng100, 2),  # DNg100 → E1, E2
+            e1,
+            e2,  # E1 ↔ E2
+            e1,
+            e2,  # E1/E2 → I1
+            np.repeat(i1, 2),  # I1 ⊣ E1, E2
+            np.repeat(e1, 2),
+            np.repeat(e2, 2),  # CPG → MN
+            odn1,  # oDN1 → E1
+            dnb08,  # DNb08 weakly → E1
+            bluebell,  # Bluebell ⊣ oDN1
+            dng100,
+            dng100,  # local recurrence so tonic current spikes
+        ]
+    )
+    post = np.concatenate(
+        [
+            post,
+            dng100,
+            np.tile(np.array([93, 94], dtype=np.uint32), 2),
+            e2,
+            e1,
+            i1,
+            i1,
+            np.array([93, 94], dtype=np.uint32),
+            motor[:2],
+            motor[2:4],
+            e1,
+            e1,
+            odn1,
+            dng100,
+        ]
+    )
+    weight = np.concatenate(
+        [
+            weight,
+            np.full(2, 16, dtype=np.uint32),
+            np.full(4, 20, dtype=np.uint32),
+            np.full(2, 18, dtype=np.uint32),
+            np.full(2, 12, dtype=np.uint32),
+            np.full(2, 22, dtype=np.uint32),
+            np.full(4, 14, dtype=np.uint32),
+            np.full(1, 10, dtype=np.uint32),
+            np.full(1, 4, dtype=np.uint32),
+            np.full(1, 16, dtype=np.uint32),
+            np.full(2, 24, dtype=np.uint32),
+        ]
+    )
 
     ptr, post, weight = _coo_to_csr(pre, post, weight, n)
 
