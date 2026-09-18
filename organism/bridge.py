@@ -830,7 +830,7 @@ def format_walk_trace(trace: dict) -> str:
             "sensory_input": float(why.get("sensory_input", 0.0) or 0.0),
             "modulation_x": float(why.get("modulation_x", 1.0) or 1.0),
         }
-    width = 43
+    width = 49
 
     def row(left: str, right: str = "") -> str:
         inner = width - 2
