@@ -65,13 +65,6 @@ def miniature_connectome(seed: int = 0) -> Connectome:
     weight = np.concatenate([weight, np.full(premotor.size, 12, dtype=np.uint32)])
     # Published walking CPG (Pugliese 2025), miniature and labeled — not MaleCNS.
     # DNg100 → E1; E1↔E2; E1/E2→I1; I1⊣E1/E2; E1/E2→MN. DNp09 can recruit DNg100.
-    dng100 = np.array([88, 89], dtype=np.uint32)
-    odn1 = np.array([90], dtype=np.uint32)
-    dnb08 = np.array([91], dtype=np.uint32)
-    bluebell = np.array([92], dtype=np.uint32)
-    e1 = np.array([93], dtype=np.uint32)
-    e2 = np.array([94], dtype=np.uint32)
-    i1 = np.array([95], dtype=np.uint32)
     cpg_pre = np.array(
         [
             32, 33,  # DNp09 → DNg100
