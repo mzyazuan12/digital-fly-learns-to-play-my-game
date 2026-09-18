@@ -493,7 +493,7 @@ class WalkingCircuit:
         self.halt_indices = self._union(("foxglove", "bluebell", "brake"))
         self.cpg_core_indices = self._union(("E1", "E2", "I1"))
         self.dnb08_motif_indices = self._union(("E4", "E5", "E1", "E2", "I2"))
-        self.soma = _try_soma_xyz(connectome)
+        self.neuropil_cells = resolve_cpg_cells(connectome) if connectome.n >= 10_000 else {}
         self.legs = self._assign_legs()
 
     def _union(self, names: tuple[str, ...]) -> np.ndarray:
@@ -527,37 +527,39 @@ class WalkingCircuit:
 
     def _assign_legs(self) -> dict[str, LegCPGCopy]:
         connectome = self.connectome
-        soma = self.soma
-        e1_slots = _assign_e1_slots(connectome, self.indices("E1"), soma)
-        role_slots = {"E1": e1_slots}
+        role_slots: dict[str, dict[str, int | None]] = {}
+        role_details: dict[str, dict] = {}
         for role in CPG_ROLES:
-            if role == "E1":
-                continue
-            role_slots[role] = _assign_role_to_e1(
-                connectome,
-                self.indices(role),
-                e1_slots,
-                soma,
-                SIDE_SLOTS,
-            )
-        assignment = (
-            "INFERRED somaLocation Z rank within side for E1, then MEASURED "
-            "reciprocal contacts onto that E1 for other CPG types"
+            slots, details = assign_indices(connectome, self.indices(role), self.neuropil_cells)
+            role_slots[role] = slots
+            role_details[role] = details
+        sources_used = sorted(
+            {
+                (details.get(slot).assignment_source if details.get(slot) is not None else "")
+                for details in role_details.values()
+                for slot in LEG_SLOTS
+            }
+            - {""}
         )
-        if self.soma is None:
-            assignment = (
-                "INFERRED: no soma table; ipsilateral rank by body ID, then "
-                "MEASURED contacts onto E1"
-            )
+        assignment = (
+            "MEASURED per-cell T1/T2/T3 × L/R from MaleCNS ROI innervation, "
+            "MN connectivity, or somaNeuromere annotation. Not soma XYZ rank. "
+            f"Sources used: {', '.join(sources_used) or 'none'}."
+        )
+        motor_pool = self._motor_by_slot()
         legs: dict[str, LegCPGCopy] = {}
         for slot in LEG_SLOTS:
             side, neuromere = LEG_LAYOUT[slot]
             cells = {role: role_slots[role].get(slot) for role in CPG_ROLES}
             body_ids: dict[str, int | None] = {}
+            assignment_sources: dict[str, str] = {}
             for role, idx in cells.items():
                 body_ids[role] = int(connectome.neuron_ids[idx]) if idx is not None else None
+                detail = role_details[role].get(slot)
+                assignment_sources[role] = detail.assignment_source if detail is not None else ""
             sources = [idx for idx in (cells.get("E1"), cells.get("E2"), cells.get("E3")) if idx is not None]
-            motor = _motor_targets(connectome, sources, self.vnc_motor, k=8)
+            preferred = motor_pool.get(slot, np.zeros(0, dtype=np.int32))
+            motor = _motor_targets(connectome, sources, preferred if preferred.size else self.vnc_motor, k=8)
             e1, e2 = cells.get("E1"), cells.get("E2")
             rec = 0
             if e1 is not None and e2 is not None:
@@ -571,8 +573,21 @@ class WalkingCircuit:
                 motor_indices=motor,
                 assignment=assignment,
                 e1_e2_contacts=rec,
+                assignment_sources=assignment_sources,
             )
         return legs
+
+    def _motor_by_slot(self) -> dict[str, np.ndarray]:
+        from organism.neuropil import motor_slot_table
+
+        table = motor_slot_table(self.connectome, self.neuropil_cells)
+        buckets: dict[str, list[int]] = {slot: [] for slot in LEG_SLOTS}
+        for idx in self.vnc_motor.tolist():
+            body = int(self.connectome.neuron_ids[int(idx)])
+            slot = table.get(body) or slot_of(_side_of(self.connectome, int(idx)), "")
+            if slot:
+                buckets[slot].append(int(idx))
+        return {slot: np.asarray(idxs, dtype=np.int32) for slot, idxs in buckets.items()}
 
     def indices(self, name: str) -> np.ndarray:
         return self.pathways[name].indices
