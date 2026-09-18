@@ -273,6 +273,8 @@ class MotorBridge:
                 ("DNa01", "R"),
                 ("DNa02", "L"),
                 ("DNa02", "R"),
+                ("MDN", "L"),
+                ("MDN", "R"),
             )
         }
 
@@ -443,10 +445,8 @@ class MotorBridge:
         scaffold_used = False
         # ENGINEERED_NEURAL_MOTOR_INTERFACE: continuous decode, not if rate > 18.
         locomotor_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.walk_trace + analog_walk, 0.0, 1.2))
-        reverse_drive = float(np.clip(0.15 * self.reverse_trace, 0.0, 0.8))
-        speed = locomotor_drive
-        if reverse_drive > locomotor_drive:
-            speed = -reverse_drive
+        reverse_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.reverse_trace, 0.0, 0.8))
+        speed = locomotor_drive - reverse_drive
         if self.legacy_scaffold and self.policy.allow_behavior_timers and walking_bout_s > 0.05:
             speed = max(float(abs(speed)), float(np.clip(0.85 * walking_drive, 0.0, 1.15))) * (
                 -1.0 if speed < 0 else 1.0
@@ -782,6 +782,8 @@ class MotorBridge:
             "neural_sources": {
                 "DNp09_L_hz": float((rates or {}).get("DNp09_L", 0.0)),
                 "DNp09_R_hz": float((rates or {}).get("DNp09_R", 0.0)),
+                "MDN_L_hz": float((rates or {}).get("MDN_L", 0.0)),
+                "MDN_R_hz": float((rates or {}).get("MDN_R", 0.0)),
                 "upstream_input": float(why.get("upstream_input", 0.0) or 0.0),
                 "graded_input": float(why.get("graded_input", 0.0) or 0.0),
                 "sensory_input": float(why.get("sensory_input", 0.0) or 0.0),
@@ -862,6 +864,8 @@ def format_walk_trace(trace: dict) -> str:
         row("Neural sources"),
         row("DNp09 L", f"{float(neural.get('DNp09_L_hz', 0.0)):.1f} Hz"),
         row("DNp09 R", f"{float(neural.get('DNp09_R_hz', 0.0)):.1f} Hz"),
+        row("MDN L", f"{float(neural.get('MDN_L_hz', 0.0)):.1f} Hz"),
+        row("MDN R", f"{float(neural.get('MDN_R_hz', 0.0)):.1f} Hz"),
         row("upstream input", f"{float(neural.get('upstream_input', 0.0)):+.2f}"),
         row("graded input", f"{float(neural.get('graded_input', 0.0)):+.2f}"),
         row("sensory input", f"{float(neural.get('sensory_input', 0.0)):+.2f}"),

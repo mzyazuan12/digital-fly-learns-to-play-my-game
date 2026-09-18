@@ -22,6 +22,7 @@ from organism.toy import miniature_connectome
 from worlds import empty_arena
 
 ROOT = Path(__file__).resolve().parents[1]
+SPAWN = Pose(x_mm=200.0, y_mm=200.0)
 
 
 def malecns_available() -> bool:
@@ -280,6 +281,7 @@ def _compare(trials: dict) -> dict:
         "mean_neural_locomotor_drive",
         "mean_physical_velocity_mm_s",
         "n_walk",
+        "n_reverse",
     )
     out = {k: {name: trial.get(k) for name, trial in trials.items()} for k in keys}
     intact = trials.get("intact") or {}
@@ -348,7 +350,7 @@ def run(
     fly = VirtualFly(graph, seed=seed, legacy_scaffold=False)
     validation = dataset_validation(graph, models=fly.net.models, policy_name=fly.policy.name, net=fly.net)
     print(validation["text"], flush=True)
-    fly.inhabit(empty_arena(), spawn=Pose())
+    fly.inhabit(empty_arena(), spawn=SPAWN)
     out = out or (ROOT / "outputs" / "walking_initiation_no_scaffold.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     ckpt = out.parent / "birth_001"
@@ -365,9 +367,9 @@ def run(
     sham = _sham_indices(fly, sham_n, seed=seed, forbidden=forbidden)
 
     def trial(label: str, indices: np.ndarray | None, steps: int) -> dict:
-        fly.restore_state(ckpt)
+        fly.restore_state(ckpt, pose=SPAWN)
         if fly.body is None or fly.world is None:
-            fly.inhabit(empty_arena(), spawn=Pose())
+            fly.inhabit(empty_arena(), spawn=SPAWN)
         n_lesion = 0 if indices is None else int(indices.size)
         if indices is not None and indices.size:
             fly.net.lesion(indices, silent=True)

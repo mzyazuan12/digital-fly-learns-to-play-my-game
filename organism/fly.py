@@ -545,7 +545,7 @@ class VirtualFly:
         (path / "dataset_validation.txt").write_text(validation["text"])
         return path
 
-    def restore_state(self, path: Path | str) -> None:
+    def restore_state(self, path: Path | str, *, pose: Pose | None = None) -> None:
         """Reload neural/metabolic/learned state without reconstructing the connectome.
 
         Used to fork identical birth checkpoints for lesion trials.
@@ -580,7 +580,8 @@ class VirtualFly:
         self.provenance = ProvenanceLog()
         self.physiology.seconds = 0.0
         if self.body is not None and getattr(self.body, "kind", "") != "neuromechfly":
-            self.body.teleport(Pose())
+            if pose is not None:
+                self.body.teleport(pose)
             if hasattr(self.body, "last_command"):
                 self.body.last_command = np.zeros(2)
             if hasattr(self.body, "last_mode"):
