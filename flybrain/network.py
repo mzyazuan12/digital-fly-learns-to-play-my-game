@@ -138,10 +138,20 @@ class LIFNetwork:
             self._rebuild_weights()
 
     def lesion(self, indices, silent: bool = True) -> None:
-        """Silence identified cells. Restoring them (silent=False) is the control."""
+        """Silence identified cells. Restoring them (silent=False) is the control.
+
+        Silencing blocks spikes and synaptic emission. It does not freeze the
+        membrane at whatever voltage the last bombardment left behind — restore
+        would then be a test of recovery from hyperpolarization, not of the
+        pathway. Restored cells return to rest.
+        """
         idx = np.asarray(indices, dtype=np.int32)
-        if idx.size:
-            self.silent[idx] = bool(silent)
+        if not idx.size:
+            return
+        self.silent[idx] = bool(silent)
+        self.v[idx] = self.v_rest
+        self.g[idx] = 0
+        self.refractory[idx] = 0
 
     def inject(self, indices, current: float, source: str = "inject") -> None:
         idx = np.asarray(indices, dtype=np.int32)
@@ -184,6 +194,9 @@ class LIFNetwork:
         live = (~self.silent) & (self.refractory == 0)
         if np.any(self.refractory > 0):
             self.refractory[self.refractory > 0] -= 1
+        if np.any(self.silent):
+            dead = self.silent
+            self.v[dead] = self.v_rest + (self.v[dead] - self.v_rest) * self.alpha_v
         drive = self.drive
         if self.intrinsic_noise_std > 0:
             noise = (

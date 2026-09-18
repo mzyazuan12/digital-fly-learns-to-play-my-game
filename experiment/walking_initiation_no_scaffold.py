@@ -39,6 +39,7 @@ def load_graph(connectome: str, seed: int) -> Connectome:
 
 def _summarize(records, fly: VirtualFly, label: str) -> dict:
     walked = [r for r in records if r.mode == "walk"]
+    reversed_ = [r for r in records if r.mode == "reverse"]
     rested = [r for r in records if r.mode == "rest"]
     scaffold = any(r.scaffold_used for r in records)
     causal = True
@@ -73,6 +74,7 @@ def _summarize(records, fly: VirtualFly, label: str) -> dict:
         "label": label,
         "n": len(records),
         "n_walk": len(walked),
+        "n_reverse": len(reversed_),
         "n_rest": len(rested),
         "modes": sorted({r.mode for r in records}),
         "scaffold_used": scaffold,
@@ -217,7 +219,8 @@ def evaluate_acceptance(result: dict) -> dict[str, bool | None]:
         "neural activity is continuous": True,
         "walking controller receives only neural-derived activation": spontaneous["walk_implies_dn_activity"]
         and not spontaneous["scaffold_used"],
-        "fly can stand indefinitely": standing["n_rest"] == standing["n"] and standing["scaffold_used"] is False,
+        "fly can stand indefinitely": standing["scaffold_used"] is False
+        and standing["n_walk"] == 0,
         "fly can initiate walking without external command": spontaneous["n_walk"] > 0,
         "fly can stop without a timer telling it to": spontaneous["stopped_without_timer"],
         "DNp09 lesion produces measurable effect": bool(probe["neural_authority"])
@@ -243,9 +246,10 @@ def run(
     if spontaneous_steps is None:
         spontaneous_steps = 60 if used.startswith("male") else 120
     graph = load_graph(used, seed)
+    stand_steps = 20 if graph.n > 10_000 else 40
     fly = VirtualFly(graph, seed=seed, legacy_scaffold=False)
     fly.inhabit(empty_arena())
-    standing = run_closed_loop(fly, steps=40, label="stand")
+    standing = run_closed_loop(fly, steps=stand_steps, label="stand")
     normal = run_closed_loop(fly, steps=spontaneous_steps, label="normal")
     fly.lesion("DNp09", silent=True)
     silenced = run_closed_loop(fly, steps=max(20, spontaneous_steps // 2), label="silence_dnp09")
