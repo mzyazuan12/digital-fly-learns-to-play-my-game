@@ -352,10 +352,18 @@ class MotorBridge:
             for typename, side in (
                 ("DNp09", "L"),
                 ("DNp09", "R"),
+                ("DNg100", "L"),
+                ("DNg100", "R"),
+                ("DNg97", "L"),
+                ("DNg97", "R"),
+                ("DNb08", "L"),
+                ("DNb08", "R"),
                 ("DNa01", "L"),
                 ("DNa01", "R"),
                 ("DNa02", "L"),
                 ("DNa02", "R"),
+                ("DNg60", "L"),
+                ("DNg60", "R"),
                 ("MDN", "L"),
                 ("MDN", "R"),
             )
