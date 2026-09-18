@@ -41,6 +41,9 @@ class StepRecord:
     scaffold_used: bool = False
     motor_mode: str = "MODE_ENGINEERED_CPG"
     motor_fidelity_level: int = 1
+    locomotor_drive: float = 0.0
+    steering_drive: float = 0.0
+    analog_walk: float = 0.0
     notes: str = ""
     developer: bool = False
 
@@ -63,6 +66,9 @@ class StepRecord:
             "scaffold_used": self.scaffold_used,
             "motor_mode": self.motor_mode,
             "motor_fidelity_level": self.motor_fidelity_level,
+            "locomotor_drive": self.locomotor_drive,
+            "steering_drive": self.steering_drive,
+            "analog_walk": self.analog_walk,
             "notes": self.notes,
             "developer": self.developer,
         }
