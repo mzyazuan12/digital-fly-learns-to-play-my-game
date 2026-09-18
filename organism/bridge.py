@@ -473,6 +473,7 @@ class MotorBridge:
 
     def reset_traces(self) -> None:
         self.walk_trace = 0.0
+        self.forward_trace = 0.0
         self.steer_l_trace = 0.0
         self.steer_r_trace = 0.0
         self.reverse_trace = 0.0
@@ -513,6 +514,7 @@ class MotorBridge:
         )
 
         walk_hz = _group_rate(counts, self.walk_indices, duration_s)
+        forward_hz = _group_rate(counts, self.forward_walk_indices, duration_s)
         left_hz = _group_rate(counts, self.steer_left, duration_s)
         right_hz = _group_rate(counts, self.steer_right, duration_s)
         reverse_hz = _group_rate(counts, self.reverse_indices, duration_s)
@@ -522,20 +524,23 @@ class MotorBridge:
         right_hz = right_hz + 0.5 * _group_rate(counts, self.contra_left, duration_s)
         analog = graded_output if graded_output is not None else getattr(net, "graded_release", None)
         analog_walk = 0.0
-        if analog is not None and self.walk_indices.size:
-            analog_walk = float(np.mean(analog[self.walk_indices]))
+        analog_idx = self.forward_walk_indices if self.forward_walk_indices.size else self.walk_indices
+        if analog is not None and analog_idx.size:
+            analog_walk = float(np.mean(analog[analog_idx]))
 
-        previous_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.walk_trace + analog_walk, 0.0, 1.2))
+        previous_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.forward_trace + analog_walk, 0.0, 1.2))
         dt = max(float(duration_s), 1e-4)
         alpha = float(1.0 - np.exp(-dt / self.RATE_TAU_S))
         self.walk_trace += alpha * (walk_hz - self.walk_trace)
+        self.forward_trace += alpha * (forward_hz - self.forward_trace)
         self.steer_l_trace += alpha * (left_hz - self.steer_l_trace)
         self.steer_r_trace += alpha * (right_hz - self.steer_r_trace)
         self.reverse_trace += alpha * (reverse_hz - self.reverse_trace)
 
         scaffold_used = False
         # ENGINEERED_NEURAL_MOTOR_INTERFACE: continuous decode, not if rate > 18.
-        locomotor_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.walk_trace + analog_walk, 0.0, 1.2))
+        # Forward walking DNs: DNp09 + DNg100 + oDN1/DNg97. Still mapped onto FlyGym CPG.
+        locomotor_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.forward_trace + analog_walk, 0.0, 1.2))
         reverse_drive = float(np.clip(SPIKE_HZ_TO_DRIVE * self.reverse_trace, 0.0, 0.8))
         speed = locomotor_drive - reverse_drive
         if self.legacy_scaffold and self.policy.allow_behavior_timers and walking_bout_s > 0.05:
