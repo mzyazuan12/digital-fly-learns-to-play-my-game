@@ -281,6 +281,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"oscillation_reproduced: {result['oscillation_reproduced']}")
     print(f"graph_modified: {result['graph_modified']} dynamics_retuned: {result['dynamics_retuned']}")
     intact = result["conditions"]["intact"]["summary"]
+    dng_v = intact.get("DNg100_v") or {}
+    print(
+        f"DNg100 spikes mean={intact['DNg100'].get('mean'):.3f} "
+        f"V mean={dng_v.get('mean')} min={dng_v.get('min')} max={dng_v.get('max')}"
+    )
     print(f"oscillatory legs: {intact.get('n_oscillatory_legs')} tonic_core: {intact.get('core_tonic_plateau')}")
     for slot in LEG_SLOTS:
         row = (intact.get("legs") or {}).get(slot) or {}
