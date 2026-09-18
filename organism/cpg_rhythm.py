@@ -18,6 +18,8 @@ PUBLISHED_WALK_HZ = (7.0, 15.0)
 SEARCH_BAND_HZ = (5.0, 20.0)
 RHYTHMICITY_THRESHOLD = 0.5
 PREVIEW_POINTS = 60
+# LIF rest is −52 mV. |V| far outside this range is not a walking rhythm.
+EXPLOSION_ABS_MV = 150.0
 
 
 def _autocorr(x: np.ndarray) -> np.ndarray:
@@ -59,6 +61,7 @@ def rhythmicity_score(
         "tonic_plateau": False,
         "silent_or_flat": True,
         "oscillatory": False,
+        "exploding": False,
         "in_published_walk_band": False,
     }
     if x.size < 16:
@@ -71,8 +74,18 @@ def rhythmicity_score(
     out["max"] = float(x.max())
     out["cv"] = float(std / abs(mean)) if abs(mean) > 1e-9 else 0.0
     span = float(x.max() - x.min())
+    finite = np.isfinite(x)
+    exploding = bool(
+        (not np.all(finite))
+        or abs(out["min"]) >= EXPLOSION_ABS_MV
+        or abs(out["max"]) >= EXPLOSION_ABS_MV
+        or (np.isfinite(x).any() and (np.max(np.abs(x[finite])) >= EXPLOSION_ABS_MV))
+    )
+    out["exploding"] = exploding
     flat = std < 1e-8 or span < 1e-8
-    out["silent_or_flat"] = bool(flat)
+    out["silent_or_flat"] = bool(flat and not exploding)
+    if exploding:
+        return out
     if flat:
         out["tonic_plateau"] = bool(mean > 0.25)
         return out
