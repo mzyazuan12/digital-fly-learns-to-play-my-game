@@ -6,11 +6,11 @@ ASSUMPTIONS.md.
 """
 
 from flybrain.loader import Connectome, import_malecns, load_connectome
-from flybrain.mushroom_body import MushroomBodyLearning
 from flybrain.network import LIFNetwork, LIFParams
 from flybrain.neuron_model import NeuronKind, ParameterProvenance
 from flybrain.neurons import NT_SIGN, LIF_PARAMS
 from flybrain.plasticity import RewardModulatedPlasticity
+from flybrain.mushroom_body import MushroomBodyLearning
 
 __all__ = [
     "Connectome",

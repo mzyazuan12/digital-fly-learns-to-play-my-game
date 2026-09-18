@@ -16,7 +16,7 @@ import numpy as np
 
 from flybrain.loader import Connectome
 from flybrain.network import LIFNetwork
-from organism.config import ParameterProvenance
+from flybrain.neuron_model import ParameterProvenance
 
 
 def _lookup_any(connectome: Connectome, *, prefixes: tuple[str, ...], superclasses: tuple[str, ...] = ()) -> np.ndarray:
