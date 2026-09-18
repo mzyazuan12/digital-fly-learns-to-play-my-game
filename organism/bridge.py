@@ -878,6 +878,10 @@ class MotorBridge:
             "neural_sources": {
                 "DNp09_L_hz": float((rates or {}).get("DNp09_L", 0.0)),
                 "DNp09_R_hz": float((rates or {}).get("DNp09_R", 0.0)),
+                "DNg100_L_hz": float((rates or {}).get("DNg100_L", 0.0)),
+                "DNg100_R_hz": float((rates or {}).get("DNg100_R", 0.0)),
+                "oDN1_L_hz": float((rates or {}).get("DNg97_L", 0.0)),
+                "oDN1_R_hz": float((rates or {}).get("DNg97_R", 0.0)),
                 "MDN_L_hz": float((rates or {}).get("MDN_L", 0.0)),
                 "MDN_R_hz": float((rates or {}).get("MDN_R", 0.0)),
                 "upstream_input": float(why.get("upstream_input", 0.0) or 0.0),
@@ -886,6 +890,16 @@ class MotorBridge:
                 "modulation_x": float(why.get("modulation_x", 1.0) or 1.0),
             },
             "why_dnp09": why,
+            "walking_circuit": {
+                "forward_walk_n": int(self.forward_walk_indices.size),
+                "dng100_n": int(self.dng100_indices.size),
+                "odn1_n": int(self.odn1_indices.size),
+                "cpg_e1_n": int(self.cpg_e1.size),
+                "cpg_e2_n": int(self.cpg_e2.size),
+                "cpg_i1_n": int(self.cpg_i1.size),
+                "engineered_cpg_still_executes_joints": True,
+                "neural_vnc_cpg_drives_joints": False,
+            },
         }
         result["text"] = format_walk_trace(result)
         return result
@@ -960,6 +974,10 @@ def format_walk_trace(trace: dict) -> str:
         row("Neural sources"),
         row("DNp09 L", f"{float(neural.get('DNp09_L_hz', 0.0)):.1f} Hz"),
         row("DNp09 R", f"{float(neural.get('DNp09_R_hz', 0.0)):.1f} Hz"),
+        row("DNg100 L", f"{float(neural.get('DNg100_L_hz', 0.0)):.1f} Hz"),
+        row("DNg100 R", f"{float(neural.get('DNg100_R_hz', 0.0)):.1f} Hz"),
+        row("oDN1 L", f"{float(neural.get('oDN1_L_hz', 0.0)):.1f} Hz"),
+        row("oDN1 R", f"{float(neural.get('oDN1_R_hz', 0.0)):.1f} Hz"),
         row("MDN L", f"{float(neural.get('MDN_L_hz', 0.0)):.1f} Hz"),
         row("MDN R", f"{float(neural.get('MDN_R_hz', 0.0)):.1f} Hz"),
         row("upstream input", f"{float(neural.get('upstream_input', 0.0)):+.2f}"),
