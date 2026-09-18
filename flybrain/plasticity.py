@@ -64,9 +64,11 @@ class RewardModulatedPlasticity:
         moved = delta != 0
         if not np.any(moved):
             return 0
-        self.net.efficacy[moved] = np.clip(
-            self.net.efficacy[moved] + delta[moved], p.efficacy_min, p.efficacy_max
+        self.net.plastic_component[moved] = np.clip(
+            self.net.plastic_component[moved] + delta[moved], p.plastic_min if hasattr(p, "plastic_min") else -0.95,
+            p.plastic_max if hasattr(p, "plastic_max") else 4.0,
         )
+        # Keep combined scale in sync for old readers. Anatomy is never written.
         self.net._rebuild_weights()
         self.n_updates += 1
         self.changed_edges = int(np.count_nonzero(np.abs(self.net.efficacy - 1.0) > 1e-6))

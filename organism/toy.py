@@ -1,7 +1,7 @@
 """Miniature annotation-faithful graph for tests. Not MaleCNS.
 
-Cells carry MaleCNS-like type names (DNa02, DNp09, ol_sensory, …) so the
-MotorBridge can resolve the same pathways as on the real connectome.
+Cells carry MaleCNS-like type names so MotorBridge, mushroom-body learning,
+and the motor map resolve the same pathways as on the real connectome.
 
 There is no phototaxis wiring, no contact-avoidance wiring, and no
 anonymous index-range action map. Extra edges are random, not a
@@ -27,14 +27,13 @@ def _coo_to_csr(pre: np.ndarray, post: np.ndarray, weight: np.ndarray, n: int):
     return ptr, post, weight
 
 
-N = 64
+N = 96
 
 
 def miniature_connectome(seed: int = 0) -> Connectome:
     rng = np.random.default_rng(seed)
     n = N
-    # Weak random recurrent graph only. No sensory→DN behavior wiring.
-    extra = 96
+    extra = 120
     pre = rng.integers(0, n, size=extra).astype(np.uint32)
     post = rng.integers(0, n, size=extra).astype(np.uint32)
     weight = rng.integers(1, 12, size=extra).astype(np.uint32)
@@ -43,22 +42,49 @@ def miniature_connectome(seed: int = 0) -> Connectome:
     pre = np.concatenate([pre, dn, dn])
     post = np.concatenate([post, dn, np.roll(dn, 1)])
     weight = np.concatenate([weight, np.full(dn.size * 2, 24, dtype=np.uint32)])
+    # KC → MBON (plastic in mushroom-body learning). Not a motor shortcut.
+    kc = np.arange(60, 68, dtype=np.uint32)
+    mbon = np.array([70, 71], dtype=np.uint32)
+    pre = np.concatenate([pre, np.repeat(kc, mbon.size)])
+    post = np.concatenate([post, np.tile(mbon, kc.size)])
+    weight = np.concatenate([weight, np.full(kc.size * mbon.size, 8, dtype=np.uint32)])
+    # Olfactory/chemo → KC. Sensory representation, not a taxis controller.
+    chemo = np.arange(40, 48, dtype=np.uint32)
+    pre = np.concatenate([pre, np.repeat(chemo, 2)])
+    post = np.concatenate([post, np.tile(kc[:2], chemo.size)])
+    weight = np.concatenate([weight, np.full(chemo.size * 2, 6, dtype=np.uint32)])
+    # DNp09 → VNC premotor. Identified descending path, not a CPG substitute.
+    premotor = np.arange(72, 80, dtype=np.uint32)
+    pre = np.concatenate([pre, np.array([32, 33, 32, 33], dtype=np.uint32)])
+    post = np.concatenate([post, np.array([72, 73, 74, 75], dtype=np.uint32)])
+    weight = np.concatenate([weight, np.full(4, 10, dtype=np.uint32)])
+    # Graded premotor → motor neurons.
+    motor = np.arange(80, 88, dtype=np.uint32)
+    pre = np.concatenate([pre, premotor])
+    post = np.concatenate([post, motor])
+    weight = np.concatenate([weight, np.full(premotor.size, 12, dtype=np.uint32)])
+
     ptr, post, weight = _coo_to_csr(pre, post, weight, n)
 
     cell_type = np.array([f"toy{i}" for i in range(n)], dtype=object)
     superclasses = np.empty(n, dtype=object)
     sides = np.array([""] * n, dtype=object)
+    cell_class = np.array([""] * n, dtype=object)
     superclasses[0:8] = "ol_sensory"
     superclasses[8:16] = "ol_sensory"
     superclasses[16:32] = "vnc_sensory"
     superclasses[32:40] = "descending_neuron"
-    superclasses[40:48] = "cb_sensory"
-    superclasses[48:56] = "cb_sensory"
-    superclasses[56:64] = "cb_intrinsic"
+    superclasses[40:56] = "cb_sensory"
+    superclasses[56:60] = "descending_neuron"
+    superclasses[60:68] = "kenyon_cell"
+    superclasses[68:70] = "dopaminergic"
+    superclasses[70:72] = "mbon"
+    superclasses[72:80] = "vnc_premotor"
+    superclasses[80:88] = "vnc_motor"
+    superclasses[88:96] = "cb_intrinsic"
     sides[0:8] = "L"
     sides[8:16] = "R"
     sides[16:32] = np.array(["L", "R"] * 8)
-    # Identified DN names used by MotorBridge on the real graph too.
     cell_type[32] = "DNp09"
     cell_type[33] = "DNp09"
     sides[32], sides[33] = "L", "R"
@@ -71,19 +97,35 @@ def miniature_connectome(seed: int = 0) -> Connectome:
     cell_type[38] = "DNg13"
     cell_type[39] = "DNg13"
     sides[38], sides[39] = "L", "R"
-    sides[40:48] = np.array(["L", "R"] * 4)
-    sides[48:56] = np.array(["L", "R"] * 4)
-    # Flight / grooming DNs occupy otherwise-silent intrinsic slots.
+    sides[40:56] = np.array(["L", "R"] * 8)
     cell_type[56] = "DNg02"
     cell_type[57] = "DNg02"
-    superclasses[56:58] = "descending_neuron"
     sides[56], sides[57] = "L", "R"
     cell_type[58] = "aDN1"
     cell_type[59] = "aDN1"
-    superclasses[58:60] = "descending_neuron"
     sides[58], sides[59] = "L", "R"
+    for i, idx in enumerate(range(60, 68)):
+        cell_type[idx] = "KC"
+        sides[idx] = "L" if i % 2 == 0 else "R"
+    cell_type[68] = "PAM"
+    cell_type[69] = "PPL1"
+    superclasses[68:70] = "dopaminergic"
+    sides[68], sides[69] = "L", "R"
+    cell_type[70] = "MBON01"
+    cell_type[71] = "MBON02"
+    sides[70], sides[71] = "L", "R"
+    for i, idx in enumerate(range(72, 80)):
+        cell_type[idx] = "premotorIN"
+        cell_class[idx] = "premotor"
+        sides[idx] = "L" if i < 4 else "R"
+    for i, idx in enumerate(range(80, 88)):
+        cell_type[idx] = "MN"
+        cell_class[idx] = "motor"
+        sides[idx] = "L" if i < 4 else "R"
+    cell_class[0:32] = "sensory"
 
     transmitters = np.array(["acetylcholine"] * n, dtype=object)
+    transmitters[68:70] = "dopamine"
     neuron_sign = np.array([nt_sign(name) for name in transmitters], dtype=np.int8)
     sign = np.empty(len(post), dtype=np.int8)
     for i in range(n):
@@ -96,7 +138,7 @@ def miniature_connectome(seed: int = 0) -> Connectome:
         sign=sign,
         superclass=superclasses,
         cell_type=cell_type,
-        cell_class=np.array(["sensory" if i < 32 else "" for i in range(n)], dtype=object),
+        cell_class=cell_class,
         side=sides,
         neurotransmitter=transmitters,
         report={
@@ -106,10 +148,9 @@ def miniature_connectome(seed: int = 0) -> Connectome:
             "learning_demonstrated": False,
             "toy_phototaxis_wiring": False,
             "builder_seed": int(seed),
-            "note": "Type labels mimic MaleCNS so tests hit MotorBridge; wiring is not a behavior.",
+            "note": "Type labels mimic MaleCNS so tests hit MotorBridge/MB/VNC; wiring is not a behavior.",
         },
     )
 
 
-# Back-compat alias used by older imports.
 locomotor_connectome = miniature_connectome

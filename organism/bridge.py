@@ -34,6 +34,7 @@ import json
 import numpy as np
 
 from flybrain.loader import Connectome
+from organism.config import LEGACY_SCAFFOLD
 
 
 # Documented expected body IDs in MaleCNS v1.0 (uint64). Used for provenance,
@@ -72,6 +73,9 @@ class MotorCommand:
     pathways_used: tuple[str, ...]
     flight_hz: float = 0.0
     groom_hz: float = 0.0
+    scaffold_used: bool = False
+    walk_trace: float = 0.0
+    neural_only: bool = True
 
 
 def _norm_side(value: object) -> str:
@@ -105,14 +109,35 @@ def _group_rate(counts: np.ndarray, indices: np.ndarray, duration_s: float) -> f
 
 
 class MotorBridge:
-    """MaleCNS identified DNs → 2-vector command for the walking controller."""
+    """MaleCNS identified DNs → 2-vector command for the walking controller.
 
-    WALK_THRESHOLD = 0.18
+    Default path: analog mapping from identified DN rates. No bout timer,
+    no walking_drive fallback. If DNp09 is silent, the fly rests. That is
+    a scientific result, not a bug to paper over.
 
-    def __init__(self, connectome: Connectome):
+    LEGACY_SCAFFOLD restores the old timer overrides for comparison only.
+    """
+
+    # Numerical floor for "no descending drive", not a behavior policy.
+    REST_EPS = 1e-3
+    # Leaky readout of sparse DN spikes. ~80 ms, ASSUMED synaptic/membrane
+    # timescale — not a 2–5 s walking-bout scheduler.
+    RATE_TAU_S = 0.08
+
+    def __init__(self, connectome: Connectome, *, legacy_scaffold: bool | None = None):
         self.connectome = connectome
+        self.legacy_scaffold = LEGACY_SCAFFOLD if legacy_scaffold is None else bool(legacy_scaffold)
         self.pathways: list[Pathway] = []
-        self.notes: dict = {"engineered_gain": True, "not_motor_neuron_control": True}
+        self.notes: dict = {
+            "engineered_gain": True,
+            "not_motor_neuron_control": True,
+            "legacy_scaffold": self.legacy_scaffold,
+            "walk_authority": "legacy_bout_timer" if self.legacy_scaffold else "identified_dn_rates",
+        }
+        self.walk_trace = 0.0
+        self.steer_l_trace = 0.0
+        self.steer_r_trace = 0.0
+        self.reverse_trace = 0.0
         self.walk_indices = self._resolve(
             "walk_initiation",
             ("DNp09",),
@@ -251,6 +276,7 @@ class MotorBridge:
         walking_bout_s: float = 0.0,
         grooming_drive: float = 0.0,
         flight_drive: float = 0.0,
+        graded_output: np.ndarray | None = None,
     ) -> MotorCommand:
         walk_hz = _group_rate(counts, self.walk_indices, duration_s)
         left_hz = _group_rate(counts, self.steer_left, duration_s)
@@ -258,32 +284,44 @@ class MotorBridge:
         reverse_hz = _group_rate(counts, self.reverse_indices, duration_s)
         flight_hz = _group_rate(counts, self.flight_indices, duration_s)
         groom_hz = _group_rate(counts, self.groom_indices, duration_s)
-        # DNb06 is contraversive: left DNb06 contributes to right turn.
         left_hz = left_hz + 0.5 * _group_rate(counts, self.contra_right, duration_s)
         right_hz = right_hz + 0.5 * _group_rate(counts, self.contra_left, duration_s)
+        if graded_output is not None and self.walk_indices.size:
+            walk_hz = max(walk_hz, 40.0 * float(np.mean(graded_output[self.walk_indices])))
 
-        speed = np.clip(0.22 * walk_hz, 0.0, 1.2)
-        if reverse_hz > walk_hz and reverse_hz > 2.0:
-            speed = -np.clip(0.15 * reverse_hz, 0.0, 0.8)
-        elif walking_bout_s > 0.05:
-            # DNp09 is two cells; a short LIF window often records 0 Hz.
-            # An open walking bout still has to drive the legs.
+        dt = max(float(duration_s), 1e-4)
+        alpha = float(1.0 - np.exp(-dt / self.RATE_TAU_S))
+        self.walk_trace += alpha * (walk_hz - self.walk_trace)
+        self.steer_l_trace += alpha * (left_hz - self.steer_l_trace)
+        self.steer_r_trace += alpha * (right_hz - self.steer_r_trace)
+        self.reverse_trace += alpha * (reverse_hz - self.reverse_trace)
+
+        scaffold_used = False
+        speed = float(np.clip(0.08 * self.walk_trace, 0.0, 1.2))
+        if self.reverse_trace > self.walk_trace and self.reverse_trace > 2.0:
+            speed = -float(np.clip(0.15 * self.reverse_trace, 0.0, 0.8))
+        elif self.legacy_scaffold and walking_bout_s > 0.05:
             speed = max(float(speed), float(np.clip(0.85 * walking_drive, 0.0, 1.15)))
-        steer = np.clip(0.08 * (right_hz - left_hz), -0.8, 0.8)
+            scaffold_used = True
+        steer = float(np.clip(0.08 * (self.steer_r_trace - self.steer_l_trace), -0.8, 0.8))
         left = float(np.clip(abs(speed) * (1.0 - steer), 0.0, 1.4))
         right = float(np.clip(abs(speed) * (1.0 + steer), 0.0, 1.4))
-        # Large DN pools spike tonically in the LIF. Takeoff / antennal
-        # grooming follow the physiological bout that biased those cells,
-        # not the raw group rate sitting above a few Hz.
-        want_fly = flight_drive > 0.55 and walking_bout_s <= 0.05 and walking_drive < 0.42
-        want_groom = grooming_drive > 0.55 and walking_bout_s <= 0.05 and walking_drive < 0.35
+
+        want_fly = False
+        want_groom = False
+        if self.legacy_scaffold:
+            want_fly = flight_drive > 0.55 and walking_bout_s <= 0.05 and walking_drive < 0.42
+            want_groom = grooming_drive > 0.55 and walking_bout_s <= 0.05 and walking_drive < 0.35
+            if want_fly or want_groom:
+                scaffold_used = True
+
         if want_fly and abs(speed) < 0.45:
             mode = "fly"
             left, right = 0.0, 0.0
-        elif want_groom and abs(speed) < self.WALK_THRESHOLD:
+        elif want_groom and abs(speed) < 0.18:
             mode = "groom"
             left, right = 0.0, 0.0
-        elif abs(speed) < self.WALK_THRESHOLD:
+        elif abs(speed) < self.REST_EPS:
             mode = "rest"
             left, right = 0.0, 0.0
         elif speed < 0:
@@ -303,6 +341,9 @@ class MotorBridge:
             pathways_used=used,
             flight_hz=flight_hz,
             groom_hz=groom_hz,
+            scaffold_used=scaffold_used,
+            walk_trace=float(self.walk_trace),
+            neural_only=not scaffold_used,
         )
         self.last_command = cmd
         return cmd

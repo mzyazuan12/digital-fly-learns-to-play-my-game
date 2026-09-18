@@ -52,16 +52,16 @@ class SensorySystem:
     def apply(self, net: LIFNetwork, observation: SensoryObservation) -> None:
         net.clear_drive()
         g = self.gains
-        self._inject(net, self.channels.left_eye, g.vision * _clip01(observation.left_eye))
-        self._inject(net, self.channels.right_eye, g.vision * _clip01(observation.right_eye))
+        self._inject(net, self.channels.left_eye, g.vision * _clip01(observation.left_eye), "sensory.photoreceptor.left")
+        self._inject(net, self.channels.right_eye, g.vision * _clip01(observation.right_eye), "sensory.photoreceptor.right")
         if observation.ommatidia is not None:
             self._inject_ommatidia(net, observation.ommatidia)
-        self._inject_vector(net, self.channels.proprioception, observation.joint_angles, g.proprioception)
-        self._inject_vector(net, self.channels.contact, observation.contact, g.contact)
-        self._inject(net, self.channels.antenna_left, g.antenna * _clip01(observation.antenna_left))
-        self._inject(net, self.channels.antenna_right, g.antenna * _clip01(observation.antenna_right))
-        self._inject(net, self.channels.olfaction, g.olfaction * _clip01(observation.odor))
-        self._inject(net, self.channels.gustation, g.gustation * _clip01(observation.taste))
+        self._inject_vector(net, self.channels.proprioception, observation.joint_angles, g.proprioception, "sensory.proprioception")
+        self._inject_vector(net, self.channels.contact, observation.contact, g.contact, "sensory.contact")
+        self._inject(net, self.channels.antenna_left, g.antenna * _clip01(observation.antenna_left), "sensory.antenna.left")
+        self._inject(net, self.channels.antenna_right, g.antenna * _clip01(observation.antenna_right), "sensory.antenna.right")
+        self._inject(net, self.channels.olfaction, g.olfaction * _clip01(observation.odor), "sensory.olfaction")
+        self._inject(net, self.channels.gustation, g.gustation * _clip01(observation.taste), "sensory.gustation")
 
     def _inject_ommatidia(self, net: LIFNetwork, ommatidia: np.ndarray) -> None:
         """Map (2, n, c) ommatidia onto left/right visual cells if both exist."""
@@ -70,8 +70,8 @@ class SensorySystem:
         left_mean = float(np.mean(ommatidia[0]))
         right_mean = float(np.mean(ommatidia[1]))
         # Replace the coarse brightness with the actual retinal means.
-        self._inject(net, self.channels.left_eye, self.gains.vision * _clip01(left_mean))
-        self._inject(net, self.channels.right_eye, self.gains.vision * _clip01(right_mean))
+        self._inject(net, self.channels.left_eye, self.gains.vision * _clip01(left_mean), "sensory.ommatidia.left")
+        self._inject(net, self.channels.right_eye, self.gains.vision * _clip01(right_mean), "sensory.ommatidia.right")
         left_cells = self.channels.left_eye
         right_cells = self.channels.right_eye
         self._paint_retina(net, left_cells, ommatidia[0])
@@ -88,16 +88,16 @@ class SensorySystem:
         for i in range(n):
             value = float(np.mean(bins[i])) if bins[i].size else 0.0
             if value > 0:
-                net.inject([int(cells[i])], self.gains.vision * _clip01(value))
+                net.add_drive([int(cells[i])], self.gains.vision * _clip01(value), source="sensory.ommatidia")
 
     @staticmethod
-    def _inject(net: LIFNetwork, indices: np.ndarray, current: float) -> None:
+    def _inject(net: LIFNetwork, indices: np.ndarray, current: float, source: str = "sensory") -> None:
         if current != 0.0 and indices.size:
-            net.inject(indices, current)
+            net.add_drive(indices, current, source=source)
 
     @staticmethod
     def _inject_vector(
-        net: LIFNetwork, indices: np.ndarray, values: np.ndarray, gain: float
+        net: LIFNetwork, indices: np.ndarray, values: np.ndarray, gain: float, source: str = "sensory"
     ) -> None:
         if indices.size == 0:
             return
@@ -108,7 +108,7 @@ class SensorySystem:
         n = min(indices.size, scaled.size)
         for i in range(n):
             if scaled[i] > 0:
-                net.inject([int(indices[i])], float(gain * scaled[i]))
+                net.add_drive([int(indices[i])], float(gain * scaled[i]), source=source)
 
 
 def _clip01(value: float) -> float:

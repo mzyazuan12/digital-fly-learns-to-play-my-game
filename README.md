@@ -5,25 +5,45 @@ topology. FlyBody (Turaga lab, via FlyGym 2.x) is the body. MuJoCo is the
 physics. Shiritori is **one experiment** you can later run on the same
 individual. It is not the fly.
 
+**Primary objective:** measure how much autonomous organism-level behavior
+can emerge from an embodied model grounded in the real Drosophila nervous
+system. Looking alive is not the metric. A hard-coded random-walk fly can
+look more alive than a scientifically grounded one.
+
+**Birth** means: instantiate a new persistent digital individual from
+measured anatomy, initialize uncertain physiology explicitly, and let
+neural, bodily and learned state evolve through experience. MaleCNS is a
+chemically fixed EM reconstruction. It does not contain the specimen's
+live mind, and this project does not claim to resurrect it.
+
 ```text
-environment → senses → MaleCNS → identified DNs → MotorBridge
-          → FlyBody walking/flight controllers → MuJoCo → senses
+environment → biological receptors → MaleCNS brain + VNC
+          → premotor / motor neurons → (today: FlyGym CPG)
+          → FlyBody → MuJoCo → senses
 ```
 
-There is no `world.reward` in autonomous mode. Internal state (arousal,
-hunger, fatigue, …) modulates identified neurons; it does not call
-`find_food()`. The brain never receives object coordinates, key identities,
-or correct answers.
+There is no `world.reward` in autonomous mode. Metabolic state changes
+neuromodulators; neuromodulators change identified circuits; they do not
+call `find_food()` or `walk()`.
 
-Status: FlyBody gait is verified. Default view is the organism: MaleCNS
-activity on real soma coordinates, Google Neuroglancer EM, autonomous
-locomotion, Shiritori on the desk. Walk/Stand buttons exist only at `/gait`.
+Default path: **no walking-bout timer, no walking_drive fallback, no
+scripted groom/flight scheduler.** Those remain behind `FLY_LEGACY_SCAFFOLD=1`
+for comparison only.
 
 ```sh
+python birth_fly.py --individual fly_001
 python -m sim3d.serve --connectome malecns
 # http://127.0.0.1:8765/       organism (brain + body + Shiritori)
 # http://127.0.0.1:8765/gait   physics lab, manual gait commands
 # http://127.0.0.1:8765/desk   Shiritori desk
+```
+
+First experiment: DNp09 current should initiate walking through the CPG;
+silencing DNp09 should stop it. If spontaneous walking does not emerge
+without a timer, that is a result.
+
+```sh
+python -m pytest tests/test_neural_walk.py -q
 ```
 
 ## Body (optional)
@@ -31,7 +51,9 @@ python -m sim3d.serve --connectome malecns
 The anatomically detailed body is FlyGym 2.x `FlyBody`. There is no
 decorative-mesh fallback for walking. Mock unicycle trajectories are not
 FlyBody results. The HybridTurningController is an engineered VNC/muscle
-surrogate, not recovered motor circuitry.
+surrogate (`MODE_ENGINEERED_CPG`), not recovered motor circuitry.
+`MODE_HYBRID_VNC` and `MODE_NEURAL_MOTOR` exist so we can replace CPG
+outputs with motor-neuron activity without doing it all at once.
 
 ## MaleCNS files
 
@@ -66,22 +88,25 @@ python -m pytest tests/test_connectome_full.py -m full
 ## Layout
 
 ```
-organism/     VirtualFly, physiology, MotorBridge, body, persistence
+organism/     VirtualFly, birth, neuromodulation, MotorBridge, body
 worlds/       living room, arena, stimulus, Shiritori workstation
-flybrain/     MaleCNS loader, LIF, plasticity
+flybrain/     MaleCNS loader, mixed LIF/graded dynamics, mushroom body
 shiritori/    game rules used by an experiment / old letter curriculum
 training/     letter-grid curriculum (does not bypass organism persistence)
-sim3d/        MuJoCo gait viewer at / ; living room at /habitat (root motion off)
+sim3d/        organism view at / ; gait lab at /gait
 tests/
 ASSUMPTIONS.md
 ```
 
 ## Honesty
 
-- The connectome is real. The LIF constants are not.
+- The connectome is real. Membrane constants are not.
 - Identified DN types (DNp09, DNa02, …) are resolved from annotations.
-  Mapping their rates onto the walking controller is engineered.
-- The miniature CI graph uses the same type names with random recurrent
-  edges. It is **not** wired for phototaxis.
+  Mapping their rates onto the walking CPG is engineered.
+- VNC premotor cells use graded/rate dynamics by literature, not because
+  MaleCNS measured that for each cell.
+- Learning is KC→MBON, not a global reward rule on every synapse.
+- The miniature CI graph uses the same type names with mostly random
+  extra edges. It is **not** wired for phototaxis.
+- No internal variable is labeled consciousness.
 - See `ASSUMPTIONS.md`.
-# digital-fly-learns-to-play-my-game

@@ -8,19 +8,28 @@ The MaleCNS v1.0 Feather files specify:
 - predicted neurotransmitters
 
 They do **not** specify membrane time constants, synaptic receptors, delays,
-plasticity rules, photoreceptors, muscles, or a task. Everything below is a
-declared model. Code that uses these values points at `organism/assumptions.py`.
+plasticity rules, photoreceptors, muscles, or a task. They do not contain
+the live physiological state of the chemically fixed specimen. Everything
+below is a declared model. Code that uses these values points at
+`organism/assumptions.py`.
+
+Birth, in this project, means: instantiate a **new** persistent digital
+individual from measured anatomy and let its state evolve. It does not mean
+resurrection of the original fly's mind.
 
 ## What is biological in this repository
 
 - MaleCNS v1.0 retained graph (166,700 neurons, 25,582,938 directed edges)
 - FlyBody / NeuroMechFly articulated anatomy (when FlyGym is installed)
 - MuJoCo rigid-body physics of that articulated model
+- Identified descending types (DNp09, DNa02, …) resolved from annotations
+- Annotated motor neurons, where present, plus published muscle-target maps
+  (incomplete; FANC→MaleCNS transfers are cross-sex inference)
 
 ## Neuron dynamics (not in the connectome)
 
-Coarse current-based LIF, matching the publicly documented Shiu / DoomFly
-constants so the kernel is reproducible:
+Default unlabeled cells: coarse current-based LIF (Shiu / DoomFly constants),
+labeled **ASSUMED**.
 
 | symbol | value | role |
 | --- | --- | --- |
@@ -34,8 +43,12 @@ constants so the kernel is reproducible:
 | default `dt` | 0.1 ms | milestone-1 kernel |
 | organism `dt` | 1.0 ms | closed-loop speed, same topology |
 
-Visual cells in the real fly often use graded transmission. Here every cell
-is a spiking LIF proxy.
+VNC premotor / local interneuron labels use **graded/rate** dynamics
+(**LITERATURE_DERIVED**: many insect walking premotor neurons are
+nonspiking). Not every one of the 166k cells is an identical LIF unit.
+
+Small inspectable membrane noise (std 0.35) is **ASSUMED**. It is not fake
+visual firing and not a hidden walk timer. Drive sources are logged.
 
 ## Synapse sign (policy, not receptors)
 
@@ -45,6 +58,16 @@ is a spiking LIF proxy.
 
 There are hundreds of thousands of `unclear` predictions. Treating them as +
 is a choice, copied from DoomFly, not a measurement.
+
+## Connectome vs effectome
+
+```text
+weight = anatomical_count × functional_gain × (1 + plastic_component) × sign × contact_gain
+```
+
+Anatomical counts are frozen. Learning writes `plastic_component` only, and
+only on identified KC→MBON edges by default. Functional gain is physiological
+efficacy, not a place to hide a behavior scheduler.
 
 ## Graph inclusion
 
@@ -59,67 +82,74 @@ Published accounting: **166,700** retained neurons, **25,582,938** directed
 edges, **124,177,617** synaptic contacts. The paper’s 166,691 figure uses a
 slightly different inclusion convention.
 
-## Body and motor (scaffolding)
+## Body and motor
 
-Initial locomotion is:
+Default motor mode is `MODE_ENGINEERED_CPG`:
 
 ```text
-MaleCNS → left/right descending rates → 2-vector command
+MaleCNS identified DNs (rates)
+       → analog 2-vector
        → FlyGym HybridTurningController
        → FlyBody / NeuroMechFly position actuators
        → MuJoCo
 ```
 
-This is **not** descending neuron → VNC → motor neuron → muscle. The CPG
-and preprogrammed steps are pretrained scaffolding. Rest vs walk is a
-hand-implemented threshold on identified DN rates (DNp09 and steering DNs
-resolved from annotations). Each step is logged as
-`biological_connectome`, `pretrained_locomotion_controller`,
-`hand_implemented_transition`, `learned_plasticity`, or
-`developer_override`.
+This is **not** descending neuron → VNC CPG → motor neuron → muscle. The
+CPG is pretrained scaffolding. Rest vs walk follows whether identified
+walking DNs (DNp09) actually emit drive. There is **no** `walking_bout_s`
+override on the default path.
+
+`MODE_HYBRID_VNC` logs motor-neuron activity beside the CPG.
+`MODE_NEURAL_MOTOR` is reserved until muscle actuation exists.
+
+A `MotorNeuronMuscleMap` records, for every mapped motor neuron: MaleCNS
+body ID, MANC type, MN type, side, body part, muscle, joint/action, source,
+confidence, and whether the mapping is direct or inferred. Female FANC
+muscle targets transferred onto MaleCNS/MANC are labeled
+`inferred_cross_sex`.
 
 When FlyGym is missing, a unicycle `MockBody` stands in. Mock trajectories
 are not FlyBody results.
 
-A later replacement path, without rewriting the organism:
-
-```text
-MaleCNS → DNs → VNC → motor neurons → muscle models → joints
-```
+The `/gait` page still uses `GAIT_COMMANDS` as a physics-lab keyboard. That
+is not the organism's decision source.
 
 ## Sensory system (scaffolding)
 
-The brain is not given `target_position`, `keyboard_key`, or `correct_answer`.
+The brain is not given `target_position`, `keyboard_key`, `correct_answer`,
+or world object coordinates.
 
-First-goal vision is two cosine receptive fields (or FlyGym ommatidia when
-`add_vision()` succeeds). Intensities become LIF currents with hand-set gains.
+Vision is two cosine receptive fields, or FlyGym ommatidia when
+`add_vision()` succeeds. Intensities become currents with hand-set gains.
 Proprioception and contact are joint/contact readings mapped onto annotated
-sensory superclasses. Antenna / olfaction / gustation interfaces exist and
-are mostly quiet until those physics are added.
+sensory superclasses. Antenna / olfaction / gustation interfaces exist.
 
-Population assignment (which annotated cells are “left eye”) is a stable
-engineered interface stored with the individual. It is not a claim that
-those cells are a phototaxis circuit.
+Population assignment is a stable engineered interface stored with the
+individual. It is not a claim that those cells are a phototaxis circuit.
 
 The miniature graph used in CI labels cells with MaleCNS-like types
-(DNp09, DNa02, …) so `MotorBridge` can resolve the same pathways. Extra
-edges are random. It is **not** a phototaxis or collision-avoidance
-controller. Real MaleCNS phototaxis is not assumed.
+(DNp09, DNa02, KC, MBON, MN, …) so bridges resolve the same pathways.
+Extra edges are mostly random. It is **not** a phototaxis controller.
 
-Internal physiological variables (arousal, hunger, fatigue, walking bouts)
-add tonic current into identified populations. They do not select actions.
+## Neuromodulation
 
-## Plasticity (experimental)
+Internal variables (arousal, hunger, fatigue) are allowed. They update
+dopamine, octopamine, and serotonin. Modulators change identified circuits.
+They do **not** call `walk()` or `find_food()`.
 
-Reward-modulated eligibility traces scale **existing** MaleCNS edges.
-Anatomical counts stay frozen. No new synapses are created.
+Octopamine adds modest current to DNp09 (locomotion literature; numeric
+gain **ASSUMED**). If DNp09 does not spike, the fly rests.
 
-Not implemented, only reserved: STDP-like traces as the sole rule,
-identified dopaminergic credit assignment, homeostatic set-points.
+Bout timers (`walking_bout_s`, random groom/flight) exist only behind
+`FLY_LEGACY_SCAFFOLD=1` for comparison.
 
-DoomFly is explicit that its plasticity experiments have **not** demonstrated
-validated learning. This project starts from the same honesty: log synapse
-changes, and do not call weight movement “learning.”
+## Plasticity
+
+Default: mushroom-body associative rule on **KC→MBON** edges, using
+dopamine / DAN activity. Anatomical counts stay frozen.
+
+The older global reward-modulated eligibility rule still exists in
+`flybrain.plasticity` and is not the organism default.
 
 Weights are **not** reset when the fly changes worlds or tasks.
 
@@ -130,11 +160,25 @@ is an older engineered interface for the letter-grid experiment. It must not
 be called from `VirtualFly`. The intended embodied pipeline is screen pixels
 → eyes → MaleCNS → body → physical key. That pipeline is not complete.
 
+## Consciousness
+
+No internal variable is labeled consciousness. Measurable properties
+(activity, recurrence, memory, state-dependent behavior) may be logged.
+Whether those amount to subjective experience is outside what this
+simulation can establish.
+
 ## What would count as a result
 
-Immediate goal: one persistent fly exists in the living room with no task
-and mixes rest, walking, turning, and stopping. Brain state survives world
-changes and save/load.
+A behavior is neural/autonomous only if:
 
-A later task result is a change in **that same fly**, measured against
-frozen / shuffled / rewired controls, with developer teleports excluded.
+1. removing the relevant neural pathway disrupts it
+2. no behavior timer directly invokes it
+3. no developer command directly selects it
+4. neural activity causally precedes the motor output
+5. sensory perturbations alter it through the nervous system
+6. provenance identifies the biological/model pathway
+
+Immediate experiment: DNp09 current initiates walking via the CPG;
+silencing DNp09 abolishes it; restoring DNp09 restores it. If spontaneous
+walking does not emerge without a timer, record that and look for the
+missing physiological mechanism. Do not add another timer.

@@ -1,8 +1,9 @@
 """Closed sensorimotor loop.
 
-environment → senses → MaleCNS → identified DNs → body controller → physics
+environment → biological receptors → MaleCNS → identified DNs → body → physics
 
 No task branch. No world.reward. No play_shiritori.
+Walking start/stop come from identified DN rates unless LEGACY_SCAFFOLD is on.
 """
 
 from __future__ import annotations
@@ -11,6 +12,8 @@ from dataclasses import replace
 
 import numpy as np
 
+from organism.config import MotorMode
+from organism.motor_map import command_for_mode
 from organism.provenance import BehaviorSource, StepRecord
 from organism.sensory import SensoryObservation, SensorySystem
 
@@ -48,10 +51,11 @@ class SensorimotorLoop:
             world=fly.world.name,
             notes="paused",
             developer=True,
+            motor_mode=fly.motor_mode.value,
         )
 
     def infer_command(self, observation: SensoryObservation | None = None) -> StepRecord:
-        """Sense + LIF + descending command. Does not step MuJoCo."""
+        """Sense + neural dynamics + descending command. Does not step MuJoCo."""
         fly = self.fly
         if fly.body is None or fly.world is None:
             raise RuntimeError("VirtualFly must inhabit a world before stepping")
@@ -73,6 +77,15 @@ class SensorimotorLoop:
             walking_bout_s=self.physiology.state.walking_bout_s,
             grooming_drive=self.physiology.state.grooming_drive,
             flight_drive=self.physiology.state.flight_drive,
+            graded_output=fly.net.graded_output,
+        )
+        fly.physiology.state.walking_drive = float(command.walk_trace / 40.0) if command.walk_trace else 0.0
+        fly.motor_report = command_for_mode(
+            fly.motor_mode,
+            left=command.left,
+            right=command.right,
+            walk_mode=command.mode,
+            mn_activity=fly.motor_map.activity(counts, duration_s),
         )
 
         sources = [BehaviorSource.BIOLOGICAL_CONNECTOME]
@@ -80,9 +93,9 @@ class SensorimotorLoop:
             if getattr(fly.body, "kind", "") == "neuromechfly":
                 sources.append(BehaviorSource.PRETRAINED_LOCOMOTION_CONTROLLER)
             sources.append(BehaviorSource.HAND_IMPLEMENTED_TRANSITION)
-        else:
+        if command.scaffold_used:
             sources.append(BehaviorSource.HAND_IMPLEMENTED_TRANSITION)
-        if fly.plasticity.changed_edges:
+        if fly.learning.changed_edges:
             sources.append(BehaviorSource.LEARNED_PLASTICITY)
         pose = fly.body.pose
         return StepRecord(
@@ -98,6 +111,10 @@ class SensorimotorLoop:
             world=fly.world.name,
             mode=command.mode,
             walking_drive=fly.physiology.state.walking_drive,
+            walk_hz=command.walk_hz,
+            walk_trace=command.walk_trace,
+            scaffold_used=command.scaffold_used,
+            motor_mode=fly.motor_mode.value,
         )
 
     def step_body(self, n: int | None = None) -> None:
@@ -134,9 +151,13 @@ class SensorimotorLoop:
             ),
         )
 
-        fly.plasticity.observe_activity()
+        fly.learning.observe_activity()
         if reward:
-            fly.plasticity.apply_reward(reward)
+            fly.learning.apply_reward(reward)
+        elif fly.learning.dan.size:
+            dan_hz = float(fly.net.counts[fly.learning.dan].sum()) / max(duration_s, 1e-6)
+            if dan_hz > 0.5:
+                fly.learning.apply_dopamine(fly.physiology.neuromodulation.state.dopamine)
 
         pose = fly.body.pose
         record = replace(record, x_mm=pose.x_mm, y_mm=pose.y_mm, heading_rad=pose.heading_rad)

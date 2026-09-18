@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "virtual-drosophila"
-version = "0.2.0"
+version = "0.3.0"
 description = "One persistent embodied Drosophila: MaleCNS brain, FlyBody body, arbitrary worlds"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,6 +24,7 @@ fly-milestone1 = "training.milestone1:main"
 fly-train = "training.train:main"
 fly-eval = "training.evaluate:main"
 virtual-fly = "organism.first_goal:main"
+birth-fly = "organism.birth:main"
 
 [tool.setuptools.packages.find]
 include = ["flybrain*", "shiritori*", "training*", "sim3d*", "organism*", "worlds*"]

@@ -253,6 +253,7 @@ def test_fly_motion_matches_adult_walking_scale():
     assert "body_transforms" in runtime_py
     assert "geom_transforms" in runtime_py
     assert "_walk_off" in runtime_py
+    assert "legacy_scaffold and walking_bout_s" in (ROOT / "organism/bridge.py").read_text()
     assert "walking_bout_s" in (ROOT / "organism/bridge.py").read_text()
     assert "mode = \"fly\"" in (ROOT / "organism/bridge.py").read_text() or "mode = 'fly'" in (ROOT / "organism/bridge.py").read_text()
 

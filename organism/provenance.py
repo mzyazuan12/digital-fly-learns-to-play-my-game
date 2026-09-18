@@ -36,6 +36,10 @@ class StepRecord:
     world: str
     mode: str = "rest"
     walking_drive: float = 0.0
+    walk_hz: float = 0.0
+    walk_trace: float = 0.0
+    scaffold_used: bool = False
+    motor_mode: str = "MODE_ENGINEERED_CPG"
     notes: str = ""
     developer: bool = False
 
@@ -53,6 +57,10 @@ class StepRecord:
             "world": self.world,
             "mode": self.mode,
             "walking_drive": self.walking_drive,
+            "walk_hz": self.walk_hz,
+            "walk_trace": self.walk_trace,
+            "scaffold_used": self.scaffold_used,
+            "motor_mode": self.motor_mode,
             "notes": self.notes,
             "developer": self.developer,
         }

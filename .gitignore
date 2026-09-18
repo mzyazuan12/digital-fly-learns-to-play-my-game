@@ -6,6 +6,7 @@ __pycache__/
 .mypy_cache/
 outputs/
 checkpoints/
+individuals/
 .DS_Store
 .kilo/
 *.npz

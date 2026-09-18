@@ -1,0 +1,68 @@
+{
+  "title": "Motor neuron → muscle → FlyBody actuator map",
+  "note": "Connectome circuits can be attached to the physical body only where a motor neuron's muscle target is known. Coverage is incomplete. Cross-sex FANC muscle targets transferred onto MaleCNS/MANC are labeled INFERRED, not measured from the MaleCNS specimen.",
+  "references": [
+    "Azevedo et al. 2024 Nature: female VNC reconstruction; muscle targets for leg and wing motor neurons (EM, genetics, X-ray tomography).",
+    "Lesser / MANC motor-neuron annotations: 737 annotated motor neurons plus premotor networks.",
+    "Each leg ~60–70 identifiable motor neurons; each wing side ~29."
+  ],
+  "architecture_modes": [
+    "MODE_ENGINEERED_CPG",
+    "MODE_HYBRID_VNC",
+    "MODE_NEURAL_MOTOR"
+  ],
+  "entries": [
+    {
+      "malecns_body_id": null,
+      "manc_type": "T1_leg_motor_neuron",
+      "motor_neuron_type": "leg_mn",
+      "body_side": "L",
+      "target_body_part": "left_front_leg",
+      "target_muscle": "unspecified_leg_muscle",
+      "joint_action": "lf_coxa_roll",
+      "data_source": "MANC/FANC motor-neuron class; muscle target not resolved for this placeholder",
+      "confidence": 0.15,
+      "mapping_kind": "inferred_cross_specimen",
+      "provenance": "INFERRED"
+    },
+    {
+      "malecns_body_id": null,
+      "manc_type": "T1_leg_motor_neuron",
+      "motor_neuron_type": "leg_mn",
+      "body_side": "R",
+      "target_body_part": "right_front_leg",
+      "target_muscle": "unspecified_leg_muscle",
+      "joint_action": "rf_coxa_roll",
+      "data_source": "MANC/FANC motor-neuron class; muscle target not resolved for this placeholder",
+      "confidence": 0.15,
+      "mapping_kind": "inferred_cross_specimen",
+      "provenance": "INFERRED"
+    },
+    {
+      "malecns_body_id": null,
+      "manc_type": "wing_motor_neuron",
+      "motor_neuron_type": "wing_mn",
+      "body_side": "L",
+      "target_body_part": "left_wing",
+      "target_muscle": "unspecified_wing_muscle",
+      "joint_action": "l_wing",
+      "data_source": "Azevedo et al. 2024 wing MN muscle targets; not a MaleCNS specimen measurement",
+      "confidence": 0.2,
+      "mapping_kind": "inferred_cross_sex",
+      "provenance": "INFERRED"
+    },
+    {
+      "malecns_body_id": null,
+      "manc_type": "wing_motor_neuron",
+      "motor_neuron_type": "wing_mn",
+      "body_side": "R",
+      "target_body_part": "right_wing",
+      "target_muscle": "unspecified_wing_muscle",
+      "joint_action": "r_wing",
+      "data_source": "Azevedo et al. 2024 wing MN muscle targets; not a MaleCNS specimen measurement",
+      "confidence": 0.2,
+      "mapping_kind": "inferred_cross_sex",
+      "provenance": "INFERRED"
+    }
+  ]
+}

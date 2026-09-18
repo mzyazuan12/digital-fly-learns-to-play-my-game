@@ -38,6 +38,7 @@ def run_first_goal(
     modes = {r.mode for r in first}
     v_after = fly.net.v.copy()
     efficacy_after = fly.net.efficacy.copy()
+    plastic_after = fly.net.plastic_component.copy()
     fly_id = fly.identity.fly_id
 
     fly.detach()
@@ -46,7 +47,9 @@ def run_first_goal(
     if not np.allclose(fly.net.v, v_after):
         raise RuntimeError("Inhabiting a new world reset neural state")
     if not np.allclose(fly.net.efficacy, efficacy_after):
-        raise RuntimeError("Inhabiting a new world reset efficacies")
+        raise RuntimeError("Inhabiting a new world reset combined synaptic scale")
+    if not np.allclose(fly.net.plastic_component, plastic_after):
+        raise RuntimeError("Inhabiting a new world reset plastic synaptic components")
     second = fly.run(stimulus_steps)
     left_eye = float(np.mean([r.left_eye for r in second])) if second else 0.0
     right_eye = float(np.mean([r.right_eye for r in second])) if second else 0.0
@@ -57,7 +60,7 @@ def run_first_goal(
     same_individual = (
         loaded.identity.fly_id == fly_id
         and np.allclose(loaded.net.v, fly.net.v)
-        and np.allclose(loaded.net.efficacy, fly.net.efficacy)
+        and np.allclose(loaded.net.plastic_component, fly.net.plastic_component)
         and loaded.net.sim_ms == fly.net.sim_ms
         and loaded.plasticity.n_updates == fly.plasticity.n_updates
         and loaded.physiology.state.hunger == fly.physiology.state.hunger
@@ -82,11 +85,14 @@ def run_first_goal(
         "provenance": fly.provenance.summary(),
         "neural_dynamics_validated": False,
         "learning_demonstrated": False,
+        "legacy_scaffold": fly.legacy_scaffold,
+        "consciousness_claimed": False,
+        "scaffold_used": any(getattr(r, "scaffold_used", False) for r in first),
         "first_goal_ok": bool(
-            "rest" in modes
-            and "walk" in modes
-            and same_individual
+            same_individual
             and not fly.connectome.report.get("toy_phototaxis_wiring")
+            and not fly.legacy_scaffold
+            and not any(getattr(r, "scaffold_used", False) for r in first)
         ),
     }
     out.parent.mkdir(parents=True, exist_ok=True)

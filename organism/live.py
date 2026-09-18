@@ -121,13 +121,17 @@ def run_live(
         "final_xy": [rec.x_mm, rec.y_mm],
         "provenance": fly.provenance.summary(),
         "physiology": fly.physiology.state.snapshot(),
-        "alive_enough": bool(rest > 0 and walk > 0 and heading_span > 0.02),
+        "neuromodulation": fly.physiology.neuromodulation.state.snapshot(),
+        "spontaneous_walk_emerged": walk > 0,
+        "scaffold_used": any(getattr(r, "scaffold_used", False) for r in recs),
+        "looks_alive_is_not_the_metric": True,
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({k: result[k] for k in (
         "world", "rest_steps", "walk_steps", "path_mm",
-        "heading_span_rad", "alive_enough", "toy_phototaxis_wiring",
+        "heading_span_rad", "spontaneous_walk_emerged", "scaffold_used",
+        "toy_phototaxis_wiring",
     )}, indent=2), flush=True)
     return result
 
@@ -160,7 +164,7 @@ def main(argv=None) -> int:
         seconds=seconds,
         out=args.out,
     )
-    return 0 if result["alive_enough"] else 1
+    return 0 if not result.get("scaffold_used") else 1
 
 
 if __name__ == "__main__":

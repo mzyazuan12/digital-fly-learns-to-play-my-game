@@ -205,10 +205,8 @@ class OrganismRuntime:
         return float(np.clip(u, 0.04, 0.96)), float(np.clip(v, 0.08, 0.92))
 
     def _walk_off(self, strength: float = 0.7) -> None:
-        s = self.fly.physiology.state
-        s.walking_bout_s = max(s.walking_bout_s, 0.9 * strength + 0.4)
-        s.walking_drive = min(1.0, max(s.walking_drive, 0.62 * strength + 0.2))
-        s.grooming_bout_s = 0.0
+        """Sensory/neuromodulatory event after a key. Does not start a walk bout."""
+        self.fly.physiology.salient_event(strength)
 
     def _teach(self, reward: float) -> None:
         if abs(float(reward)) < 1e-6:
@@ -448,6 +446,13 @@ class OrganismRuntime:
             "sources": sources,
             "paused": self.paused,
             "physiology": self.fly.physiology.state.snapshot(),
+            "neuromodulation": self.fly.physiology.neuromodulation.state.snapshot(),
+            "walk_hz": float(getattr(rec, "walk_hz", 0.0) or 0.0) if rec is not None else 0.0,
+            "walk_trace": float(getattr(rec, "walk_trace", 0.0) or 0.0) if rec is not None else 0.0,
+            "scaffold_used": bool(getattr(rec, "scaffold_used", False)) if rec is not None else False,
+            "legacy_scaffold": self.fly.legacy_scaffold,
+            "motor_mode": self.fly.motor_mode.value,
+            "consciousness_claimed": False,
             "gait_phase": float(getattr(self.fly.body, "gait_phase", 0.0)),
             "activity": self._activity_cache or self._activity(rec),
             "frame_ready": False,

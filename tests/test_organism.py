@@ -85,58 +85,47 @@ def test_motor_bridge_resolves_identified_types():
     assert fly.bridge.walk_indices.size >= 1
 
 
-def test_motor_bridge_bouts_not_tonic_dn_noise():
+def test_motor_bridge_silent_dns_do_not_walk_without_scaffold():
     graph = miniature_connectome(1)
-    bridge = MotorBridge(graph)
+    neural = MotorBridge(graph, legacy_scaffold=False)
     counts = np.zeros(graph.n, dtype=np.int32)
-    if bridge.groom_indices.size:
-        counts[bridge.groom_indices] = 80
-    if bridge.flight_indices.size:
-        counts[bridge.flight_indices] = 80
-    walk = bridge.read(
+    rest = neural.read(
+        counts, 0.04, walking_drive=0.9, walking_bout_s=2.0, grooming_drive=0.9, flight_drive=0.9
+    )
+    assert rest.mode == "rest"
+    assert rest.left + rest.right == 0.0
+    assert rest.scaffold_used is False
+    assert rest.neural_only is True
+
+    legacy = MotorBridge(graph, legacy_scaffold=True)
+    walk = legacy.read(
         counts, 0.04, walking_drive=0.7, walking_bout_s=1.2, grooming_drive=0.2, flight_drive=0.0
     )
     assert walk.mode == "walk"
-    assert walk.left + walk.right > 0.3
-    groom = bridge.read(
+    assert walk.scaffold_used is True
+    groom = legacy.read(
         counts, 0.04, walking_drive=0.1, walking_bout_s=0.0, grooming_drive=0.72, flight_drive=0.0
     )
     assert groom.mode == "groom"
-    fly = bridge.read(
+    fly = legacy.read(
         counts, 0.04, walking_drive=0.1, walking_bout_s=0.0, grooming_drive=0.1, flight_drive=0.8
     )
     assert fly.mode == "fly"
-    rest = bridge.read(
-        counts, 0.04, walking_drive=0.1, walking_bout_s=0.0, grooming_drive=0.1, flight_drive=0.0
-    )
-    assert rest.mode == "rest"
 
 
-def test_autonomous_rest_and_walk_in_living_room():
-    fly = VirtualFly.hatch(seed=0, connectome="synthetic")
+def test_autonomous_loop_does_not_use_a_walk_timer():
+    fly = VirtualFly.hatch(seed=0, connectome="synthetic", legacy_scaffold=False)
     x, y, z = spawn_on_rug()
     fly.inhabit(living_room(), spawn=Pose(x_mm=x, y_mm=y, z_mm=z))
-    records = fly.run(700)
-    modes = {r.mode for r in records}
-    assert "rest" in modes or "groom" in modes or "fly" in modes
-    assert "walk" in modes
+    records = fly.run(120)
+    assert fly.legacy_scaffold is False
     assert fly.world.name == "living_room"
-    assert fly.world.width_mm >= 4000
+    assert all(not r.scaffold_used for r in records)
+    walked = [r for r in records if r.mode == "walk"]
+    for rec in walked:
+        assert rec.walk_hz > 0.0 or rec.walk_trace > 0.0
     sources = {s.value for r in records for s in r.sources}
-    assert "biological_connectome" in sources
     assert "developer_override" not in sources
-    walked = any(
-        abs(b.x_mm - a.x_mm) + abs(b.y_mm - a.y_mm) > 0.02
-        for a, b in zip(records, records[1:])
-        if b.mode == "walk"
-    )
-    assert walked
-    still = any(
-        abs(b.x_mm - a.x_mm) + abs(b.y_mm - a.y_mm) < 1e-6
-        for a, b in zip(records, records[1:])
-        if a.mode in {"rest", "groom", "fly"} and b.mode in {"rest", "groom", "fly"}
-    )
-    assert still
 
 
 def test_loop_has_no_task_branch():
@@ -152,7 +141,7 @@ def test_physiology_modulates_neurons_not_actions():
 
     src = inspect.getsource(phys_mod.Physiology)
     assert "find_food" not in src
-    assert "add_drive" in src
+    assert "neuromodulation" in src or "add_drive" in src
     fly = VirtualFly.hatch(seed=2, connectome="synthetic")
     fly.physiology.step(0.05, walking=True, contact=0.0, odor=0.0, vision=0.2)
     assert 0.0 <= fly.physiology.state.hunger <= 1.0
@@ -188,7 +177,7 @@ def test_save_reload_same_individual(tmp_path):
     fly = VirtualFly.hatch(seed=3, connectome="synthetic")
     fly.inhabit(empty_arena())
     fly.run(12)
-    fly.net.efficacy[0] = 1.7
+    fly.net.functional_gain[0] = 1.7
     fly.net._rebuild_weights()
     hunger = fly.physiology.state.hunger
     path = fly.save(tmp_path / "unit.fly")

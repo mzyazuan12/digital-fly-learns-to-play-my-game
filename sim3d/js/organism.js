@@ -71,8 +71,8 @@ function syncFly(s) {
   hud.body.textContent = s.body || "—";
   const d = s.descending || [0, 0];
   hud.drive.textContent = `${s.mode || "rest"}  L ${Number(d[0]).toFixed(2)}  R ${Number(d[1]).toFixed(2)}`;
-  hud.walkDrive.textContent = Number(phys.walking_drive ?? s.walking_drive ?? 0).toFixed(2);
-  hud.groomDrive.textContent = Number(phys.grooming_drive ?? 0).toFixed(2);
+  hud.walkDrive.textContent = Number(s.walk_hz ?? phys.walking_drive ?? 0).toFixed(2) + " Hz";
+  hud.groomDrive.textContent = Number((s.neuromodulation || {}).octopamine ?? phys.grooming_drive ?? 0).toFixed(2);
   hud.thorax.textContent = `${Number(s.x_mm || 0).toFixed(2)}, ${Number(s.y_mm || 0).toFixed(2)}, ${Number(s.z_mm || 0).toFixed(2)} mm · ${Number(s.speed_mm_s || 0).toFixed(1)} mm/s`;
   hud.spikes.textContent = String(s.spikes ?? 0);
   const pw = s.activity?.pathways || {};
