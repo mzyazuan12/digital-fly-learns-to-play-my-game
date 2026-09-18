@@ -345,8 +345,6 @@ def run(
         used = "synthetic"
     if spontaneous_steps is None:
         spontaneous_steps = 60 if used.startswith("male") else 120
-    graph = load_graph(used, seed)
-    stand_steps = 20 if graph.n > 10_000 else 40
     manifest = computational_graph_manifest()
     if used in {"malecns", "malecns_v1", "full"}:
         if not manifest["computational_graph_exists"]:
@@ -361,6 +359,8 @@ def run(
             "synapse coordinate tables loaded: False",
             flush=True,
         )
+    graph = load_graph(used, seed)
+    stand_steps = 20 if graph.n > 10_000 else 40
     fly = VirtualFly(graph, seed=seed, legacy_scaffold=False)
     print(format_policy_banner(fly.policy), flush=True)
     validation = dataset_validation(graph, models=fly.net.models, policy_name=fly.policy.name, net=fly.net)

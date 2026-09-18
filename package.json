@@ -1,0 +1,8 @@
+{
+  "name": "virtual-drosophila-devtools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "auto-git": "node scripts/auto-git.mjs"
+  }
+}

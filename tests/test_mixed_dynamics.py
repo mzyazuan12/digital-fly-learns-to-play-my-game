@@ -73,7 +73,7 @@ def test_lifnetwork_is_mixed_dynamics_alias():
 
 
 def test_graded_a_drives_spiking_b_every_tick_without_accumulating():
-    net = _chain(["graded", "spiking"], anatomical=80.0)
+    net = _chain(["graded", "spiking"], anatomical=5.0)
     held = float(net.v_rest + GRADED_RELEASE_SCALE_MV)
     currents = []
     voltages = []
@@ -81,11 +81,13 @@ def test_graded_a_drives_spiking_b_every_tick_without_accumulating():
         net.v[0] = held
         net._tick()
         assert bool(net.last_spikes[0]) is False
+        assert bool(net.last_spikes[1]) is False
         assert float(net.graded_release[0]) > GRADED_RELEASE_EPS
         assert float(net.g_graded[1]) > 0.0
         currents.append(float(net.g_graded[1]))
         voltages.append(float(net.v[1]))
     assert int(net.counts[0]) == 0
+    assert int(net.counts[1]) == 0
     assert np.allclose(currents, currents[0], rtol=0, atol=1e-6)
     assert voltages[-1] > voltages[0]
     assert voltages[-1] > float(net.v_rest)
@@ -98,7 +100,7 @@ def test_graded_a_drives_spiking_b_every_tick_without_accumulating():
 
 
 def test_graded_cell_is_not_gated_by_refractory_live_mask():
-    net = _chain(["graded", "spiking"], anatomical=80.0)
+    net = _chain(["graded", "spiking"], anatomical=5.0)
     net.refractory[0] = 9
     net.v[0] = float(net.v_rest + GRADED_RELEASE_SCALE_MV)
     net._tick()

@@ -1,7 +1,15 @@
 """NO_SCAFFOLD walking initiation: no timer, no fallback, no named gait command."""
 
 import pytest
-from organism.config import NO_SCAFFOLD, LEGACY_POLICY, motor_fidelity_level, MotorMode
+from organism.config import (
+    NO_SCAFFOLD,
+    LEGACY_POLICY,
+    ScaffoldViolation,
+    assert_neural_drive_source,
+    format_policy_banner,
+    motor_fidelity_level,
+    MotorMode,
+)
 from organism.bridge import MotorBridge, NonNeuralMotorAuthority, format_walk_trace
 from organism.neuromodulation import MODULATORY_EFFECTS
 from organism.toy import miniature_connectome
@@ -19,6 +27,20 @@ def test_no_scaffold_disables_timers_and_fallbacks():
     assert NO_SCAFFOLD.allow_privileged_world_state is False
     assert NO_SCAFFOLD.allow_pretrained_low_level_gait is True
     assert LEGACY_POLICY.allow_behavior_timers is True
+    assert NO_SCAFFOLD.no_scaffold is True
+    assert LEGACY_POLICY.no_scaffold is False
+    banner = format_policy_banner(NO_SCAFFOLD)
+    assert "NO_SCAFFOLD MODE" in banner
+    assert "timers            OFF" in banner
+    assert "named gait cmds   OFF" in banner
+    assert "walk fallback     OFF" in banner
+    assert "root motion       OFF" in banner
+    assert "target coords     OFF" in banner
+    assert "developer motor   OFF" in banner
+    assert "low-level gait    ON" in banner
+    assert issubclass(NonNeuralMotorAuthority, ScaffoldViolation)
+    with pytest.raises(ScaffoldViolation):
+        assert_neural_drive_source(NO_SCAFFOLD, "walking_timer")
 
 
 def test_motor_fidelity_level_is_identified_dns_to_cpg():
@@ -79,7 +101,7 @@ def test_plastic_factor_cannot_flip_synapse_sign():
     graph = miniature_connectome(0)
     net = LIFNetwork(graph, params=LIFParams(dt=1.0), seed=0)
     anatomy = net.anatomical.copy()
-    signed = np.sign(net.edge_sign)
+    signed = np.sign(net.synaptic_effect_sign)
     net.plastic_component[:] = -8.0
     net._rebuild_weights()
     assert float(net.plastic_factor.min()) >= MIN_PLASTIC_FACTOR
@@ -159,6 +181,8 @@ def test_no_scaffold_experiment_toy(tmp_path):
     assert result["birth_checkpoint"]
     assert {"intact", "DNp09_lesion", "upstream_lesion", "sham_lesion"} <= set(result["trials"])
     assert result["comparison"]["statue"] or result["trials"]["intact"]["n_walk"] >= 0
+    assert result["synapse_coordinate_tables_loaded"] is False
+    assert result["computational_graph"]["synapse_coordinate_tables_loaded"] is False
 
 
 def test_optogenetic_dnp09_probe_still_causal():
