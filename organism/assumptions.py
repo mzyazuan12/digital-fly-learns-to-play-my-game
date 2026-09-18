@@ -114,7 +114,7 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
     ),
     Assumption(
         id="vnc_walking_cpg_traced_not_executed",
-        statement="MaleCNS contains DNg100, DNb08, DNg97/oDN1, and the published E1/E2/I1 walking CPG types (Pugliese 2025). Their anatomy is traced. Joint trajectories still come from FlyGym HybridTurningController until MODE_NEURAL_MOTOR exists. Standing is silent locomotor DNs, not a stand() command.",
+        statement="MaleCNS contains DNg100, DNb08, DNg97/oDN1, and the published walking CPG types (E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012, E4=IN03A006, E5=INXXX464). These names tag cells for measurement/lesion; they never mean if DNg100: walk(). Type-level averages are not a CPG state — there are six per-leg copies. MODE_NEURAL_CPG records E1/E2/I1 timing and does not actuate FlyBody yet. Standing is silent locomotor DNs, not a stand() command. An older preprint passage appears to call E5 INXXX466; canonical mapping is the published article.",
         used_by="organism.walking_pathways / organism.bridge.MotorBridge",
         biological=True,
     ),
