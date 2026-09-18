@@ -93,19 +93,32 @@ def _summarize(records, fly: VirtualFly, label: str) -> dict:
 
 
 def probe_dnp09_on(graph: Connectome, *, seed: int = 1, current: float = 40.0) -> dict:
-    """Optogenetic-style current into DNp09. Experimental probe, not a timer."""
+    """Optogenetic-style current into DNp09. Experimental probe, not a timer.
+
+    Each phase starts from rest so the restore control is a pathway test, not
+    a race against network hyperpolarization that built up in the intact window.
+    """
     params = LIFParams(dt=1.0)
     net = LIFNetwork(graph, params=params, seed=seed)
     bridge = MotorBridge(graph, legacy_scaffold=False, policy=NO_SCAFFOLD)
-    net.add_drive(bridge.walk_indices, current, source="experiment.optogenetic.DNp09")
-    counts = net.step(10)
-    cmd = bridge.read(
-        counts,
-        0.01,
-        net=net,
-        external_command="experiment.optogenetic.DNp09",
-        motor_mode="MODE_ENGINEERED_CPG",
-    )
+
+    def phase(*, silent: bool) -> tuple:
+        net.reset()
+        net.lesion(bridge.walk_indices, silent=silent)
+        net.clear_drive()
+        net.add_drive(bridge.walk_indices, current, source="experiment.optogenetic.DNp09")
+        bridge.walk_trace = 0.0
+        counts = net.step(10)
+        cmd = bridge.read(
+            counts,
+            0.01,
+            net=net,
+            external_command="experiment.optogenetic.DNp09",
+            motor_mode="MODE_ENGINEERED_CPG",
+        )
+        return cmd, counts
+
+    cmd, counts = phase(silent=False)
     intact = {
         "mode": cmd.mode,
         "walk_hz": cmd.walk_hz,
@@ -121,17 +134,7 @@ def probe_dnp09_on(graph: Connectome, *, seed: int = 1, current: float = 40.0) -
         "n_spike_events": int(net.last_n_spike_events),
         "trace_text": bridge.last_trace.get("text", ""),
     }
-    net.lesion(bridge.walk_indices, silent=True)
-    net.clear_drive()
-    net.add_drive(bridge.walk_indices, current, source="experiment.optogenetic.DNp09")
-    bridge.walk_trace = 0.0
-    counts_lesion = net.step(10)
-    cmd_lesion = bridge.read(
-        counts_lesion,
-        0.01,
-        net=net,
-        external_command="experiment.optogenetic.DNp09",
-    )
+    cmd_lesion, counts_lesion = phase(silent=True)
     lesion = {
         "mode": cmd_lesion.mode,
         "walk_hz": cmd_lesion.walk_hz,
@@ -139,17 +142,7 @@ def probe_dnp09_on(graph: Connectome, *, seed: int = 1, current: float = 40.0) -
         "spikes": int(counts_lesion[bridge.walk_indices].sum()) if bridge.walk_indices.size else 0,
         "scaffold_used": cmd_lesion.scaffold_used,
     }
-    net.lesion(bridge.walk_indices, silent=False)
-    net.clear_drive()
-    net.add_drive(bridge.walk_indices, current, source="experiment.optogenetic.DNp09")
-    bridge.walk_trace = 0.0
-    counts_restored = net.step(10)
-    cmd_restored = bridge.read(
-        counts_restored,
-        0.01,
-        net=net,
-        external_command="experiment.optogenetic.DNp09",
-    )
+    cmd_restored, counts_restored = phase(silent=False)
     restored = {
         "mode": cmd_restored.mode,
         "walk_hz": cmd_restored.walk_hz,
