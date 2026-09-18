@@ -18,4 +18,5 @@ def test_motor_map_resolves_toy_motor_neurons():
 def test_default_motor_mode_is_engineered_cpg():
     fly = VirtualFly.hatch(seed=0, connectome="synthetic")
     assert fly.motor_mode is MotorMode.ENGINEERED_CPG
+    assert fly.motor_fidelity_level == 1
     assert fly.motor_map.notes["n_vnc_motor_annotated"] >= 1

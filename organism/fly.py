@@ -381,6 +381,8 @@ class VirtualFly:
                     "connectome_dataset": self.identity.connectome_dataset,
                     "motor_mode": self.motor_mode.value,
                     "legacy_scaffold": self.legacy_scaffold,
+                    "policy": self.policy.as_dict(),
+                    "motor_fidelity_level": self.motor_fidelity_level,
                     "birth_definition": BIRTH_DEFINITION,
                     "consciousness_claimed": False,
                     "neuron_models": self.net.models.snapshot(),
@@ -440,6 +442,8 @@ class VirtualFly:
                     "history": self.history,
                     "provenance_summary": self.provenance.summary(),
                     "legacy_scaffold": self.legacy_scaffold,
+                    "policy": self.policy.as_dict(),
+                    "motor_fidelity_level": self.motor_fidelity_level,
                     }
                 ),
                 indent=2,
@@ -449,17 +453,62 @@ class VirtualFly:
         (path / "metabolic_state.json").write_text(
             json.dumps(_json_ready(self.physiology.state.snapshot()), indent=2) + "\n"
         )
+        (path / "modulator_state.json").write_text(
+            json.dumps(_json_ready(self.physiology.neuromodulation.state.snapshot()), indent=2) + "\n"
+        )
         (path / "neuromodulatory_state.json").write_text(
             json.dumps(_json_ready(self.physiology.neuromodulation.state.snapshot()), indent=2) + "\n"
+        )
+        (path / "birth.json").write_text(
+            json.dumps(
+                _json_ready(
+                    {
+                        "individual_id": self.identity.fly_id,
+                        "seed": self.identity.seed,
+                        "created_at": self.identity.created_at,
+                        "model_version": MODEL_VERSION,
+                        "connectome_dataset": self.identity.connectome_dataset,
+                        "neurons": self.connectome.n,
+                        "edges": self.connectome.n_edges,
+                        "v_init_noise_std": float(self.net.v_init_noise_std),
+                        "v_mean": float(self.net.v.mean()),
+                        "v_std": float(self.net.v.std()),
+                        "age_ms": float(self.net.sim_ms),
+                        "policy": self.policy.as_dict(),
+                        "motor_fidelity_level": self.motor_fidelity_level,
+                        "birth_definition": BIRTH_DEFINITION,
+                        "consciousness_claimed": False,
+                    }
+                ),
+                indent=2,
+            )
+            + "\n"
+        )
+        (path / "age.json").write_text(
+            json.dumps({"age_ms": float(self.net.sim_ms), "at": _utc_now()}, indent=2) + "\n"
         )
         (path / "channels.json").write_text(json.dumps(self.channels.to_jsonable()) + "\n")
         self.net.save(path / "neural_state.npz")
         self.net.save(path / "brain.npz")
         np.savez_compressed(
+            path / "functional_synapses.npz",
+            anatomical=self.net.anatomical,
+            functional_gain=self.net.functional_gain,
+            plastic_component=self.net.plastic_component,
+        )
+        np.savez_compressed(
             path / "synaptic_state.npz",
             anatomical=self.net.anatomical,
             functional_gain=self.net.functional_gain,
             plastic_component=self.net.plastic_component,
+        )
+        np.savez_compressed(
+            path / "learned_state.npz",
+            plastic_component=self.net.plastic_component,
+            eligibility=self.learning.eligibility,
+            n_updates=np.int64(self.learning.n_updates),
+            last_dopamine=np.float64(self.learning.last_dopamine),
+            changed_edges=np.int64(self.learning.changed_edges),
         )
         memories = path / "memories"
         memories.mkdir(exist_ok=True)
@@ -545,7 +594,9 @@ class VirtualFly:
         if not brain_path.exists():
             brain_path = path / "brain.npz"
         fly.net.load(brain_path)
-        syn = path / "synaptic_state.npz"
+        syn = path / "functional_synapses.npz"
+        if not syn.exists():
+            syn = path / "synaptic_state.npz"
         if syn.exists():
             syn_data = np.load(syn)
             fly.net.functional_gain = syn_data["functional_gain"]

@@ -27,7 +27,7 @@ def probe_dnp09(seed: int = 1, current: float = 40.0) -> dict:
     bridge = MotorBridge(graph, legacy_scaffold=False)
     net.add_drive(bridge.walk_indices, current, source="experiment.optogenetic.DNp09")
     counts = net.step(10)
-    cmd = bridge.read(counts, 0.01)
+    cmd = bridge.read(counts, 0.01, net=net, external_command="experiment.optogenetic.DNp09")
     intact = {
         "mode": cmd.mode,
         "walk_hz": cmd.walk_hz,

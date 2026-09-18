@@ -240,6 +240,19 @@ class MotorBridge:
             for p in self.pathways
         ]
         self.notes["fallback"] = self._fallback_note()
+        self._rate_cells = {
+            f"{typename}_{side}": _side_filter(
+                self.connectome, _lookup_type(self.connectome, typename), side
+            )
+            for typename, side in (
+                ("DNp09", "L"),
+                ("DNp09", "R"),
+                ("DNa01", "L"),
+                ("DNa01", "R"),
+                ("DNa02", "L"),
+                ("DNa02", "R"),
+            )
+        }
 
     def _fallback_note(self) -> str:
         if self.walk_indices.size and self.steer_left.size and self.steer_right.size:
@@ -409,18 +422,9 @@ class MotorBridge:
         return f"{ct}_{side}" if side else ct
 
     def identified_rates(self, counts: np.ndarray, duration_s: float) -> dict[str, float]:
-        keys = (
-            ("DNp09", "L"),
-            ("DNp09", "R"),
-            ("DNa01", "L"),
-            ("DNa01", "R"),
-            ("DNa02", "L"),
-            ("DNa02", "R"),
-        )
         out: dict[str, float] = {}
-        for typename, side in keys:
-            idx = _side_filter(self.connectome, _lookup_type(self.connectome, typename), side)
-            out[f"{typename}_{side}"] = _group_rate(counts, idx, duration_s)
+        for name, idx in self._rate_cells.items():
+            out[name] = _group_rate(counts, idx, duration_s)
         return out
 
     def _ensure_walk_afferents(self) -> None:

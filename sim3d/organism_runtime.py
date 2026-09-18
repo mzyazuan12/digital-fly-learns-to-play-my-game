@@ -7,8 +7,10 @@ shiritori.lol session — not a local word bot, not a dictionary.
 
 from __future__ import annotations
 
+import json
 import threading
 import time
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -18,10 +20,25 @@ from organism.body import Pose
 from organism.fly import VirtualFly
 from worlds.room import living_room, spawn_on_rug
 
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_or_hatch(*, connectome: str, seed: int) -> VirtualFly:
+    path = ROOT / "individuals" / "fly_001"
+    identity_path = path / "identity.json"
+    if identity_path.exists() and ((path / "neural_state.npz").exists() or (path / "brain.npz").exists()):
+        identity = json.loads(identity_path.read_text())
+        dataset = str(identity.get("connectome_dataset", ""))
+        want_male = connectome in {"malecns", "malecns_v1", "full"}
+        is_male = "malecns" in dataset
+        if want_male == is_male:
+            return VirtualFly.load(path)
+    return VirtualFly.hatch(seed=seed, connectome=connectome, legacy_scaffold=False)
+
 
 class OrganismRuntime:
     def __init__(self, *, connectome: str = "synthetic", seed: int = 1, physics: bool = False, live=None):
-        self.fly = VirtualFly.hatch(seed=seed, connectome=connectome)
+        self.fly = _load_or_hatch(connectome=connectome, seed=seed)
         room = living_room()
         x, y, z = spawn_on_rug()
         spawn_z = 0.6 if physics else z
@@ -451,7 +468,11 @@ class OrganismRuntime:
             "walk_trace": float(getattr(rec, "walk_trace", 0.0) or 0.0) if rec is not None else 0.0,
             "scaffold_used": bool(getattr(rec, "scaffold_used", False)) if rec is not None else False,
             "legacy_scaffold": self.fly.legacy_scaffold,
+            "policy": self.fly.policy.as_dict(),
             "motor_mode": self.fly.motor_mode.value,
+            "motor_fidelity_level": self.fly.motor_fidelity_level,
+            "walk_initiation_trace": dict(self.fly.bridge.last_trace or {}),
+            "walk_trace_text": (self.fly.bridge.last_trace or {}).get("text", ""),
             "consciousness_claimed": False,
             "gait_phase": float(getattr(self.fly.body, "gait_phase", 0.0)),
             "activity": self._activity_cache or self._activity(rec),

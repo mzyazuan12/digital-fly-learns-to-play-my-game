@@ -14,6 +14,9 @@ const hud = {
   spikes: document.getElementById("spikes"),
   pathways: document.getElementById("pathways"),
   source: document.getElementById("source"),
+  fidelity: document.getElementById("fidelity"),
+  walkTrace: document.getElementById("walk-trace-body"),
+  walkWhy: document.getElementById("walk-why"),
 };
 const game = {
   need: document.getElementById("need"),
@@ -78,6 +81,19 @@ function syncFly(s) {
   const pw = s.activity?.pathways || {};
   hud.pathways.textContent = `walk ${fmtHz(pw.walk)}  L ${fmtHz(pw.steer_l)}  R ${fmtHz(pw.steer_r)}`;
   hud.source.textContent = (s.sources || []).join(", ") || "—";
+  if (hud.fidelity) hud.fidelity.textContent = `level ${s.motor_fidelity_level ?? 1} · ${s.policy?.name || "NO_SCAFFOLD"}`;
+  const trace = s.walk_trace_text || s.walk_initiation_trace?.text;
+  if (hud.walkTrace && trace) hud.walkTrace.textContent = trace;
+  if (hud.walkWhy) {
+    const why = s.walk_initiation_trace?.why_dnp09 || {};
+    const rows = [
+      ...(why.afferents || []).map((row) => `← ${row.pre_label || row.pre_type || row.pre}`),
+      ...Object.keys(why.drive_sources || {}).map((name) => `← ${name}`),
+    ];
+    hud.walkWhy.innerHTML = rows.length
+      ? rows.map((line) => `<li>${line}</li>`).join("")
+      : "<li>No DNp09 afferents this window.</li>";
+  }
   hud.backend.textContent = `${s.dataset} · ${Number(s.neurons || 0).toLocaleString()} cells · ${s.body || "body"}`;
   if (room?.fly) {
     if (s.bodies?.length) room.fly.applyBodies(s.bodies, { mode: s.mode, wingPhase: s.wing_phase });
@@ -193,6 +209,13 @@ document.getElementById("btn-em").onclick = () => {
   }
   document.getElementById("btn-em").textContent = ng.hidden ? "Embed EM" : "Hide EM";
 };
+
+const walkTracePanel = document.getElementById("walk-trace");
+if (walkTracePanel && hud.walkWhy) {
+  walkTracePanel.onclick = () => {
+    hud.walkWhy.hidden = !hud.walkWhy.hidden;
+  };
+}
 
 setInterval(pump, 40);
 pump();

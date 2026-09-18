@@ -20,7 +20,7 @@ from pathlib import Path
 import numpy as np
 
 from flybrain.loader import Connectome
-from organism.config import MotorMode, ParameterProvenance
+from organism.config import MotorMode, ParameterProvenance, motor_fidelity_level
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MAP = ROOT / "data" / "motor_neuron_muscle_map.json"
@@ -179,6 +179,7 @@ def command_for_mode(
     """
     return {
         "motor_mode": mode.value,
+        "motor_fidelity_level": motor_fidelity_level(mode),
         "cpg_left": float(left),
         "cpg_right": float(right),
         "body_mode": walk_mode,

@@ -9,7 +9,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=nmf30" />
+    <link rel="stylesheet" href="./styles.css?v=nmf31" />
     <script type="importmap">
       {
         "imports": {
@@ -36,8 +36,15 @@
         <dt>Thorax</dt><dd id="thorax">—</dd>
         <dt>Spikes</dt><dd id="spikes">0</dd>
         <dt>DNs</dt><dd id="pathways">—</dd>
+        <dt>Fidelity</dt><dd id="fidelity">—</dd>
         <dt>Source</dt><dd id="source">—</dd>
       </dl>
+      <div id="walk-trace" class="walk-trace">
+        <p class="kicker">Walk initiation</p>
+        <pre id="walk-trace-body">waiting…</pre>
+        <ul id="walk-why" hidden></ul>
+        <p class="hint">Click the trace to see why DNp09 is active.</p>
+      </div>
       <div class="actions">
         <button id="btn-invite" type="button">Ask the fly to play</button>
         <button id="btn-follow" type="button" class="ghost">Free camera</button>
@@ -114,6 +121,6 @@
       </dl>
       <p id="game-msg" class="hint">Ask the fly. One tap per key. Modes are on the monitor.</p>
     </aside>
-    <script type="module" src="./js/organism.js?v=nmf30"></script>
+    <script type="module" src="./js/organism.js?v=nmf31"></script>
   </body>
 </html>
