@@ -175,7 +175,7 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
         aliases=("I1",),
         role="cpg_inhibitory",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025: I1 (IN16B036) in the MANC three-neuron core",
+        literature="Pugliese et al. 2025 bioRxiv: I1 (IN16B036) in the MANC three-neuron core",
         family="cpg",
     ),
     PathwaySpec(
