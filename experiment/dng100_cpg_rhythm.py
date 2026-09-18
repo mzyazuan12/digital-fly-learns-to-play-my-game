@@ -181,8 +181,8 @@ def run(
             }
             lesion_report[name] = _lesion_effect(intact["summary"], result["summary"])
             expected = {
-                "E1": "rhythm should collapse strongly (published full-network necessity)",
-                "E2": "rhythm should collapse strongly (published full-network necessity)",
+                "E1": "rhythm should collapse strongly (preprint full-network necessity)",
+                "E2": "rhythm should collapse strongly (preprint full-network necessity)",
                 "I1": "effect may be weaker; other inhibitory cells can compensate",
             }[name]
             lesion_report[name]["published_expectation"] = expected
@@ -214,8 +214,11 @@ def run(
         "e5_type_provenance": dict(E5_TYPE_PROVENANCE),
         "rhythmicity_threshold": RHYTHMICITY_THRESHOLD,
         "published_walk_hz": [7.0, 15.0],
+        "source_status": "bioRxiv preprint (Pugliese et al. 2025), not a peer-reviewed article",
         "dng100_n": int(dng100.size),
+        "dng100_is_six_neurons": False,
         "dng100_body_ids": [int(graph.neuron_ids[i]) for i in dng100.tolist()[:8]],
+        "dng100_sides": [str(graph.side[i]) for i in dng100.tolist()[:8]],
         "catalog": {
             name: catalog[name]
             for name in ("DNg100", "DNb08", "E1", "E2", "I1", "I2", "E3", "E4", "E5")
@@ -224,9 +227,32 @@ def run(
         "leg_copies": {slot: circuit.legs[slot].as_dict() for slot in LEG_SLOTS},
         "anatomy_core": {
             "dng100_to_E1": anatomy["dng100_to_E1"],
+            "dng100_to_each_E1": anatomy.get("dng100_to_each_E1"),
             "E1_to_E2": anatomy["E1_to_E2"],
             "I1_to_E1": anatomy["I1_to_E1"],
             "n_leg_copies_with_E1": anatomy["n_leg_copies_with_E1"],
+        },
+        "authors_vs_ours": {
+            "authors": {
+                "graph": "MANC T1 DN-to-MN subgraph, 4604 neurons",
+                "equations": "rate ODE dR/dt = (half-tanh(WR+I) - R)/tau",
+                "tau_s": 0.02,
+                "threshold": 7.5,
+                "weight_multiplier": 0.03,
+                "stim_current": 250,
+                "stim_index_in_their_W": 31,
+                "T_s": 2.0,
+                "oscillation_threshold": 0.5,
+            },
+            "ours": {
+                "graph": "full MaleCNS sparse graph, ordinary edges, no extra CPG wiring",
+                "equations": "MixedDynamicsNetwork LIF + graded VNC premotor",
+                "dt_ms": float(params.dt),
+                "contact_gain": float(params.contact_gain),
+                "stim_current": current,
+                "stimulated": "both DNg100 body IDs",
+                "retuned": False,
+            },
         },
         "dataset_validation": dataset_validation(graph, policy_name=NO_SCAFFOLD.name, net=net),
         "conditions": conditions,
@@ -241,6 +267,10 @@ def run(
         "t_ms": intact["recording"].t_ms,
         "DNg100": intact["recording"].dng100,
         "DNg100_v": intact["recording"].dng100_v,
+        "DNg100_L": intact["recording"].dng100_l,
+        "DNg100_R": intact["recording"].dng100_r,
+        "DNg100_L_v": intact["recording"].dng100_l_v,
+        "DNg100_R_v": intact["recording"].dng100_r_v,
     }
     for slot, traces in intact["recording"].legs.items():
         for role, tr in traces.items():
