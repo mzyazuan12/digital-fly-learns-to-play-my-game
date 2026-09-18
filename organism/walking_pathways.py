@@ -70,7 +70,7 @@ WALKING_DNS: tuple[PathwaySpec, ...] = (
         aliases=("BDN2",),
         role="walking_command_cpg_access",
         maps_to="forward_locomotor_drive",
-        literature="Pugliese et al. 2025; Sapkal et al. 2024 BDN2 walking, including headless",
+        literature="Pugliese et al. 2025 bioRxiv; Sapkal et al. 2024 BDN2 walking, including headless",
         family="command_dn",
     ),
     PathwaySpec(
@@ -157,7 +157,7 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
         aliases=("E1",),
         role="cpg_excitatory",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025: E1 (IN17A001), one per leg neuropil",
+        literature="Pugliese et al. 2025 bioRxiv: E1 (IN17A001), one per leg neuropil",
         family="cpg",
     ),
     PathwaySpec(
@@ -166,7 +166,7 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
         aliases=("E2",),
         role="cpg_excitatory",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025 published: E2 (INXXX466). Not E5.",
+        literature="Pugliese et al. 2025 bioRxiv: E2 (INXXX466). Not E5.",
         family="cpg",
     ),
     PathwaySpec(
