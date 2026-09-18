@@ -61,17 +61,22 @@ def test_toy_has_six_leg_slots_and_fills_front_left():
     assert legs["FR"]["E1"]["index"] is None
 
 
-def test_rhythmicity_detects_sine_and_tonic():
+def test_rhythmicity_detects_sine_tonic_and_explosion():
     dt = 1.0
     t = np.arange(400)
     sine = 0.5 + 0.4 * np.sin(2 * np.pi * 10.0 * t / 1000.0)
     scored = rhythmicity_score(sine, dt)
     assert scored["oscillatory"]
     assert 7.0 <= float(scored["peak_hz"]) <= 15.0
+    assert scored["exploding"] is False
     tonic = np.full(400, 0.8)
     plateau = rhythmicity_score(tonic, dt)
     assert plateau["tonic_plateau"]
     assert plateau["oscillatory"] is False
+    boom = np.linspace(-52.0, -400.0, 400)
+    exploded = rhythmicity_score(boom, dt)
+    assert exploded["exploding"]
+    assert exploded["oscillatory"] is False
 
 
 def test_neural_cpg_mode_does_not_hand_joints_to_flygym():
