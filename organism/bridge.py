@@ -194,9 +194,11 @@ class MotorBridge:
             },
         }
         self.walk_trace = 0.0
+        self.forward_trace = 0.0
         self.steer_l_trace = 0.0
         self.steer_r_trace = 0.0
         self.reverse_trace = 0.0
+        self.circuit = WalkingCircuit(connectome)
         self.walk_indices = self._resolve(
             "walk_initiation",
             ("DNp09",),
@@ -253,6 +255,73 @@ class MotorBridge:
             maps_to="antennal_groom",
             literature="Antennal grooming DNs; joint CPG is an engineered VNC surrogate",
         )
+        self.dng100_indices = self._resolve(
+            "walking_dng100",
+            ("DNg100",),
+            None,
+            maps_to="forward_speed",
+            literature="Pugliese et al. 2025 / Sapkal et al. 2024: DNg100/BDN2 walking command",
+        )
+        self.odn1_indices = self._resolve(
+            "walking_odn1",
+            ("DNg97", "oDN1"),
+            None,
+            maps_to="forward_speed",
+            literature="Sapkal et al. 2024: oDN1/DNg97 bolt-related forward walking",
+        )
+        self.dnb08_indices = self._resolve(
+            "leg_search_dnb08",
+            ("DNb08",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025: DNb08 rhythmic searching, not walking",
+        )
+        self.halt_bluebell = self._resolve(
+            "halt_bluebell",
+            ("DNg60",),
+            None,
+            maps_to="halt_observe",
+            literature="Sapkal et al. 2024: Bluebell/DNg60 walk-OFF",
+        )
+        self.halt_foxglove = self._resolve(
+            "halt_foxglove",
+            ("CB0890",),
+            None,
+            maps_to="halt_observe",
+            literature="Sapkal et al. 2024 Foxglove/CB0890. May be unlabeled in MaleCNS.",
+        )
+        self.halt_brake = self._resolve(
+            "halt_brake",
+            ("AN19A018",),
+            None,
+            maps_to="halt_observe",
+            literature="Sapkal et al. 2024 Brake; FlyBase AN19A018",
+        )
+        self.cpg_e1 = self._resolve(
+            "cpg_E1",
+            ("IN17A001",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025: E1 (IN17A001)",
+        )
+        self.cpg_e2 = self._resolve(
+            "cpg_E2",
+            ("INXXX466",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025: E2 (INXXX466)",
+        )
+        self.cpg_i1 = self._resolve(
+            "cpg_I1",
+            ("IN16B036",),
+            None,
+            maps_to="observe_only",
+            literature="Pugliese et al. 2025: I1 (IN16B036)",
+        )
+        self.forward_walk_indices = self.circuit.forward_walk_indices
+        if self.forward_walk_indices.size == 0:
+            self.forward_walk_indices = self.walk_indices
+        self.halt_indices = self.circuit.halt_indices
         chemo = connectome.lookup(superclass="cb_sensory")
         contact = connectome.lookup(superclass="vnc_sensory")
         self.chemosensory = chemo.astype(np.int32) if chemo.size else np.zeros(0, np.int32)
