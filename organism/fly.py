@@ -305,8 +305,8 @@ class VirtualFly:
         self.world = None
         self.loop = None
 
-    def lesion(self, pathway: str, silent: bool = True) -> np.ndarray:
-        """Silence an identified pathway. Restoring it is the scientific control."""
+    def lesion(self, pathway: str | np.ndarray, silent: bool = True) -> np.ndarray:
+        """Silence an identified pathway or an explicit index set. Restoring is the control."""
         names = {
             "walk": self.bridge.walk_indices,
             "walk_initiation": self.bridge.walk_indices,
@@ -314,13 +314,18 @@ class VirtualFly:
             "steer_left": self.bridge.steer_left,
             "steer_right": self.bridge.steer_right,
         }
-        if pathway not in names:
-            raise KeyError(f"Unknown pathway '{pathway}'")
-        idx = names[pathway]
+        if isinstance(pathway, str):
+            if pathway not in names:
+                raise KeyError(f"Unknown pathway '{pathway}'")
+            idx = names[pathway]
+            name = pathway
+        else:
+            idx = np.asarray(pathway, dtype=np.int32)
+            name = "indices"
         self.net.lesion(idx, silent=silent)
-        if silent:
-            self.bridge.walk_trace = 0.0 if pathway in {"walk", "walk_initiation", "DNp09"} else self.bridge.walk_trace
-        self.log_life("lesion", {"pathway": pathway, "silent": silent, "n": int(idx.size)})
+        if silent and name in {"walk", "walk_initiation", "DNp09"}:
+            self.bridge.walk_trace = 0.0
+        self.log_life("lesion", {"pathway": name, "silent": silent, "n": int(idx.size)})
         return idx
 
     def step(self, **kwargs):
@@ -531,7 +536,54 @@ class VirtualFly:
             (path / "body_state.json").write_text(json.dumps(self.body.snapshot(), indent=2) + "\n")
         self._init_life_history()
         self.log_life("save", {"path": str(path)})
+        validation = self.net.dataset_validation(policy_name=self.policy.name)
+        (path / "dataset_validation.json").write_text(
+            json.dumps(_json_ready(validation), indent=2) + "\n"
+        )
+        (path / "dataset_validation.txt").write_text(validation["text"])
         return path
+
+    def restore_state(self, path: Path | str) -> None:
+        """Reload neural/metabolic/learned state without reconstructing the connectome.
+
+        Used to fork identical birth checkpoints for lesion trials.
+        """
+        path = Path(path)
+        brain_path = path / "neural_state.npz"
+        if not brain_path.exists():
+            brain_path = path / "brain.npz"
+        self.net.load(brain_path)
+        syn = path / "functional_synapses.npz"
+        if not syn.exists():
+            syn = path / "synaptic_state.npz"
+        if syn.exists():
+            syn_data = np.load(syn)
+            self.net.functional_gain = syn_data["functional_gain"]
+            self.net.plastic_component = syn_data["plastic_component"]
+            self.net._rebuild_weights()
+        if (path / "plasticity.npz").exists():
+            plastic = np.load(path / "plasticity.npz")
+            self.learning.eligibility = plastic["eligibility"]
+            self.learning.n_updates = int(plastic["n_updates"])
+            self.learning.last_dopamine = float(plastic["last_reward"])
+            self.learning.changed_edges = int(plastic["changed_edges"])
+        if (path / "metabolic_state.json").exists():
+            self.physiology.state.load(json.loads((path / "metabolic_state.json").read_text()))
+        if (path / "neuromodulatory_state.json").exists():
+            self.physiology.neuromodulation.state.load(
+                json.loads((path / "neuromodulatory_state.json").read_text())
+            )
+        self.net.silent.fill(False)
+        self.bridge.reset_traces()
+        self.provenance = ProvenanceLog()
+        self.physiology.seconds = 0.0
+        if self.body is not None and getattr(self.body, "kind", "") != "neuromechfly":
+            self.body.teleport(Pose())
+            if hasattr(self.body, "last_command"):
+                self.body.last_command = np.zeros(2)
+            if hasattr(self.body, "last_mode"):
+                self.body.last_mode = "rest"
+        self.log_life("restore_state", {"from": str(path)})
 
     @classmethod
     def load(
