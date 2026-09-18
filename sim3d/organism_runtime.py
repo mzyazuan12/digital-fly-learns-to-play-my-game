@@ -34,7 +34,13 @@ def _load_or_hatch(*, connectome: str, seed: int) -> VirtualFly:
         want_male = connectome in {"malecns", "malecns_v1", "full"}
         is_male = "malecns" in dataset
         if want_male == is_male:
-            return VirtualFly.load(path)
+            try:
+                return VirtualFly.load(path)
+            except ValueError:
+                # Miniature graph wiring can change; do not reuse a stale toy brain.
+                if not is_male:
+                    return VirtualFly.hatch(seed=seed, connectome=connectome, legacy_scaffold=False)
+                raise
     return VirtualFly.hatch(seed=seed, connectome=connectome, legacy_scaffold=False)
 
 
