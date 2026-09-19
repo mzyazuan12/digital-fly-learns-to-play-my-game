@@ -429,14 +429,25 @@ def load_raw_annotation_table():
             f"index.name={raw.index.name}. Wrong DataFrame: the NT table and "
             "syn-points use column 'body', not 'bodyId'. Do not use the index."
         )
-    dng = raw.loc[raw["type"].astype(str).str.strip().eq("DNg100")]
-    if len(dng) != 2:
-        raise AssertionError(f"expected exactly 2 MaleCNS DNg100 rows, got {len(dng)}")
-    if CORE_CPG_TYPES["I2"] != "IN19B007":
-        raise AssertionError("I2 must be IN19B007")
-    if "IN19A007" in CORE_CPG_TYPES.values():
-        raise AssertionError("IN19A007 is not I2")
+    assert_expected_annotation_counts(raw)
+    if CORE_CPG_TYPES["I2"] != "IN19A007":
+        raise AssertionError("I2 must be IN19A007")
+    if "IN19B007" in CORE_CPG_TYPES.values():
+        raise AssertionError("IN19B007 is not I2")
     return raw
+
+
+def assert_expected_annotation_counts(raw) -> None:
+    """Stop the mapping build rather than guessing if a core type has the wrong copy count."""
+    if CORE_CPG_TYPES["I2"] != "IN19A007":
+        raise AssertionError("I2 must be IN19A007")
+    if "IN19B007" in CORE_CPG_TYPES.values():
+        raise AssertionError("IN19B007 is not I2")
+    types = raw["type"].astype(str).str.strip()
+    for cell_type, expected in EXPECTED_COUNTS.items():
+        found = raw.loc[types.eq(cell_type)]
+        if len(found) != expected:
+            raise AssertionError(f"{cell_type}: expected {expected}, got {len(found)}")
 
 
 def raw_dng100_annotation_rows():
