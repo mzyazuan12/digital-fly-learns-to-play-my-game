@@ -59,6 +59,9 @@ def test_jsonable_keeps_python_bools():
     assert _jsonable(True) is True
     assert _jsonable(False) is False
     assert _jsonable({"ok": True, "n": 1}) == {"ok": True, "n": 1}
+
+
+def test_three_model_ids_are_distinct():
     params = PuglieseRateParams()
     assert SHIU_LIF_SANITY_MODEL == "shiu_lif_sanity_v1"
     assert PUGLIESE_CPG_MODEL == "pugliese_cpg_v1"
