@@ -31,7 +31,7 @@ from flybrain.neurons import (
     PUGLIESE_RATE_MALECNS_V1,
     SHIU_LIF_SANITY_MODEL,
 )
-from flybrain.malecns_volume import SIZE_CACHE, assert_volume_size_source
+from flybrain.malecns_volume import assert_volume_size_source
 from flybrain.pugliese_rate import (
     OSCILLATION_THRESHOLD,
     PuglieseRateParams,
