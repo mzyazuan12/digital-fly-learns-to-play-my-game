@@ -557,16 +557,20 @@ def tiny_cpg_connectome(*, synapse_count: int = SCALE_SYNAPSE_COUNT) -> Connecto
 
 
 def tiny_cpg_numerical_sanity(*, steps: int = 80, current: float = ISOLATED_STIM_CURRENT) -> dict:
-    """Reconnect the walking motif only after the four isolated tests pass.
+    """Reconnect the walking motif only after the isolated tests pass.
 
-    Success is finite millivolt traces and downstream current, not a published rhythm.
+    Success is a boring, finite millivolt census. FFT does not run here.
     """
     four = run_lif_sanity()
     if not four["ok"]:
         return {
             "ok": False,
             "name": "tiny_cpg_numerical_sanity",
+            "model_id": SHIU_LIF_SANITY_MODEL,
             "failed": ["lif_sanity"] + four["failed"],
+            "fft_executed": False,
+            "allow_lesions": False,
+            "valid_for_rhythm_analysis": False,
             "note": "Isolated SHIU_LIF tests failed. Do not interpret this CPG.",
         }
     graph = tiny_cpg_connectome()
@@ -579,30 +583,67 @@ def tiny_cpg_numerical_sanity(*, steps: int = 80, current: float = ISOLATED_STIM
     net.add_drive([dng], float(current), source="sanity.tiny_cpg.DNg100")
     v = np.zeros((steps, net.n), dtype=np.float64)
     g_e1 = np.zeros(steps, dtype=np.float64)
-    dng_spikes = 0
+    spikes = np.zeros(net.n, dtype=np.int32)
     for t in range(steps):
         net.step(1)
         v[t] = net.v
         g_e1[t] = float(net.g[e1])
-        dng_spikes += int(net.last_spikes[dng])
-    dynamics_ok = bool(valid_dynamics(v))
-    e1_depolarized = bool(float(np.max(v[:, e1])) > V_REST_MV + 0.05)
+        spikes += net.last_spikes.astype(np.int32)
+    census = {}
+    for name, idx in TINY_CPG_INDEX.items():
+        vv = v[:, idx]
+        nsp = int(spikes[idx])
+        census[name] = {
+            "spikes": nsp,
+            "v_min": float(vv.min()),
+            "v_max": float(vv.max()),
+            "active": bool(nsp > 0 or float(vv.max()) > V_REST_MV + 0.05),
+            "voltage_finite": voltages_finite(vv),
+            "voltage_physiological": voltage_is_physiological(vv),
+            "valid_dynamics": valid_dynamics(vv),
+        }
+    all_finite = all(row["voltage_finite"] for row in census.values())
+    all_phys = all(row["voltage_physiological"] for row in census.values())
+    all_dyn = all(row["valid_dynamics"] for row in census.values())
+    dng_voltage_physiological = bool(census["DNg100"]["voltage_physiological"])
+    dng_dynamics_valid = bool(census["DNg100"]["valid_dynamics"])
+    dng_v_exploding = not (dng_voltage_physiological and dng_dynamics_valid)
+    valid_for_rhythm_analysis = (
+        dng_dynamics_valid
+        and not dng_v_exploding
+        and all_phys
+        and all_finite
+        and all_dyn
+    )
+    dynamics_ok = bool(all_dyn and all_finite)
+    e1_depolarized = bool(census["E1"]["v_max"] > V_REST_MV + 0.05)
     e1_got_current = bool(float(np.max(g_e1)) > 0.0)
-    i1_not_exploded = bool(valid_dynamics(v[:, i1]))
-    ok = dynamics_ok and dng_spikes > 0 and e1_depolarized and e1_got_current and i1_not_exploded
+    i1_not_exploded = bool(census["I1"]["valid_dynamics"])
+    dng_spikes = int(census["DNg100"]["spikes"])
+    ok = dynamics_ok and all_phys and dng_spikes > 0 and e1_depolarized and e1_got_current and i1_not_exploded
     return {
         "ok": bool(ok),
         "name": "tiny_cpg_numerical_sanity",
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "dynamics_model": SHIU_LIF_SANITY_MODEL,
         "not_a_pugliese_reproduction": True,
         "voltage_unit": VOLTAGE_UNIT,
+        "census": census,
+        "dng100_voltage_physiological": dng_voltage_physiological,
+        "dng100_dynamics_valid": dng_dynamics_valid,
+        "dng100_voltage_exploding": dng_v_exploding,
+        "all_network_voltages_valid": all_phys,
+        "all_voltages_physiological": all_phys,
+        "all_voltages_finite": all_finite,
         "valid_dynamics": dynamics_ok,
+        "valid_for_rhythm_analysis": bool(valid_for_rhythm_analysis),
         "allow_lesions": False,
+        "fft_executed": False,
         "dominant_frequency": None,
         "rhythmicity_score": None,
-        "dng100_spikes": int(dng_spikes),
-        "e1_vmax": float(np.max(v[:, e1])),
-        "e1_vmin": float(np.min(v[:, e1])),
+        "dng100_spikes": dng_spikes,
+        "e1_vmax": census["E1"]["v_max"],
+        "e1_vmin": census["E1"]["v_min"],
         "e1_g_max": float(np.max(g_e1)),
         "v_min": float(v.min()),
         "v_max": float(v.max()),
@@ -612,9 +653,9 @@ def tiny_cpg_numerical_sanity(*, steps: int = 80, current: float = ISOLATED_STIM
         "v_threshold_mv": V_THRESHOLD_MV,
         "next": (
             "Tiny CPG voltages are finite and DNg100 drives E1. Still not a "
-            "Pugliese reproduction. Only then consider full MaleCNS."
+            "Pugliese reproduction. FFT has not run. Only then consider rhythm."
             if ok
-            else "Tiny CPG is not numerically sane. Do not load MaleCNS."
+            else "Tiny CPG is not numerically sane. Do not FFT. Do not load MaleCNS."
         ),
     }
 
@@ -627,6 +668,7 @@ def run_lif_sanity() -> dict:
         isolated_positive_stimulus(),
         cholinergic_depolarizes(),
         gaba_hyperpolarizes(),
+        synapse_count_scaling(),
         weight_orientation(),
     ]
     by_name = {row["name"]: row for row in tests}
@@ -635,6 +677,7 @@ def run_lif_sanity() -> dict:
         "ok": not failed,
         "failed": failed,
         "tests": by_name,
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "dynamics_model": SHIU_LIF_SANITY_MODEL,
         "not_a_pugliese_reproduction": True,
         "pugliese_cpg_model": PUGLIESE_CPG_MODEL,
@@ -646,17 +689,19 @@ def run_lif_sanity() -> dict:
         "tau_syn_ms": TAU_SYN_MS,
         "delay_ms": DELAY_MS,
         "wsyn_mv": WSYN_MV,
+        "synaptic_step_mv": SYNAPTIC_STEP_MV,
         "physiological_v_lower": PHYSIOLOGICAL_V_LOWER_MV,
         "physiological_v_upper": PHYSIOLOGICAL_V_UPPER_MV,
         "physiological_bound_is_debug_guardrail": True,
+        "debug_hierarchy": list(DEBUG_HIERARCHY),
         "next_if_failed": (
             "Do not load MaleCNS. Do not run lesions. The sign, scale, or CSR "
             "orientation of MixedDynamicsNetwork is wrong."
         ),
         "next_if_passed": (
-            "SHIU_LIF_SANITY_MODEL isolated tests passed. Next is the tiny CPG "
-            "subgraph (DNg100+E1/E2/E3/I1/I2), still not PUGLIESE_CPG_MODEL, "
-            "and not full MaleCNS."
+            "shiu_lif_sanity_v1 isolated tests passed. Next is the tiny CPG "
+            "subgraph (DNg100+E1/E2/E3/I1/I2), still not pugliese_cpg_reference_v1, "
+            "and not full MaleCNS. Do not FFT until the tiny-circuit census is sane."
         ),
     }
 
@@ -665,7 +710,7 @@ def assert_lif_sanity() -> dict:
     report = run_lif_sanity()
     if not report["ok"]:
         raise RuntimeError(
-            "SHIU_LIF_SANITY_MODEL failed: "
+            "shiu_lif_sanity_v1 failed: "
             + ", ".join(report["failed"])
             + ". Do not run MaleCNS or lesions. "
             + report["next_if_failed"]
@@ -676,7 +721,7 @@ def assert_lif_sanity() -> dict:
 def format_lif_sanity(report: dict | None = None) -> str:
     report = report or run_lif_sanity()
     lines = [
-        f"{SHIU_LIF_SANITY_MODEL}  (not {PUGLIESE_CPG_MODEL})",
+        f"model_id={report.get('model_id', SHIU_LIF_SANITY_MODEL)}  (not {PUGLIESE_CPG_MODEL})",
         f"ok={report['ok']}  unit={report['voltage_unit']}  "
         f"V_rest={report['v_rest']}  V_thresh={report['v_threshold']}  Wsyn={report['wsyn_mv']} mV/synapse",
         "",
@@ -690,6 +735,13 @@ def format_lif_sanity(report: dict | None = None) -> str:
             extra = f"  spikes={row.get('spikes')}  minV={row.get('v_min'):.2f}"
         elif "outgoing_from_A" in row:
             extra = f"  A→{row['outgoing_from_A']}  B→{row['outgoing_from_B']}"
+        elif "by_transmitter" in row:
+            ach = (row.get("by_transmitter") or {}).get("acetylcholine") or {}
+            gab = (row.get("by_transmitter") or {}).get("gaba") or {}
+            extra = (
+                f"  ACh ΔV20/ΔV10={ach.get('ratio_20_over_10')}  "
+                f"GABA ΔV20/ΔV10={gab.get('ratio_20_over_10')}"
+            )
         elif "expected_g" in row:
             extra = (
                 f"  N={row.get('synapse_count')}×Wsyn={row.get('wsyn_mv')} "
@@ -708,11 +760,27 @@ def format_lif_sanity(report: dict | None = None) -> str:
 
 def format_tiny_cpg(report: dict | None = None) -> str:
     report = report or tiny_cpg_numerical_sanity()
-    return (
-        f"{SHIU_LIF_SANITY_MODEL} tiny CPG  ok={report['ok']}  "
+    census = report.get("census") or {}
+    lines = [
+        f"model_id={report.get('model_id', SHIU_LIF_SANITY_MODEL)} tiny CPG  "
+        f"ok={report.get('ok')}  fft_executed={report.get('fft_executed')}",
         f"valid_dynamics={report.get('valid_dynamics')}  "
-        f"DNg100 spikes={report.get('dng100_spikes')}  "
-        f"E1 Vmax={report.get('e1_vmax')}  "
-        f"V[{report.get('v_min')}, {report.get('v_max')}] mV\n"
-        f"{report.get('next')}\n"
-    )
+        f"all voltages physiological={report.get('all_voltages_physiological')}",
+        "",
+    ]
+    for name in ("DNg100", "E1", "E2", "E3", "I1", "I2", "MN"):
+        row = census.get(name) or {}
+        if name == "DNg100":
+            lines.append(f"{name}:")
+            lines.append(f"  spikes? {row.get('spikes')}")
+            lines.append(f"  min/max V? {row.get('v_min')} / {row.get('v_max')}")
+        else:
+            lines.append(f"{name}:")
+            lines.append(f"  active? {row.get('active')}")
+            if row:
+                lines.append(f"  min/max V? {row.get('v_min')} / {row.get('v_max')}")
+    lines.append("")
+    lines.append(f"all voltages physiological? {report.get('all_voltages_physiological')}")
+    lines.append(f"fft_executed? {report.get('fft_executed')}")
+    lines.append(str(report.get("next") or ""))
+    return "\n".join(lines) + "\n"
