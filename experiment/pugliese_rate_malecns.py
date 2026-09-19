@@ -31,18 +31,19 @@ from flybrain.neurons import (
     PUGLIESE_RATE_MALECNS_V1,
     SHIU_LIF_SANITY_MODEL,
 )
+from flybrain.malecns_volume import SIZE_CACHE, assert_volume_size_source
 from flybrain.pugliese_rate import (
     OSCILLATION_THRESHOLD,
     PuglieseRateParams,
     class_conditional_shuffle,
     integrate_rate,
     make_input,
-    neuron_sizes_from_swc,
+    neuron_sizes_from_neuprint_cache,
     population_rate_metrics,
     rate_rhythmicity_score,
     rates_are_valid,
     reweight_connectivity,
-    sample_cell_parameters,
+    sample_cell_parameters_block,
     set_sizes,
     signed_weight_matrix,
 )
@@ -267,9 +268,15 @@ def simulate_graph(
     params: PuglieseRateParams,
 ) -> dict:
     W = signed_weight_matrix(graph)
-    print("computing SWC sizes", flush=True)
-    size_info = neuron_sizes_from_swc(graph.neuron_ids)
-    print(f"sizes missing={size_info['n_missing']} median={np.nanmedian(size_info['sizes'])}", flush=True)
+    print("loading neuPrint Neuron.size cache", flush=True)
+    size_info = neuron_sizes_from_neuprint_cache(graph.neuron_ids)
+    assert_volume_size_source(size_info["source"])
+    median = float(size_info["median_volume_reference"])
+    print(
+        f"sizes missing={size_info['n_missing']} full_dataset_median={median} "
+        f"circuit_nanmedian={np.nanmedian(size_info['sizes'])}",
+        flush=True,
+    )
     rng = np.random.default_rng(seed)
     W_sim = W
     if shuffle:
@@ -281,17 +288,22 @@ def simulate_graph(
     stim_idx = graph.index_of(stim_body)
     inputs = make_input(graph.n, [stim_idx], params.stim_amplitude)
     idx = role_indices(graph)
+    drawn = sample_cell_parameters_block(graph.n, n_replicates, seed, params)
+    gain, threshold = set_sizes(
+        size_info["sizes"],
+        drawn["gain"],
+        drawn["threshold"],
+        median_size=median,
+    )
     replicates = []
     for rep in range(n_replicates):
-        drawn = sample_cell_parameters(graph.n, rng, params)
-        gain, threshold = set_sizes(size_info["sizes"], drawn["gain"], drawn["threshold"])
         print(f"replicate {rep+1}/{n_replicates} integrating {graph.n} cells", flush=True)
         rates = integrate_rate(
             weighted,
-            tau=drawn["tau"],
-            gain=gain,
-            threshold=threshold,
-            fr_cap=drawn["fr_cap"],
+            tau=drawn["tau"][rep],
+            gain=gain[rep],
+            threshold=threshold[rep],
+            fr_cap=drawn["fr_cap"][rep],
             inputs=inputs,
             params=params,
         )
@@ -314,6 +326,7 @@ def simulate_graph(
         "W": W,
         "W_sim": W_sim,
         "size_info": size_info,
+        "parameter_sampler": drawn["sampler"],
         "replicates": replicates,
         "stim_index": int(stim_idx),
         "indices": {k: v.astype(int).tolist() for k, v in idx.items()},
