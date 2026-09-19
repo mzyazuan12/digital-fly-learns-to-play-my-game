@@ -19,6 +19,7 @@ import numpy as np
 
 from flybrain.lif_sanity import (
     assert_lif_sanity,
+    _spiking_models,
     DEBUG_HIERARCHY,
     format_lif_sanity,
     format_tiny_cpg,
@@ -395,7 +396,7 @@ def run(
     if warmup is None:
         warmup = min(50, max(10, steps // 8))
     params = shiu_lif_params(dt=1.0)
-    net = MixedDynamicsNetwork(graph, params=params, seed=seed)
+    net = MixedDynamicsNetwork(graph, params=params, seed=seed, models=_spiking_models(graph.n))
     circuit = WalkingCircuit(graph)
     stim_info = stimulated_dng100(graph, circuit, stim=stim)
     dng100 = stim_info["indices"]

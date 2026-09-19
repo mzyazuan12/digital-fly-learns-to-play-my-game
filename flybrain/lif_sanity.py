@@ -595,7 +595,7 @@ def tiny_cpg_numerical_sanity(*, steps: int = 80, current: float = ISOLATED_STIM
             "note": "Isolated SHIU_LIF tests failed. Do not interpret this CPG.",
         }
     graph = tiny_cpg_connectome()
-    net = MixedDynamicsNetwork(graph, params=shiu_lif_params(dt=1.0), seed=0)
+    net = MixedDynamicsNetwork(graph, params=shiu_lif_params(dt=1.0), seed=0, models=_spiking_models(graph.n))
     net.intrinsic_noise_std = 0.0
     net.reset()
     dng = TINY_CPG_INDEX["DNg100"]
