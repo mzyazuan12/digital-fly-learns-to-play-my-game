@@ -60,7 +60,7 @@ SIDES = ("L", "R")
 ROI_COLUMNS = tuple(f"{seg}_{side}_{kind}" for seg in NEUROMERES for side in SIDES for kind in ("pre", "post"))
 ASSIGNMENT_METHOD = "LegNp synaptic innervation"
 DNG100_ASSIGNMENT_METHOD = "MaleCNS annotation type == DNg100"
-FORBIDDEN_KEYS = {"id", "dng100_body_id"}
+FORBIDDEN_KEYS = {"id", "dng100_body_id", "body_id"}
 PUGLIESE_MANC_STIM_BODY = 10093
 
 PAPER_SLOTS = ("LF", "RF", "LM", "RM", "LH", "RH")
@@ -81,7 +81,7 @@ CORE_CPG_TYPES = {
     "E2": "INXXX466",
     "E3": "IN19B012",
     "I1": "IN16B036",
-    "I2": "IN19B007",
+    "I2": "IN19A007",
 }
 EXTENDED_CPG_TYPES = {
     "E4": "IN03A006",
@@ -95,34 +95,42 @@ ROLE_FOR_TYPE = {
     "IN17A001": "E1",
     "INXXX466": "E2",
     "IN16B036": "I1",
-    "IN19B007": "I2",
+    "IN19A007": "I2",
     "IN19B012": "E3",
     "IN03A006": "E4",
     "INXXX464": "E5",
 }
 TYPE_FOR_ROLE = {role: typename for typename, role in ROLE_FOR_TYPE.items() if role != "walking_command"}
 TYPE_FOR_ROLE["DNg100"] = "DNg100"
-EXPECTED_COPIES = {
+EXPECTED_COUNTS = {
+    "DNg100": 2,
     "IN17A001": 6,
     "INXXX466": 6,
-    "IN16B036": 6,
-    "IN19B007": 2,
     "IN19B012": 6,
+    "IN16B036": 6,
+    "IN19A007": 6,
+}
+EXPECTED_COPIES = {
+    **{typename: EXPECTED_COUNTS[typename] for typename in EXPECTED_COUNTS},
     "IN03A006": 6,
     "INXXX464": 6,
-    "DNg100": 2,
 }
 
 I2_TYPE_PROVENANCE = {
-    "canonical": "IN19B007",
+    "canonical": "IN19A007",
     "role": "I2",
-    "rejected_alias": "IN19A007",
+    "rejected_alias": "IN19B007",
+    "source": (
+        "Pugliese et al. 2025 (PMC13142387): E1=IN17A001, E2=INXXX466, "
+        "E3=IN19B012, I1=IN16B036, I2=IN19A007"
+    ),
     "note": (
-        "Pugliese core CPG I2 is IN19B007. IN19A007 exists in MaleCNS "
-        "(six T1/T2/T3 copies) and has connectivity around this circuit, "
-        "but it is not the identified I2."
+        "I2 is IN19A007: six T1/T2/T3 copies, predicted GABAergic. "
+        "IN19B007 exists in MaleCNS (two neurons) and was an incorrect earlier I2 assignment."
     ),
 }
+MALE_CNS_DATASETS = {"MaleCNS_v1.0", "MaleCNS_v1"}
+MANC_DATASETS = {"MANC_T1", "MANC"}
 
 # Best neuromere / (T1+T2+T3). Below this → AMBIGUOUS.
 CONFIDENCE_THRESHOLD = 0.70
