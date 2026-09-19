@@ -576,10 +576,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--stim-body", type=int, default=MALECNS_DNG100_R)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--n-replicates", type=int, default=2)
+    parser.add_argument("--n-replicates", type=int, default=8)
     parser.add_argument("--shuffle", action="store_true", help="Experiment D: class-conditional topology null")
     parser.add_argument("--reference", type=Path, default=DEFAULT_REFERENCE)
     parser.add_argument("--lif-report", type=Path, default=DEFAULT_LIF)
+    parser.add_argument(
+        "--manc-portcheck",
+        type=Path,
+        required=True,
+        help="Directory or report.json from experiment.pugliese_rate_manc_portcheck (step 6)",
+    )
     args = parser.parse_args(argv)
     result = run(
         args.out,
@@ -589,6 +595,7 @@ def main(argv: list[str] | None = None) -> int:
         shuffle=args.shuffle,
         reference_metrics=args.reference,
         lif_report=args.lif_report,
+        manc_portcheck=args.manc_portcheck,
     )
     print(args.out.resolve())
     print("status", result["status"], "rhythm_reproduced", result["rhythm_reproduced"])
