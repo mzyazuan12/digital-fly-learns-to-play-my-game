@@ -366,6 +366,7 @@ def run(
         "atol": params.atol,
         "stim_amplitude": params.stim_amplitude,
         "weight_transformation": "anatomical count × NT sign, then transpose × 0.03/0.03",
+        "rhythm_criterion": "authors compute_oscillation_score >= 0.5 for both E1 and E2; published 7-15 Hz is an annotation",
         "note": (
             "Restricted MaleCNS topology with published rate dynamics. "
             "Not a Shiu-LIF retune. Not the intact CNS. Two replicates are an "
