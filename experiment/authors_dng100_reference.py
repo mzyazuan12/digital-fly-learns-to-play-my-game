@@ -101,8 +101,9 @@ def _load_rates(ckpt_dir: Path):
     return rates, rs_path
 
 
-def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
-    ckpt_dir = Path(ckpt_dir)
+def extract_reference(ckpt_dir: Path, config_path: Path | None = None, *, output_dir: Path | None = None) -> dict:
+    ckpt_dir = Path(ckpt_dir).resolve()
+    reference = Path(output_dir).resolve() if output_dir else ckpt_dir.parent / "analysis"
     if is_shipped_author_figure(ckpt_dir):
         raise ValueError(
             "third_party/Pugliese_2026/figures are author-shipped reference "
@@ -116,12 +117,19 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
             "logs/run_config.yaml (or .hydra/config.yaml) and a *_Rs.npz trace."
         )
     sys.path.insert(0, str(REPO))
-    os.chdir(REPO)
     import pandas as pd
     import jax.numpy as jnp
     from src.utils.sim_utils import compute_oscillation_score, load_wTable
 
     rates, rs_path = _load_rates(ckpt_dir)
+    if not np.all(np.isfinite(rates)) or np.any(rates < 0):
+        raise ValueError("Invalid rate trace: refusing reference rhythm analysis")
+    import yaml
+    config_path = config_path or ckpt_dir.parent / "logs" / "run_config.yaml"
+    config = yaml.safe_load(config_path.read_text())
+    dt_s = float(config["sim"]["dt"])
+    if dt_s <= 0:
+        raise ValueError("Reference sample interval must be positive")
     # Authors save (n_stim, n_replicates, n_neurons, n_times)
     if rates.ndim == 4:
         mean_rates = rates.mean(axis=(0, 1))
@@ -149,7 +157,7 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
         active_mask = mean_rate > 0.1
     osc, hz = compute_oscillation_score(jnp.asarray(mean_rates), jnp.asarray(active_mask), 0.05)
     hz_cycles = float(hz)
-    hz_real = hz_cycles / 0.001 if 0 < hz_cycles < 1 else hz_cycles
+    hz_real = hz_cycles / dt_s if np.isfinite(hz_cycles) and hz_cycles > 0 else None
 
     def _pop(name: str, activity: np.ndarray, mask_active: np.ndarray):
         mask = type_series.eq(name).to_numpy()[: activity.shape[0]]
@@ -160,8 +168,8 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
         return {
             "n": int(mask.sum()),
             "oscillation_score": float(sc),
-            "frequency_cycles_per_sample": f,
-            "frequency_hz": f / 0.001 if 0 < f < 1 else f,
+            "frequency_cycles_per_sample": f if np.isfinite(f) else None,
+            "frequency_hz": f / dt_s if np.isfinite(f) and f > 0 else None,
         }
 
     per_rep = []
@@ -184,11 +192,10 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
             )
     e1_osc = sum(1 for row in per_rep if (row["E1"].get("oscillation_score") or 0) >= 0.5)
 
-    REFERENCE.mkdir(parents=True, exist_ok=True)
-    np.save(REFERENCE / "rates.npy", mean_rates)
-    np.save(REFERENCE / "motor_rates.npy", motor_rates)
+    reference.mkdir(parents=True, exist_ok=False)
+    np.savez_compressed(reference / "rates.npz", model_id=PUGLIESE_CPG_MODEL, rates=mean_rates, motor_rates=motor_rates, dt_s=dt_s)
     if config_path and config_path.exists():
-        shutil.copy(config_path, REFERENCE / "config.yaml")
+        shutil.copy(config_path, reference / "config.yaml")
     metrics = {
         "source": "Pugliese_2026 src/run_hydra.py experiment=DNg100_Stim (authors' code, not a reimplementation)",
         "rates_shape_raw": list(rates.shape),
@@ -239,9 +246,19 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
             "Cloned figures/DNg100_Stim_* directories are not this run."
         ),
     }
-    if hz_real < 7:
+    if hz_real is not None and hz_real < 7:
         metrics["frequency_below_published_band"] = True
-    (REFERENCE / "rhythm_metrics.json").write_text(json.dumps(metrics, indent=2) + "\n")
+    def clean(value):
+        if isinstance(value, dict): return {k: clean(v) for k,v in value.items()}
+        if isinstance(value, list): return [clean(v) for v in value]
+        if isinstance(value, float) and not np.isfinite(value): return None
+        return value
+    metrics.update(dt_s=dt_s, source_dataset="MANC_T1", source_matrix_index=31, source_body_id=10093,
+                   neuron_parameter_file=str(ckpt_dir / "neuron_params.h5"),
+                   seed=config["experiment"]["seed"], per_replicate=per_rep,
+                   reference_git_commit=subprocess.check_output(["git", "-C", str(REPO), "rev-parse", "HEAD"], text=True).strip())
+    metrics = clean(metrics)
+    (reference / "rhythm_metrics.json").write_text(json.dumps(metrics, indent=2, allow_nan=False) + "\n")
     return metrics
 
 
@@ -249,15 +266,10 @@ def latest_ckpt(run_id: str = "authors_dng100") -> Path:
     """Our Hydra ckpt only. Never third_party/Pugliese_2026/figures."""
     base = OUR_HYDRA_ROOT / "DNg100_Stim"
     matches = [p for p in base.glob(f"**/run_id={run_id}/ckpt") if is_our_hydra_run(p)]
-    if matches:
-        return matches[0]
-    matches = [p for p in base.glob("**/ckpt") if is_our_hydra_run(p)]
     if not matches:
-        raise FileNotFoundError(
-            f"no Hydra ckpt under {base}. Shipped figures in {SHIPPED_FIGURES_DIR} "
-            "do not count. Run: python src/run_hydra.py experiment=DNg100_Stim paths=mac"
-        )
+        raise FileNotFoundError(f"No completed Hydra run for requested run_id={run_id} under {base}")
     return max(matches, key=lambda p: p.stat().st_mtime)
+
 
 
 def main(argv: list[str] | None = None) -> int:
