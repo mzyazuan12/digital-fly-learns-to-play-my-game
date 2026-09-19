@@ -1,0 +1,22 @@
+{
+  "dataset": "male-cns:v1.0",
+  "volume_property": "size",
+  "n_neurons_with_size": 175313,
+  "min_volume": 62913.0,
+  "max_volume": 106999248062.0,
+  "mean_volume": 389973782.7771001,
+  "median_volume": 178403737.0,
+  "vnc_n_neurons_with_size": 0,
+  "vnc_median_volume": null,
+  "median_used_for_normalization": "full_MaleCNS_Neuron_size",
+  "note": "Pugliese normalize by the median of the modeled dataset, not the tiny selected circuit. This cache uses the median of all neuPrint male-cns:v1.0 Neuron.size values. Their published mCNS model was a 4,310-cell VNC-ROI population whose exact membership is not in this checkout; the VNC-synapse median is recorded only as a diagnostic.",
+  "n_cached_neurons": 408,
+  "n_missing_volume": 0,
+  "missing_malecns_body_ids": [],
+  "inspected_body_id": 10056,
+  "inspected_keys_include_size": true,
+  "dng100_r_volume_raw": 16542412146.0,
+  "dng100_l_volume_raw": 16688976137.0,
+  "parquet": "/Users/mac/fly-learns-shiri/data/malecns_v1/pugliese_rate_sizes.parquet",
+  "source": "neuprint male-cns:v1.0 Neuron.size (voxel volume)"
+}

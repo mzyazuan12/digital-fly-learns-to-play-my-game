@@ -247,14 +247,13 @@ def test_full_malecns_remains_locked(monkeypatch):
         experiment.run(connectome="malecns")
 
 
-def test_restricted_graph_primary_transfer_excludes_left_dng100():
+def test_restricted_graph_keeps_both_dng100_and_stim_is_separate():
     from experiment.restricted_cpg import restricted_cpg_graph
 
-    graph = restricted_cpg_graph(dng100_bodies=(10056,))
-    dng = graph.neuron_ids[graph.cell_type == "DNg100"]
-    assert list(dng.astype(int)) == [10056]
-    assert 10045 not in set(graph.neuron_ids.astype(int))
-    assert graph.n < 2000
+    graph = restricted_cpg_graph()
+    dng = sorted(int(x) for x in graph.neuron_ids[graph.cell_type == "DNg100"])
+    assert dng == [10045, 10056]
+    assert graph.n == 408
     assert "motor feedback omitted" in graph.report["subset"]
 
 

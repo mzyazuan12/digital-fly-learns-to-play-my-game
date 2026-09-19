@@ -12,14 +12,16 @@ Run from the repository root using its Python environment:
 
 The biological validator creates a new timestamped directory, scans raw synaptic ROI data in batches, saves the mapping, builds a restricted biological graph, and runs each DNg100 side separately. Exit status 2 means a scientific gate failed; inspect its report and preserved traces. No full connectome simulation is launched.
 
-The next scientific gate transfers published Pugliese rate dynamics onto that restricted MaleCNS graph. It does not retune Shiu LIF:
+The next scientific gate transfers published Pugliese rate dynamics onto that restricted MaleCNS graph. It does not retune Shiu LIF. Step 6 must pass on the authors' MANC matrix before any MaleCNS run:
 
 ```sh
-.venv/bin/python -m experiment.pugliese_rate_malecns
-.venv/bin/python -m experiment.pugliese_rate_malecns --shuffle
+.venv/bin/python scripts/cache_pugliese_rate_sizes.py
+.venv/bin/python -m experiment.pugliese_rate_manc_portcheck
+.venv/bin/python -m experiment.pugliese_rate_malecns --manc-portcheck outputs/pugliese_rate_manc_portcheck_TIMESTAMP
+.venv/bin/python -m experiment.pugliese_rate_malecns --shuffle --manc-portcheck outputs/pugliese_rate_manc_portcheck_TIMESTAMP
 ```
 
-Primary stimulated cell is MaleCNS DNg100_R `10056` (MANC homolog `10093`). Existing output directories are refused. A passing transfer still does not unlock full MaleCNS.
+MaleCNS volume is neuPrint `Neuron.size`, normalized by the full male-cns:v1.0 median, not SWC or the 408-cell median. The restricted graph keeps both DNg100 cells; only `10056` is stimulated. Stimulus 250 is a transfer assumption unless an mCNS stimI is recovered. Existing output directories are refused. A passing transfer still does not unlock full MaleCNS.
 
 For the original-code reference, choose a new run ID:
 
