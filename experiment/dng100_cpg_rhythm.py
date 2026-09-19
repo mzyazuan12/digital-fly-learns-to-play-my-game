@@ -270,7 +270,7 @@ def _population_metrics(summary: dict) -> dict:
     if not valid:
         return {
             "model_id": SHIU_LIF_SANITY_MODEL,
-            "valid_dynamics": False,
+            "valid_dynamics": bool(summary.get("all_dynamics_valid", summary.get("valid_dynamics", False))) and not exploding,
             "valid_for_rhythm_analysis": False,
             "allow_lesions": False,
             "dng100_voltage_physiological": bool(summary.get("dng100_voltage_physiological", False)),
@@ -289,7 +289,7 @@ def _population_metrics(summary: dict) -> dict:
             "mean_motor_firing_rate": float(np.mean(mn_means)) if mn_means else 0.0,
             "active_neuron_count": int(n_active),
             "frequency_below_published_band": False,
-            "invalid_reason": "non-physiological or non-finite voltage; FFT/autocorr peaks are not a CPG rhythm",
+            "invalid_reason": "voltage validation or required circuit recruitment failed; no rhythm analysis permitted",
         }
 
     def _mean(values: list) -> float:
@@ -375,8 +375,10 @@ def run(
     stim: str = "left_vnc",
     out: Path = OUT,
 ) -> dict:
-    graph = load_graph(connectome, seed)
     assert_lif_sanity()
+    if connectome in {"malecns", "malecns_v1", "full"}:
+        raise RuntimeError("Full MaleCNS experiment is locked pending biological tiny-circuit recruitment and Pugliese reference review. Run python -m experiment.validate_neural_milestone first; synthetic sanity cannot unlock it.")
+    graph = load_graph(connectome, seed)
     tiny = connectome in {"tiny_cpg", "cpg_subgraph"}
     if connectome in {"malecns", "malecns_v1", "full"}:
         cpg = tiny_cpg_numerical_sanity()

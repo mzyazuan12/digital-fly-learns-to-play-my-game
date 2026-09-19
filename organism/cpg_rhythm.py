@@ -226,7 +226,7 @@ class RhythmRecording:
         dng_v = self.dng100_v[stim] if stim.size == self.dng100_v.size and np.any(stim) else self.dng100_v
         dng_l_v = self.dng100_l_v[stim] if stim.size == self.dng100_l_v.size and np.any(stim) else self.dng100_l_v
         dng_r_v = self.dng100_r_v[stim] if stim.size == self.dng100_r_v.size and np.any(stim) else self.dng100_r_v
-        dng_voltage_physiological = bool(not dng_v.size or voltage_is_physiological(dng_v))
+        dng_voltage_physiological = bool(voltage_is_physiological(dng_v) and (self.dng_voltage_valid is None or np.all(self.dng_voltage_valid)))
         dng_dynamics_valid = bool(voltages_finite(dng_v) and dng_voltage_physiological)
         dng_voltage_finite = bool(not dng_v.size or voltages_finite(dng_v))
         left_phys = bool(not dng_l_v.size or voltage_is_physiological(dng_l_v))
@@ -352,6 +352,7 @@ def allocate_traces(circuit: WalkingCircuit, n_steps: int) -> RhythmRecording:
         dng100_r_v=np.zeros(n_steps, dtype=np.float64),
         legs=legs,
         network_voltage_valid=np.zeros(n_steps, dtype=bool),
+        dng_voltage_valid=np.zeros(n_steps, dtype=bool),
     )
 
 
@@ -371,6 +372,8 @@ def record_tick(rec: RhythmRecording, net, circuit: WalkingCircuit, t: int, t_ms
     if rec.network_voltage_valid is not None:
         rec.network_voltage_valid[t] = voltage_is_physiological(net.v)
     dng_idx = circuit.indices("DNg100")
+    if rec.dng_voltage_valid is not None:
+        rec.dng_voltage_valid[t] = bool(dng_idx.size and voltage_is_physiological(net.v[dng_idx]))
     rec.dng100[t] = population_signal(net, dng_idx)
     rec.dng100_v[t] = float(np.mean(net.v[dng_idx])) if dng_idx.size else 0.0
     sides = _dng100_by_side(circuit)
@@ -410,7 +413,7 @@ def interpret_intact(summary: dict) -> dict:
     elif reproduced:
         answer = "yes"
         next_step = (
-            "Oscillation is present under DNg100 current in E1 or E2. Compare "
+            "Oscillation is present under DNg100 current in both E1 and E2. Compare "
             "E1/E2/I1/I2 lesions to Pugliese et al. 2025 bioRxiv, then consider MN→FlyBody."
         )
     elif mn_osc and not (e1_osc and e2_osc):
@@ -441,7 +444,7 @@ def interpret_intact(summary: dict) -> dict:
         ),
         "answer": answer,
         "oscillation_reproduced": reproduced,
-        "valid_dynamics": valid,
+        "valid_dynamics": bool(summary.get("all_dynamics_valid", summary.get("valid_dynamics", False))) and not exploding,
         "valid_for_rhythm_analysis": valid,
         "allow_lesions": valid,
         "e1_rhythmic": e1_osc,

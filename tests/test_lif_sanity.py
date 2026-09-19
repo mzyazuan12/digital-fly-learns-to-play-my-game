@@ -45,7 +45,7 @@ from organism.cpg_rhythm import derive_rhythm_permissions, interpret_intact, rhy
 
 def test_model_labels_are_distinct():
     assert SHIU_LIF_SANITY_MODEL == "shiu_lif_sanity_v1"
-    assert PUGLIESE_CPG_MODEL == "pugliese_cpg_reference_v1"
+    assert PUGLIESE_CPG_MODEL == "pugliese_cpg_v1"
     assert SHIU_LIF_SANITY_MODEL != PUGLIESE_CPG_MODEL
     assert LIFParams().model_id == SHIU_LIF_SANITY_MODEL
     assert LIFParams().model_label == SHIU_LIF_SANITY_MODEL

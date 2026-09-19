@@ -125,10 +125,10 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert "legs" in intact
     assert "FL" in intact["legs"]
     assert "E1" in intact["legs"]["FL"]
-    assert "lesion_E1" in result["conditions"]
-    assert "lesion_I2" in result["conditions"]
-    assert "lesion_I1_I2" in result["conditions"]
-    assert "scrambled_connectome" in result["conditions"]
+    # Numerically valid toy activity does not establish required circuit recruitment.
+    assert intact["valid_for_rhythm_analysis"] is False
+    assert "lesion_E1" not in result["conditions"]
+    assert "scrambled_connectome" not in result["conditions"]
     assert result["answer"] in {"yes", "no"}
     if not result["oscillation_reproduced"]:
         assert "Do not change the graph" in result["next_step"] or "do not change the graph" in result["next_step"].lower()
