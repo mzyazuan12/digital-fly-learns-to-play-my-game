@@ -17,6 +17,7 @@ from flybrain.neurons import (
     PUGLIESE_CPG_MODEL,
     PUGLIESE_CPG_STIM_AMPLITUDE,
     SHIU_LIF_SANITY_MODEL,
+    SYNAPTIC_STEP_MV,
     TAU_M_MS,
     TAU_SYN_MS,
     V_RESET_MV,
@@ -27,16 +28,32 @@ from flybrain.neurons import (
     nt_sign,
     shiu_lif_params,
     valid_dynamics,
+    voltage_is_physiological,
+    voltages_finite,
 )
 
 # Isolated probe current in the Shiu millivolt drive convention.
 # Not PUGLIESE_CPG_STIM_AMPLITUDE (250 in their size-normalized rate ODE).
 ISOLATED_STIM_CURRENT = 40.0
 SCALE_SYNAPSE_COUNT = 20
+SYNAPSE_COUNT_SWEEP = (1, 5, 10, 20, 50)
+SCALE_RATIO_COUNTS = (10, 20)
+SCALE_RATIO_LO = 1.5
+SCALE_RATIO_HI = 2.5
 # First-order expected PSP scale: N × Wsyn. Kernel/integration may be smaller.
 # A single spike must not move V by hundreds of mV.
 SCALE_DV_MAX_MV = 50.0
 SCALE_DV_MIN_MV = 0.01
+DEBUG_HIERARCHY = (
+    "numerical validity",
+    "membrane validity",
+    "synaptic sign validity",
+    "synaptic scale validity",
+    "graph orientation validity",
+    "tiny CPG validity",
+    "rhythm analysis",
+    "lesions",
+)
 
 TINY_CPG_INDEX = {
     "DNg100": 0,
@@ -53,7 +70,11 @@ def _spiking_models(n: int) -> NeuronModelTable:
     return NeuronModelTable(
         kind=np.full(n, NeuronKind.SPIKING_LIF.value, dtype=object),
         provenance=np.full(n, ParameterProvenance.ASSUMED.value, dtype=object),
-        notes={"lif_sanity": True, "dynamics_model": SHIU_LIF_SANITY_MODEL},
+        notes={
+            "lif_sanity": True,
+            "model_id": SHIU_LIF_SANITY_MODEL,
+            "dynamics_model": SHIU_LIF_SANITY_MODEL,
+        },
     )
 
 
@@ -79,7 +100,11 @@ def isolated_dng100_graph() -> Connectome:
         cell_class=np.array([""], dtype=object),
         side=np.array(["L"], dtype=object),
         neurotransmitter=np.array(["acetylcholine"], dtype=object),
-        report={"dataset_id": "lif_sanity_isolated_dng100", "dynamics_model": SHIU_LIF_SANITY_MODEL},
+        report={
+            "dataset_id": "lif_sanity_isolated_dng100",
+            "model_id": SHIU_LIF_SANITY_MODEL,
+            "dynamics_model": SHIU_LIF_SANITY_MODEL,
+        },
     )
 
 
