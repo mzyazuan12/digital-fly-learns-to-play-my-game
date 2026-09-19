@@ -191,6 +191,7 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None, *, output
                 }
             )
     e1_osc = sum(1 for row in per_rep if (row["E1"].get("oscillation_score") or 0) >= 0.5)
+    both_osc = sum(1 for row in per_rep if all((row[role].get("oscillation_score") or 0) >= 0.5 for role in ("E1", "E2")))
 
     reference.mkdir(parents=True, exist_ok=False)
     np.savez_compressed(reference / "rates.npz", model_id=PUGLIESE_CPG_MODEL, rates=mean_rates, motor_rates=motor_rates, dt_s=dt_s)
@@ -214,6 +215,7 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None, *, output
         if per_rep
         else hz_real,
         "fraction_replicates_oscillation_ge_0.5": None,
+        "fraction_replicates_E1_E2_oscillation_ge_0.5": float(both_osc / len(per_rep)) if per_rep else None,
         "fraction_replicates_E1_oscillation_ge_0.5": float(e1_osc / len(per_rep)) if per_rep else None,
         "published_walk_hz": [7.0, 15.0],
         "model_id": PUGLIESE_CPG_MODEL,
@@ -233,7 +235,7 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None, *, output
         ),
         "mn_n": int(mn_mask.sum()),
         "rhythm_reproduced": bool(
-            (e1_osc / len(per_rep) >= 0.5) if per_rep else float(osc) >= 0.5
+            (both_osc / len(per_rep) >= 0.5) if per_rep else False
         ),
         "shipped_author_figures": str(SHIPPED_FIGURES_DIR),
         "shipped_figures_count_as_reproduction": False,

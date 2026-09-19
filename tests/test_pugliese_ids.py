@@ -50,3 +50,16 @@ def test_shipped_pugliese_figures_are_not_a_reproduction():
     # A cloned figure directory must never be treated as our Hydra run.
     assert not (core / "logs" / "run_config.yaml").exists() or True
     assert Path("third_party/Pugliese_2026/figures") == SHIPPED_FIGURES_DIR or SHIPPED_FIGURES_DIR.name == "figures"
+
+
+def test_reference_lookup_never_falls_back_to_another_run(tmp_path, monkeypatch):
+    import pytest
+    from experiment import authors_dng100_reference as ref
+    monkeypatch.setattr(ref, 'OUR_HYDRA_ROOT', tmp_path)
+    wrong = tmp_path/'DNg100_Stim'/'default'/'run_id=wrong'
+    (wrong/'ckpt').mkdir(parents=True)
+    (wrong/'logs').mkdir()
+    (wrong/'ckpt'/'DNg100_Stim_Rs.npz').touch()
+    (wrong/'logs'/'run_config.yaml').touch()
+    with pytest.raises(FileNotFoundError, match='requested'):
+        ref.latest_ckpt('requested')
