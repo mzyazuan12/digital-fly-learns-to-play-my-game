@@ -5,7 +5,7 @@
     "E2": "INXXX466",
     "E3": "IN19B012",
     "I1": "IN16B036",
-    "I2": "IN19B007",
+    "I2": "IN19A007",
     "E4": "IN03A006",
     "E5": "INXXX464",
     "DNg100": "DNg100"
@@ -20,10 +20,11 @@
     "type_level_roi_pooling": false
   },
   "i2_type_provenance": {
-    "canonical": "IN19B007",
+    "canonical": "IN19A007",
     "role": "I2",
-    "rejected_alias": "IN19A007",
-    "note": "Pugliese core CPG I2 is IN19B007. IN19A007 exists in MaleCNS (six T1/T2/T3 copies) and has connectivity around this circuit, but it is not the identified I2."
+    "rejected_alias": "IN19B007",
+    "source": "Pugliese et al. 2025 (PMC13142387): E1=IN17A001, E2=INXXX466, E3=IN19B012, I1=IN16B036, I2=IN19A007",
+    "note": "I2 is IN19A007: six T1/T2/T3 copies, predicted GABAergic. IN19B007 exists in MaleCNS (two neurons) and was an incorrect earlier I2 assignment."
   },
   "DNg100": {
     "pugliese_reference": {
@@ -47,6 +48,7 @@
         "malecns_body_id": 10045,
         "type": "DNg100",
         "side": "L",
+        "identity_method": "raw annotation type == DNg100",
         "root_side": "",
         "instance": "DNg100_L",
         "predicted_nt": "acetylcholine",
@@ -73,6 +75,7 @@
         "innervation_side": "R",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10339,
           "manc_type": "DNg100",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -84,6 +87,7 @@
         "malecns_body_id": 10056,
         "type": "DNg100",
         "side": "R",
+        "identity_method": "raw annotation type == DNg100",
         "root_side": "",
         "instance": "DNg100_R",
         "predicted_nt": "acetylcholine",
@@ -110,6 +114,7 @@
         "innervation_side": "L",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10093,
           "manc_type": "DNg100",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -131,6 +136,7 @@
         "malecns_body_id": 800173,
         "type": "IN17A001",
         "side": "L",
+        "identity_method": "raw annotation type == IN17A001",
         "roi_counts": {
           "T1": {
             "pre": 2519,
@@ -154,6 +160,7 @@
         "assigned_slot": "LF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10707,
           "manc_type": "IN17A001",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -164,6 +171,7 @@
         "malecns_body_id": 800288,
         "type": "IN17A001",
         "side": "R",
+        "identity_method": "raw annotation type == IN17A001",
         "roi_counts": {
           "T1": {
             "pre": 2537,
@@ -187,6 +195,7 @@
         "assigned_slot": "RF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10690,
           "manc_type": "IN17A001",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -197,6 +206,7 @@
         "malecns_body_id": 800009,
         "type": "IN17A001",
         "side": "L",
+        "identity_method": "raw annotation type == IN17A001",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -220,6 +230,7 @@
         "assigned_slot": "LM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10559,
           "manc_type": "IN17A001",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -230,6 +241,7 @@
         "malecns_body_id": 818556,
         "type": "IN17A001",
         "side": "R",
+        "identity_method": "raw annotation type == IN17A001",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -253,6 +265,7 @@
         "assigned_slot": "RM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10072,
           "manc_type": "IN17A001",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -263,6 +276,7 @@
         "malecns_body_id": 800003,
         "type": "IN17A001",
         "side": "L",
+        "identity_method": "raw annotation type == IN17A001",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -286,6 +300,7 @@
         "assigned_slot": "LH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10498,
           "manc_type": "IN17A001",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -296,6 +311,7 @@
         "malecns_body_id": 800114,
         "type": "IN17A001",
         "side": "R",
+        "identity_method": "raw annotation type == IN17A001",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -319,6 +335,7 @@
         "assigned_slot": "RH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10558,
           "manc_type": "IN17A001",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -339,6 +356,7 @@
         "malecns_body_id": 800863,
         "type": "INXXX466",
         "side": "L",
+        "identity_method": "raw annotation type == INXXX466",
         "roi_counts": {
           "T1": {
             "pre": 1492,
@@ -362,6 +380,7 @@
         "assigned_slot": "LF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11751,
           "manc_type": "INXXX466",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -372,6 +391,7 @@
         "malecns_body_id": 903216,
         "type": "INXXX466",
         "side": "R",
+        "identity_method": "raw annotation type == INXXX466",
         "roi_counts": {
           "T1": {
             "pre": 1440,
@@ -395,6 +415,7 @@
         "assigned_slot": "RF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 13698,
           "manc_type": "INXXX466",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -405,6 +426,7 @@
         "malecns_body_id": 801728,
         "type": "INXXX466",
         "side": "L",
+        "identity_method": "raw annotation type == INXXX466",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -428,6 +450,7 @@
         "assigned_slot": "LM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11767,
           "manc_type": "INXXX466",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -438,6 +461,7 @@
         "malecns_body_id": 802025,
         "type": "INXXX466",
         "side": "R",
+        "identity_method": "raw annotation type == INXXX466",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -461,6 +485,7 @@
         "assigned_slot": "RM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 12107,
           "manc_type": "INXXX466",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -471,6 +496,7 @@
         "malecns_body_id": 801149,
         "type": "INXXX466",
         "side": "L",
+        "identity_method": "raw annotation type == INXXX466",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -494,6 +520,7 @@
         "assigned_slot": "LH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 12315,
           "manc_type": "INXXX466",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -504,6 +531,7 @@
         "malecns_body_id": 801429,
         "type": "INXXX466",
         "side": "R",
+        "identity_method": "raw annotation type == INXXX466",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -527,6 +555,7 @@
         "assigned_slot": "RH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 152696,
           "manc_type": "INXXX466",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -547,6 +576,7 @@
         "malecns_body_id": 801884,
         "type": "IN16B036",
         "side": "L",
+        "identity_method": "raw annotation type == IN16B036",
         "roi_counts": {
           "T1": {
             "pre": 982,
@@ -570,6 +600,7 @@
         "assigned_slot": "LF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 13905,
           "manc_type": "IN16B036",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -580,6 +611,7 @@
         "malecns_body_id": 803183,
         "type": "IN16B036",
         "side": "R",
+        "identity_method": "raw annotation type == IN16B036",
         "roi_counts": {
           "T1": {
             "pre": 937,
@@ -603,6 +635,7 @@
         "assigned_slot": "RF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 14096,
           "manc_type": "IN16B036",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -613,6 +646,7 @@
         "malecns_body_id": 903139,
         "type": "IN16B036",
         "side": "L",
+        "identity_method": "raw annotation type == IN16B036",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -636,6 +670,7 @@
         "assigned_slot": "LM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 13186,
           "manc_type": "IN16B036",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -646,6 +681,7 @@
         "malecns_body_id": 904079,
         "type": "IN16B036",
         "side": "R",
+        "identity_method": "raw annotation type == IN16B036",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -669,6 +705,7 @@
         "assigned_slot": "RM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 17322,
           "manc_type": "IN16B036",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -679,6 +716,7 @@
         "malecns_body_id": 801257,
         "type": "IN16B036",
         "side": "L",
+        "identity_method": "raw annotation type == IN16B036",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -702,6 +740,7 @@
         "assigned_slot": "LH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 12953,
           "manc_type": "IN16B036",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -712,6 +751,7 @@
         "malecns_body_id": 801916,
         "type": "IN16B036",
         "side": "R",
+        "identity_method": "raw annotation type == IN16B036",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -735,6 +775,7 @@
         "assigned_slot": "RH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 156245,
           "manc_type": "IN16B036",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -746,88 +787,225 @@
     "n_expected": 6,
     "n_in_annotations": 6
   },
-  "IN19B007": {
+  "IN19A007": {
     "role": "I2",
-    "type": "IN19B007",
+    "type": "IN19A007",
     "neurons": {
-      "LF": null,
-      "RF": null,
-      "LM": null,
-      "RM": null,
-      "LH": null,
-      "RH": null
-    },
-    "unassigned": [
-      {
+      "LF": {
         "source_dataset": "MaleCNS_v1.0",
-        "malecns_body_id": 800814,
-        "type": "IN19B007",
+        "malecns_body_id": 800374,
+        "type": "IN19A007",
         "side": "L",
+        "identity_method": "raw annotation type == IN19A007",
         "roi_counts": {
           "T1": {
+            "pre": 2029,
+            "post": 6855
+          },
+          "T2": {
             "pre": 0,
             "post": 0
           },
-          "T2": {
-            "pre": 28,
-            "post": 24
-          },
           "T3": {
-            "pre": 437,
-            "post": 1130
+            "pre": 0,
+            "post": 0
           }
         },
-        "assigned_segment": "T3",
-        "assignment_confidence": 0.967881408276714,
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
         "assignment_method": "LegNp synaptic innervation",
         "fallback_used": false,
-        "assignment_status": "AMBIGUOUS",
-        "assigned_side": null,
-        "assigned_slot": null,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 12920,
-          "manc_type": "IN19B007",
+          "source_dataset": "MANC_T1",
+          "manc_body_id": 10242,
+          "manc_type": "IN19A007",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
         }
       },
-      {
+      "RF": {
         "source_dataset": "MaleCNS_v1.0",
-        "malecns_body_id": 801028,
-        "type": "IN19B007",
+        "malecns_body_id": 800411,
+        "type": "IN19A007",
         "side": "R",
+        "identity_method": "raw annotation type == IN19A007",
+        "roi_counts": {
+          "T1": {
+            "pre": 1737,
+            "post": 4687
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RF",
+        "manc_correspondence": {
+          "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
+          "manc_body_id": 10427,
+          "manc_type": "IN19A007",
+          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
+        }
+      },
+      "LM": {
+        "source_dataset": "MaleCNS_v1.0",
+        "malecns_body_id": 800233,
+        "type": "IN19A007",
+        "side": "L",
+        "identity_method": "raw annotation type == IN19A007",
         "roi_counts": {
           "T1": {
             "pre": 0,
             "post": 0
           },
           "T2": {
-            "pre": 30,
-            "post": 15
+            "pre": 2212,
+            "post": 9910
           },
           "T3": {
-            "pre": 350,
-            "post": 898
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LM",
+        "manc_correspondence": {
+          "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
+          "manc_body_id": 11680,
+          "manc_type": "IN19A007",
+          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
+        }
+      },
+      "RM": {
+        "source_dataset": "MaleCNS_v1.0",
+        "malecns_body_id": 800103,
+        "type": "IN19A007",
+        "side": "R",
+        "identity_method": "raw annotation type == IN19A007",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 2057,
+            "post": 7289
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RM",
+        "manc_correspondence": {
+          "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
+          "manc_body_id": 10252,
+          "manc_type": "IN19A007",
+          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
+        }
+      },
+      "LH": {
+        "source_dataset": "MaleCNS_v1.0",
+        "malecns_body_id": 800494,
+        "type": "IN19A007",
+        "side": "L",
+        "identity_method": "raw annotation type == IN19A007",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 2023,
+            "post": 8756
           }
         },
         "assigned_segment": "T3",
-        "assignment_confidence": 0.9651972157772621,
+        "assignment_confidence": 1.0,
         "assignment_method": "LegNp synaptic innervation",
         "fallback_used": false,
-        "assignment_status": "AMBIGUOUS",
-        "assigned_side": null,
-        "assigned_slot": null,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11186,
-          "manc_type": "IN19B007",
+          "source_dataset": "MANC_T1",
+          "manc_body_id": 10215,
+          "manc_type": "IN19A007",
+          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
+        }
+      },
+      "RH": {
+        "source_dataset": "MaleCNS_v1.0",
+        "malecns_body_id": 800119,
+        "type": "IN19A007",
+        "side": "R",
+        "identity_method": "raw annotation type == IN19A007",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1881,
+            "post": 8667
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RH",
+        "manc_correspondence": {
+          "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
+          "manc_body_id": 10346,
+          "manc_type": "IN19A007",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
         }
       }
-    ],
-    "n_assigned": 0,
-    "n_expected": 2,
-    "n_in_annotations": 2
+    },
+    "unassigned": [],
+    "n_assigned": 6,
+    "n_expected": 6,
+    "n_in_annotations": 6
   },
   "IN19B012": {
     "role": "E3",
@@ -838,6 +1016,7 @@
         "malecns_body_id": 800216,
         "type": "IN19B012",
         "side": "R",
+        "identity_method": "raw annotation type == IN19B012",
         "roi_counts": {
           "T1": {
             "pre": 1617,
@@ -861,6 +1040,7 @@
         "assigned_slot": "LF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10715,
           "manc_type": "IN19B012",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -871,6 +1051,7 @@
         "malecns_body_id": 801061,
         "type": "IN19B012",
         "side": "L",
+        "identity_method": "raw annotation type == IN19B012",
         "roi_counts": {
           "T1": {
             "pre": 1479,
@@ -894,6 +1075,7 @@
         "assigned_slot": "RF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 154691,
           "manc_type": "IN19B012",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -904,6 +1086,7 @@
         "malecns_body_id": 800837,
         "type": "IN19B012",
         "side": "R",
+        "identity_method": "raw annotation type == IN19B012",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -927,6 +1110,7 @@
         "assigned_slot": "LM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11093,
           "manc_type": "IN19B012",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -937,6 +1121,7 @@
         "malecns_body_id": 800583,
         "type": "IN19B012",
         "side": "L",
+        "identity_method": "raw annotation type == IN19B012",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -960,6 +1145,7 @@
         "assigned_slot": "RM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11109,
           "manc_type": "IN19B012",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -970,6 +1156,7 @@
         "malecns_body_id": 800089,
         "type": "IN19B012",
         "side": "R",
+        "identity_method": "raw annotation type == IN19B012",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -993,6 +1180,7 @@
         "assigned_slot": "LH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10790,
           "manc_type": "IN19B012",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1003,6 +1191,7 @@
         "malecns_body_id": 800879,
         "type": "IN19B012",
         "side": "L",
+        "identity_method": "raw annotation type == IN19B012",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1026,6 +1215,7 @@
         "assigned_slot": "RH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11984,
           "manc_type": "IN19B012",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1046,6 +1236,7 @@
         "malecns_body_id": 800663,
         "type": "IN03A006",
         "side": "L",
+        "identity_method": "raw annotation type == IN03A006",
         "roi_counts": {
           "T1": {
             "pre": 1465,
@@ -1069,6 +1260,7 @@
         "assigned_slot": "LF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 12021,
           "manc_type": "IN03A006",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1079,6 +1271,7 @@
         "malecns_body_id": 903211,
         "type": "IN03A006",
         "side": "R",
+        "identity_method": "raw annotation type == IN03A006",
         "roi_counts": {
           "T1": {
             "pre": 1002,
@@ -1102,6 +1295,7 @@
         "assigned_slot": "RF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11374,
           "manc_type": "IN03A006",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1112,6 +1306,7 @@
         "malecns_body_id": 800557,
         "type": "IN03A006",
         "side": "L",
+        "identity_method": "raw annotation type == IN03A006",
         "roi_counts": {
           "T1": {
             "pre": 2,
@@ -1135,6 +1330,7 @@
         "assigned_slot": "LM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11236,
           "manc_type": "IN03A006",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1145,6 +1341,7 @@
         "malecns_body_id": 800403,
         "type": "IN03A006",
         "side": "R",
+        "identity_method": "raw annotation type == IN03A006",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1168,6 +1365,7 @@
         "assigned_slot": "RM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11085,
           "manc_type": "IN03A006",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1178,6 +1376,7 @@
         "malecns_body_id": 800646,
         "type": "IN03A006",
         "side": "L",
+        "identity_method": "raw annotation type == IN03A006",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1201,6 +1400,7 @@
         "assigned_slot": "LH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 12058,
           "manc_type": "IN03A006",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1211,6 +1411,7 @@
         "malecns_body_id": 800897,
         "type": "IN03A006",
         "side": "R",
+        "identity_method": "raw annotation type == IN03A006",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1234,6 +1435,7 @@
         "assigned_slot": "RH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11760,
           "manc_type": "IN03A006",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1254,6 +1456,7 @@
         "malecns_body_id": 800286,
         "type": "INXXX464",
         "side": "L",
+        "identity_method": "raw annotation type == INXXX464",
         "roi_counts": {
           "T1": {
             "pre": 2432,
@@ -1277,6 +1480,7 @@
         "assigned_slot": "LF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 162543,
           "manc_type": "INXXX464",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1287,6 +1491,7 @@
         "malecns_body_id": 800375,
         "type": "INXXX464",
         "side": "R",
+        "identity_method": "raw annotation type == INXXX464",
         "roi_counts": {
           "T1": {
             "pre": 2306,
@@ -1310,6 +1515,7 @@
         "assigned_slot": "RF",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10274,
           "manc_type": "INXXX464",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1320,6 +1526,7 @@
         "malecns_body_id": 800072,
         "type": "INXXX464",
         "side": "L",
+        "identity_method": "raw annotation type == INXXX464",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1343,6 +1550,7 @@
         "assigned_slot": "LM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 11450,
           "manc_type": "INXXX464",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1353,6 +1561,7 @@
         "malecns_body_id": 800211,
         "type": "INXXX464",
         "side": "R",
+        "identity_method": "raw annotation type == INXXX464",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1376,6 +1585,7 @@
         "assigned_slot": "RM",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 100544,
           "manc_type": "INXXX464",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1386,6 +1596,7 @@
         "malecns_body_id": 929612,
         "type": "INXXX464",
         "side": "L",
+        "identity_method": "raw annotation type == INXXX464",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1409,6 +1620,7 @@
         "assigned_slot": "LH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10927,
           "manc_type": "INXXX464",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
@@ -1419,6 +1631,7 @@
         "malecns_body_id": 902520,
         "type": "INXXX464",
         "side": "R",
+        "identity_method": "raw annotation type == INXXX464",
         "roi_counts": {
           "T1": {
             "pre": 0,
@@ -1442,6 +1655,7 @@
         "assigned_slot": "RH",
         "manc_correspondence": {
           "source": "MaleCNS annotation fields mancBodyid / mancType",
+          "source_dataset": "MANC_T1",
           "manc_body_id": 10677,
           "manc_type": "INXXX464",
           "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
