@@ -10,45 +10,19 @@ from pathlib import Path
 import numpy as np
 import pyarrow.dataset as ds
 import pyarrow.feather as feather
-from flybrain.loader import ANN_FILE, NT_FILE, EDGE_FILE, DEFAULT_DATA, Connectome, _coo_to_csr
+from flybrain.loader import ANN_FILE, NT_FILE, EDGE_FILE, DEFAULT_DATA
 from flybrain.lif_sanity import assert_lif_sanity, _spiking_models, _pair_psp
 from flybrain.network import MixedDynamicsNetwork
 from flybrain.neurons import SHIU_LIF_SANITY_MODEL, nt_sign, shiu_lif_params, voltage_is_physiological, voltages_finite
 from organism.roi_innervation import (CORE_CPG_TYPES, assert_expected_annotation_counts, load_annotations,
     scan_syn_points, rois_to_row, build_cpg_mapping, validate_cpg_mapping)
 from organism.cpg_rhythm import rhythmicity_score
+from experiment.restricted_cpg import restricted_cpg_graph
 
 
 def raw_subgraph():
-    raw = feather.read_table(DEFAULT_DATA / ANN_FILE).to_pandas()
-    assert_expected_annotation_counts(raw)
-    core = raw[raw['type'].isin(['DNg100', *CORE_CPG_TYPES.values()])].copy()
-    ids = np.sort(core.bodyId.to_numpy(dtype=np.uint64))
-    chunks = []
-    # Only source edges of the biological core; no full connectome allocation.
-    dataset = ds.dataset(str(DEFAULT_DATA / EDGE_FILE), format='feather')
-    for batch in dataset.scanner(columns=['body_pre', 'body_post', 'weight'],
-                                 filter=ds.field('body_pre').isin(ids.tolist()), batch_size=65536).to_batches():
-        if batch.num_rows:
-            chunks.append(batch.to_pandas())
-    import pandas as pd
-    edges = pd.concat(chunks, ignore_index=True)
-    # Motor readouts directly downstream of the core, selected by raw superclass.
-    motor_ids = set(raw.loc[raw.superclass.astype(str).str.contains('motor', case=False), 'bodyId'].astype(int))
-    downstream = set(edges.body_post.astype(int)) & motor_ids
-    ids = np.array(sorted(set(ids.tolist()) | downstream), dtype=np.uint64)
-    edges = edges[edges.body_post.isin(ids)]
-    ann = raw.set_index('bodyId').loc[ids]
-    nt = feather.read_table(DEFAULT_DATA / NT_FILE, columns=['body', 'consensus_nt']).to_pandas().set_index('body').consensus_nt
-    tx = np.array([str(nt.get(int(i), 'missing')) for i in ids], dtype=object)
-    pre = np.searchsorted(ids, edges.body_pre.to_numpy(dtype=np.uint64))
-    post = np.searchsorted(ids, edges.body_post.to_numpy(dtype=np.uint64))
-    ptr, post, weights = _coo_to_csr(pre, post, edges.weight.to_numpy(dtype=np.uint32), len(ids))
-    signs = np.repeat(np.array([nt_sign(t) for t in tx], dtype=np.int8), np.diff(ptr))
-    def col(name): return ann[name].fillna('').astype(str).to_numpy(dtype=object)
-    graph = Connectome(ids, ptr, post, weights, signs, col('superclass'), col('type'), col('class'), col('somaSide'), tx,
-                       {'dataset_id':'MaleCNS_v1.0', 'subset':'32 core neurons plus directly downstream motor readouts; motor feedback omitted'})
-    return graph
+    """Both MaleCNS DNg100 plus core CPG types and downstream motor readouts."""
+    return restricted_cpg_graph()
 
 
 def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
