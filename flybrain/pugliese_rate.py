@@ -14,8 +14,9 @@ W_weighted is the transpose of signed synapse counts, with excitatory and
 inhibitory multipliers applied separately (default 0.03 / 0.03).
 
 Gain a is divided by median-normalized neuron size; threshold is multiplied
-by the same factor (src/utils/sim_utils.py::set_sizes). Amplitude 250 is
-this rate-ODE convention. Do not copy it into shiu_lif_sanity_v1.
+by the same factor (src/utils/sim_utils.py::set_sizes). For MaleCNS the
+denominator is the full neuPrint Neuron.size median, not the 408-cell
+circuit median. Amplitude 250 is a rate-ODE unit, not millivolts.
 """
 
 from __future__ import annotations
