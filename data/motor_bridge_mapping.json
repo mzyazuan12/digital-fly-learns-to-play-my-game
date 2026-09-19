@@ -252,10 +252,10 @@
     },
     {
       "malecns_body_id": null,
-      "neuron_type": "IN19B007",
+      "neuron_type": "IN19A007",
       "side": null,
-      "biological_role": "I2 alternative inhibitory cell of the published walking CPG",
-      "source": "Pugliese et al. 2025; I2 is IN19B007, not IN19A007",
+      "biological_role": "I2 inhibitory cell of the published walking CPG (six T1/T2/T3 copies)",
+      "source": "Pugliese et al. 2025 (PMC13142387); I2 is IN19A007, not IN19B007",
       "decoded_signal": "observe_only",
       "locomotion_controller_input": "not connected to joints; tagged for measurement/lesion only"
     },
