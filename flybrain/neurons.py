@@ -44,6 +44,9 @@ NT_SIGN = nt_sign
 # only when plotting. Never mix -52e-3 into this solver.
 SHIU_LIF_SANITY_MODEL = "shiu_lif_sanity_v1"
 PUGLIESE_CPG_MODEL = "pugliese_cpg_v1"
+# Pugliese half-tanh rate ODE on MaleCNS topology. Not Shiu LIF. Not the
+# authors' MANC Hydra run (that remains PUGLIESE_CPG_MODEL).
+PUGLIESE_RATE_MALECNS_V1 = "pugliese_rate_malecns_v1"
 
 VOLTAGE_UNIT = "mV"
 V_REST_MV = -52.0
@@ -56,8 +59,29 @@ DELAY_MS = 1.8
 # Millivolts per anatomical synapse. Connectivity weight is synapse *count*.
 WSYN_MV = 0.275
 SYNAPTIC_STEP_MV = WSYN_MV
-# PUGLIESE_CPG_MODEL rate-ODE stimulus. Not a SHIU_LIF current and not mV.
+# PUGLIESE_CPG_MODEL / PUGLIESE_RATE_MALECNS_V1 rate-ODE stimulus.
+# Not a SHIU_LIF current and not mV.
 PUGLIESE_CPG_STIM_AMPLITUDE = 250.0
+# Published truncated-normal means/sds (Pugliese et al. 2025; configs/neuron_params/default.yaml).
+PUGLIESE_TAU_MEAN_S = 0.02
+PUGLIESE_TAU_STD_S = 0.002
+PUGLIESE_GAIN_MEAN = 1.0
+PUGLIESE_GAIN_STD = 0.1
+PUGLIESE_THRESHOLD_MEAN = 7.5
+PUGLIESE_THRESHOLD_STD = 0.6
+PUGLIESE_FRCAP_MEAN_HZ = 200.0
+PUGLIESE_FRCAP_STD_HZ = 10.0
+PUGLIESE_EXC_MULTIPLIER = 0.03
+PUGLIESE_INH_MULTIPLIER = 0.03
+PUGLIESE_DT_S = 0.001
+PUGLIESE_T_S = 2.0
+PUGLIESE_PULSE_START_S = 0.02
+PUGLIESE_PULSE_END_S = 1.999
+PUGLIESE_RTOL = 2e-6
+PUGLIESE_ATOL = 5e-9
+# Cross-matched homolog of the Pugliese MANC T1 stimulus cell (body 10093).
+MALECNS_DNG100_R = 10056
+MALECNS_DNG100_L = 10045
 
 # Debug guardrail for SHIU_LIF_SANITY_MODEL. Not a measured Drosophila bound.
 PHYSIOLOGICAL_V_LOWER_MV = -100.0
