@@ -28,7 +28,6 @@ from flybrain.loader import Connectome
 from flybrain.neurons import (
     MALECNS_DNG100_R,
     PUGLIESE_CPG_MODEL,
-    PUGLIESE_CPG_STIM_AMPLITUDE,
     PUGLIESE_RATE_MALECNS_V1,
     SHIU_LIF_SANITY_MODEL,
 )
