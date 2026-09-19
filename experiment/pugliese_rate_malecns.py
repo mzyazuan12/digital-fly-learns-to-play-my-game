@@ -267,7 +267,9 @@ def simulate_graph(
     params: PuglieseRateParams,
 ) -> dict:
     W = signed_weight_matrix(graph)
+    print("computing SWC sizes", flush=True)
     size_info = neuron_sizes_from_swc(graph.neuron_ids)
+    print(f"sizes missing={size_info['n_missing']} median={np.nanmedian(size_info['sizes'])}", flush=True)
     rng = np.random.default_rng(seed)
     W_sim = W
     if shuffle:
