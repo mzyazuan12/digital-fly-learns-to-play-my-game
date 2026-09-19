@@ -19,22 +19,32 @@ Do not download EM imagery or segmentation volumes for runtime.
 The importer writes a compact sparse cache to `normalized/` (gitignored).
 That cache is derived data, not a new biological measurement.
 
-CPG leg identity is **not** in `graph.npz`. After
-`python scripts/cache_malecns_roi_innervation.py`:
+CPG / DNg100 **identity** is the official annotation feather, not a derived
+parquet:
 
-- `cpg_roi_innervation.parquet` — per-bodyId LegNp PreSyn/PostSyn counts
-- `cpg_mapping.json` — provenance-heavy E1/E2/I1… records with
-  `malecns_body_id`, per-segment `roi_counts`, `assigned_segment`,
-  `fallback_used=false`
-- `cpg_mapping.INVALID_pre_roi.json` — archived previous mapping, kept as a
-  forensic trail (do not use)
+```
+body-annotations-male-cns-v1.0-minconf-0.5.feather
+  column bodyId   →  malecns_body_id
+syn-points-male-cns-v1.0-minconf-0.5.feather
+  column body     →  malecns_body_id
+```
+
+`MaleCNS DNg100` is `annotations[type == "DNg100"]` (exactly two rows:
+bodyId 10045 L, bodyId 10056 R). Curated `mancBodyid` / `mancType` are
+correspondence to a different specimen, not integer identity. Pugliese
+`DNg100_Stim` is MANC T1 **source_matrix_index 31 / source_body_id 10093 /
+type DNg100** and lives only under `DNg100.pugliese_reference`. In that MANC
+table, body 10056 is vMS16 — a different cell from MaleCNS DNg100_R 10056.
+MaleCNS bodyId 10093 is Am1. I2 is `IN19B007`, not `IN19A007`.
+
+After `python scripts/cache_malecns_roi_innervation.py --write-mapping`:
+
+- `cpg_roi_innervation.parquet` — derived join of those two tables
+- `cpg_mapping.json` — `malecns_body_id`, per-segment `roi_counts`,
+  `assigned_segment`, `fallback_used=false`
+- `cpg_mapping.INVALID_pre_roi.json` / `cpg_mapping.INVALID_pre_namespace_fix.json`
+  / `male_cpg.INVALID_pre_namespace_fix.parquet` — forensic archives (do not use)
 - `neuron_metadata.parquet` — optional MaleCNS bodyId → graph index
-
-Pugliese `DNg100_Stim` is MANC T1 **matrix index 31 / body 10093 / type DNg100**.
-In that same MANC table, body 10056 is vMS16. MaleCNS DNg100 is resolved
-independently from `annotations[type == "DNg100"]` (one left, one right).
-The same integer can exist in both datasets as different cells.
-I2 is `IN19B007`, not `IN19A007`.
 
 Those files assign each neuron from its own synapses. Type-level ROI
 pages pool T1+T2+T3 and must not be used. Soma-Z is not used.

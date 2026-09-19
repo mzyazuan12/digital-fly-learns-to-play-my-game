@@ -10,7 +10,7 @@
     "E5": "INXXX464",
     "DNg100": "DNg100"
   },
-  "source": "Identity: body-annotations-male-cns-v1.0-minconf-0.5.feather [type] via bodyId renamed malecns_body_id. ROI: syn-points-male-cns-v1.0-minconf-0.5.feather column body, joined on malecns_body_id. Not the derived CPG parquet. Not type-level ROI totals. Soma XYZ / somaNeuromere unused. Pugliese MANC IDs appear only under DNg100.pugliese_reference.",
+  "source": "Per-bodyId LegNp PreSyn+PostSyn counts from MaleCNS v1.0 syn-points (cached as cpg_roi_innervation.parquet). Not type-level ROI totals. Soma XYZ / somaNeuromere are not used. neuPrint is not queried. MaleCNS DNg100 is annotations[type == 'DNg100'], not a MANC bodyId.",
   "assignment": {
     "signal": "T#_score = PreSyn+PostSyn in LegNp(T#)(L)+LegNp(T#)(R); then L vs R",
     "confidence_threshold": 0.7,
@@ -27,27 +27,24 @@
   },
   "DNg100": {
     "pugliese_reference": {
-      "source_dataset": "MANC_T1",
-      "source_matrix_index": 31,
-      "source_body_id": 10093,
+      "dataset": "MANC_T1",
+      "matrix_index": 31,
+      "body_id": 10093,
       "type": "DNg100",
       "predicted_nt": "acetylcholine"
     },
     "manc_vms16": {
-      "source_dataset": "MANC_T1",
-      "source_matrix_index": 16,
-      "source_body_id": 10056,
+      "dataset": "MANC_T1",
+      "matrix_index": 16,
+      "body_id": 10056,
       "type": "vMS16",
-      "predicted_nt": "gaba",
-      "note": "Pugliese MANC T1 table row 16 is vMS16, not DNg100. MaleCNS annotations independently give bodyId 10056 type DNg100 (DNg100_R). Same integer, different reconstructed specimen/dataset. Do not join on the integer. MaleCNS DNg100_R's curated mancBodyid/mancType is correspondence to MANC DNg100 10093, not to this vMS16 row."
+      "predicted_nt": "gaba"
     },
     "malecns": {
       "left": {
-        "source_dataset": "MaleCNS_v1.0",
-        "malecns_body_id": 10045,
+        "body_id": 10045,
         "type": "DNg100",
         "side": "L",
-        "root_side": "",
         "instance": "DNg100_L",
         "predicted_nt": "acetylcholine",
         "predicted_nt_confidence": 0.9529439618305637,
@@ -67,24 +64,16 @@
         },
         "assigned_segment": null,
         "assignment_confidence": 0.39704372818723055,
-        "assignment_method": "MaleCNS annotation type == DNg100",
+        "assignment_method": "LegNp synaptic innervation",
         "fallback_used": false,
         "assignment_status": "AMBIGUOUS",
         "innervation_side": "R",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10339,
-          "manc_type": "DNg100",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        },
-        "note": "MaleCNS annotations[type == DNg100]. Same annotated cell type as Pugliese's MANC DNg100, different reconstructed specimen. manc_correspondence is the curated mancBodyid field, not identity."
+        "note": "Descending; innervates all three ipsilateral neuropils. Not a six-copy CPG cell. Side is the MaleCNS annotation (DNg100_L / DNg100_R), not VNC innervation and not a MANC bodyId."
       },
       "right": {
-        "source_dataset": "MaleCNS_v1.0",
-        "malecns_body_id": 10056,
+        "body_id": 10056,
         "type": "DNg100",
         "side": "R",
-        "root_side": "",
         "instance": "DNg100_R",
         "predicted_nt": "acetylcholine",
         "predicted_nt_confidence": 0.9560235114457264,
@@ -104,22 +93,16 @@
         },
         "assigned_segment": null,
         "assignment_confidence": 0.4041150619256892,
-        "assignment_method": "MaleCNS annotation type == DNg100",
+        "assignment_method": "LegNp synaptic innervation",
         "fallback_used": false,
         "assignment_status": "AMBIGUOUS",
         "innervation_side": "L",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10093,
-          "manc_type": "DNg100",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        },
-        "note": "MaleCNS annotations[type == DNg100]. Same annotated cell type as Pugliese's MANC DNg100, different reconstructed specimen. manc_correspondence is the curated mancBodyid field, not identity."
+        "note": "Descending; innervates all three ipsilateral neuropils. Not a six-copy CPG cell. Side is the MaleCNS annotation (DNg100_L / DNg100_R), not VNC innervation and not a MANC bodyId."
       },
       "unassigned": [],
       "n_expected": 2,
       "n_in_annotations": 2,
-      "note": "Looked up by type == DNg100 in the official MaleCNS annotation feather. Same annotated cell type as Pugliese MANC DNg100, different specimen. manc_correspondence copies mancBodyid/mancType; it is not identity. MANC table body 10056 is vMS16. MaleCNS bodyId 10056 is independently DNg100_R."
+      "note": "Looked up by type == DNg100 in MaleCNS annotations. Same biological TYPE as Pugliese's MANC DNg100, not the same body ID. Integer collision with MANC vMS16 (body 10056) is not identity."
     }
   },
   "IN17A001": {
@@ -127,7 +110,6 @@
     "type": "IN17A001",
     "neurons": {
       "LF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800173,
         "type": "IN17A001",
         "side": "L",
@@ -151,16 +133,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10707,
-          "manc_type": "IN17A001",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LF"
       },
       "RF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800288,
         "type": "IN17A001",
         "side": "R",
@@ -184,16 +159,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10690,
-          "manc_type": "IN17A001",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RF"
       },
       "LM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800009,
         "type": "IN17A001",
         "side": "L",
@@ -217,16 +185,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10559,
-          "manc_type": "IN17A001",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LM"
       },
       "RM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 818556,
         "type": "IN17A001",
         "side": "R",
@@ -250,16 +211,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10072,
-          "manc_type": "IN17A001",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RM"
       },
       "LH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800003,
         "type": "IN17A001",
         "side": "L",
@@ -283,16 +237,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10498,
-          "manc_type": "IN17A001",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LH"
       },
       "RH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800114,
         "type": "IN17A001",
         "side": "R",
@@ -316,13 +263,7 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10558,
-          "manc_type": "IN17A001",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RH"
       }
     },
     "unassigned": [],
@@ -335,7 +276,6 @@
     "type": "INXXX466",
     "neurons": {
       "LF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800863,
         "type": "INXXX466",
         "side": "L",
@@ -359,16 +299,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11751,
-          "manc_type": "INXXX466",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LF"
       },
       "RF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 903216,
         "type": "INXXX466",
         "side": "R",
@@ -392,16 +325,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 13698,
-          "manc_type": "INXXX466",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RF"
       },
       "LM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801728,
         "type": "INXXX466",
         "side": "L",
@@ -425,16 +351,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11767,
-          "manc_type": "INXXX466",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LM"
       },
       "RM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 802025,
         "type": "INXXX466",
         "side": "R",
@@ -458,16 +377,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 12107,
-          "manc_type": "INXXX466",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RM"
       },
       "LH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801149,
         "type": "INXXX466",
         "side": "L",
@@ -491,16 +403,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 12315,
-          "manc_type": "INXXX466",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LH"
       },
       "RH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801429,
         "type": "INXXX466",
         "side": "R",
@@ -524,13 +429,7 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 152696,
-          "manc_type": "INXXX466",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RH"
       }
     },
     "unassigned": [],
@@ -543,7 +442,6 @@
     "type": "IN16B036",
     "neurons": {
       "LF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801884,
         "type": "IN16B036",
         "side": "L",
@@ -567,16 +465,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 13905,
-          "manc_type": "IN16B036",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LF"
       },
       "RF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 803183,
         "type": "IN16B036",
         "side": "R",
@@ -600,16 +491,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 14096,
-          "manc_type": "IN16B036",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RF"
       },
       "LM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 903139,
         "type": "IN16B036",
         "side": "L",
@@ -633,16 +517,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 13186,
-          "manc_type": "IN16B036",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LM"
       },
       "RM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 904079,
         "type": "IN16B036",
         "side": "R",
@@ -666,16 +543,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 17322,
-          "manc_type": "IN16B036",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RM"
       },
       "LH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801257,
         "type": "IN16B036",
         "side": "L",
@@ -699,16 +569,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 12953,
-          "manc_type": "IN16B036",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LH"
       },
       "RH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801916,
         "type": "IN16B036",
         "side": "R",
@@ -732,13 +595,7 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 156245,
-          "manc_type": "IN16B036",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RH"
       }
     },
     "unassigned": [],
@@ -759,7 +616,6 @@
     },
     "unassigned": [
       {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800814,
         "type": "IN19B007",
         "side": "L",
@@ -783,16 +639,9 @@
         "fallback_used": false,
         "assignment_status": "AMBIGUOUS",
         "assigned_side": null,
-        "assigned_slot": null,
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 12920,
-          "manc_type": "IN19B007",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": null
       },
       {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801028,
         "type": "IN19B007",
         "side": "R",
@@ -816,13 +665,7 @@
         "fallback_used": false,
         "assignment_status": "AMBIGUOUS",
         "assigned_side": null,
-        "assigned_slot": null,
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11186,
-          "manc_type": "IN19B007",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": null
       }
     ],
     "n_assigned": 0,
@@ -834,7 +677,6 @@
     "type": "IN19B012",
     "neurons": {
       "LF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800216,
         "type": "IN19B012",
         "side": "R",
@@ -858,16 +700,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10715,
-          "manc_type": "IN19B012",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LF"
       },
       "RF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 801061,
         "type": "IN19B012",
         "side": "L",
@@ -891,16 +726,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 154691,
-          "manc_type": "IN19B012",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RF"
       },
       "LM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800837,
         "type": "IN19B012",
         "side": "R",
@@ -924,16 +752,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11093,
-          "manc_type": "IN19B012",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LM"
       },
       "RM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800583,
         "type": "IN19B012",
         "side": "L",
@@ -957,16 +778,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11109,
-          "manc_type": "IN19B012",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RM"
       },
       "LH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800089,
         "type": "IN19B012",
         "side": "R",
@@ -990,16 +804,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10790,
-          "manc_type": "IN19B012",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LH"
       },
       "RH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800879,
         "type": "IN19B012",
         "side": "L",
@@ -1023,13 +830,7 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11984,
-          "manc_type": "IN19B012",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RH"
       }
     },
     "unassigned": [],
@@ -1042,7 +843,6 @@
     "type": "IN03A006",
     "neurons": {
       "LF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800663,
         "type": "IN03A006",
         "side": "L",
@@ -1066,16 +866,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 12021,
-          "manc_type": "IN03A006",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LF"
       },
       "RF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 903211,
         "type": "IN03A006",
         "side": "R",
@@ -1099,16 +892,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11374,
-          "manc_type": "IN03A006",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RF"
       },
       "LM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800557,
         "type": "IN03A006",
         "side": "L",
@@ -1132,16 +918,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11236,
-          "manc_type": "IN03A006",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LM"
       },
       "RM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800403,
         "type": "IN03A006",
         "side": "R",
@@ -1165,16 +944,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11085,
-          "manc_type": "IN03A006",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RM"
       },
       "LH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800646,
         "type": "IN03A006",
         "side": "L",
@@ -1198,16 +970,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 12058,
-          "manc_type": "IN03A006",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LH"
       },
       "RH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800897,
         "type": "IN03A006",
         "side": "R",
@@ -1231,13 +996,7 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11760,
-          "manc_type": "IN03A006",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RH"
       }
     },
     "unassigned": [],
@@ -1250,7 +1009,6 @@
     "type": "INXXX464",
     "neurons": {
       "LF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800286,
         "type": "INXXX464",
         "side": "L",
@@ -1274,16 +1032,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 162543,
-          "manc_type": "INXXX464",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LF"
       },
       "RF": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800375,
         "type": "INXXX464",
         "side": "R",
@@ -1307,16 +1058,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RF",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10274,
-          "manc_type": "INXXX464",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RF"
       },
       "LM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800072,
         "type": "INXXX464",
         "side": "L",
@@ -1340,16 +1084,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 11450,
-          "manc_type": "INXXX464",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LM"
       },
       "RM": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 800211,
         "type": "INXXX464",
         "side": "R",
@@ -1373,16 +1110,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RM",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 100544,
-          "manc_type": "INXXX464",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RM"
       },
       "LH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 929612,
         "type": "INXXX464",
         "side": "L",
@@ -1406,16 +1136,9 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "L",
-        "assigned_slot": "LH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10927,
-          "manc_type": "INXXX464",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "LH"
       },
       "RH": {
-        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": 902520,
         "type": "INXXX464",
         "side": "R",
@@ -1439,13 +1162,7 @@
         "fallback_used": false,
         "assignment_status": "ok",
         "assigned_side": "R",
-        "assigned_slot": "RH",
-        "manc_correspondence": {
-          "source": "MaleCNS annotation fields mancBodyid / mancType",
-          "manc_body_id": 10677,
-          "manc_type": "INXXX464",
-          "note": "Curated cross-dataset correspondence. Same annotated cell type on a different reconstructed specimen. Not integer identity of malecns_body_id."
-        }
+        "assigned_slot": "RH"
       }
     },
     "unassigned": [],

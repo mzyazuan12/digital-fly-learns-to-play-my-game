@@ -435,10 +435,12 @@ def computational_graph_manifest(data_dir: Path | None = None) -> dict:
         },
         "note": (
             "Walking experiments load data/malecns_v1/normalized/graph.npz. "
-            "Leg assignment is data/malecns_v1/cpg_mapping.json from per-bodyId "
-            "cpg_roi_innervation.parquet, not type-level ROI totals and not soma-Z. "
-            "Pugliese DNg100_Stim is MANC T1 matrix 31 / body 10093. MaleCNS DNg100 "
-            "is annotations[type==DNg100]. "
+            "MaleCNS identity is body-annotations-*.feather column bodyId "
+            "(malecns_body_id). Leg assignment is cpg_mapping.json joined to "
+            "syn-points column body on malecns_body_id. The CPG parquet is derived, "
+            "not an identity source. Not type-level ROI totals and not soma-Z. "
+            "Pugliese DNg100_Stim is MANC T1 source_matrix_index 31 / source_body_id 10093. "
+            "MaleCNS DNg100 is annotations[type==DNg100]. "
             "syn-points and syn-partners are inspector tables, not dynamics. "
             "zsh 'no matches found: data/malecns_v1/*.npz' is the parent glob, not a missing graph."
         ),

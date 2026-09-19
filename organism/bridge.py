@@ -26,7 +26,7 @@ Janelia MaleCNS v1.0 body IDs we resolve when present:
 - DNb05  L=10118  R=10065
 - DNb06  L=10888  R=11067
 - DNp09  L=10783  R=11177
-- DNg100 L/R resolved from MaleCNS annotations[type==DNg100]; Pugliese stim is MANC T1 index 31 / body 10093
+- DNg100 L=10045 R=10056 from MaleCNS annotations[type==DNg100] bodyId (MaleCNS 10056 is DNg100_R; MANC 10056 is vMS16). Pugliese stim is MANC T1 source_matrix_index 31 / source_body_id 10093. mancBodyid is correspondence, not identity.
 - DNg97  L=13805  R=230783  (oDN1)
 - DNb08  L=12189,12550 R=12044,12075
 - DNg60  L=11374  R=188947  (Bluebell)
@@ -70,6 +70,8 @@ EXPECTED_BODY_IDS = {
     "DNb05": {"L": (10118,), "R": (10065,)},
     "DNb06": {"L": (10888,), "R": (11067,)},
     "DNp09": {"L": (10783,), "R": (11177,)},
+    # From annotations[type == DNg100] bodyId, not MANC and not parquet.
+    # MaleCNS 10056 is DNg100_R; MANC 10056 is a different cell (vMS16).
     "DNg100": {"L": (10045,), "R": (10056,)},
     "DNg97": {"L": (13805,), "R": (230783,)},
     "DNb08": {"L": (12189, 12550), "R": (12044, 12075)},

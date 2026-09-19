@@ -34,6 +34,7 @@ from organism.roi_innervation import (
     left_vnc_dng100_malecns_body_id,
     malecns_body_id_of,
     malecns_dng100_by_vnc_innervation,
+    malecns_dng100_matching_manc_body,
 )
 from organism.toy import miniature_connectome
 from organism.walking_pathways import (
@@ -72,7 +73,26 @@ def stimulated_dng100(graph, circuit: WalkingCircuit, stim: str = "left_vnc") ->
     if stim in {"both", "all"}:
         chosen = all_idx
         note = "both MaleCNS DNg100 neurons"
-    elif stim in {"left_vnc", "pugliese", "DNg100_left_vnc"}:
+    elif stim in {"pugliese", "manc_correspondent"}:
+        correspondent = (
+            malecns_dng100_matching_manc_body(int(PUGLIESE_DNG100_STIM["source_body_id"]), mapping)
+            if mapping
+            else None
+        )
+        if correspondent is not None:
+            chosen = np.asarray([graph.index_of(correspondent)], dtype=np.int32)
+            note = (
+                f"MaleCNS DNg100 whose curated mancBodyid equals Pugliese MANC body "
+                f"{PUGLIESE_DNG100_STIM['source_body_id']} (malecns_body_id={correspondent}). "
+                "Same annotated type, different specimen. Not integer identity."
+            )
+        elif by_side["R"]:
+            chosen = np.asarray(by_side["R"], dtype=np.int32)
+            note = "toy fallback: annotation-right DNg100"
+        else:
+            chosen = all_idx[:1]
+            note = "first DNg100 (mancBodyid correspondence unavailable)"
+    elif stim in {"left_vnc", "DNg100_left_vnc"}:
         if left_vnc is not None:
             chosen = np.asarray([graph.index_of(left_vnc)], dtype=np.int32)
             note = (

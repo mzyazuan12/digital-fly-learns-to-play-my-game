@@ -271,11 +271,13 @@ SIDE_SLOTS = {
 }
 CPG_ROLES = ("E1", "E2", "I1", "I2", "E3", "E4", "E5")
 
-# Documented MaleCNS v1.0 body IDs from annotations[type==...], not from
-# Pugliese's MANC table. Pugliese DNg100_Stim injects MANC T1 matrix index 31
-# / MANC body 10093 (type DNg100). In that same MANC table, body 10056 is
-# vMS16. MaleCNS DNg100 is resolved independently; the integer 10056 can
-# appear in both animals as different cells.
+# Documented MaleCNS v1.0 body IDs from annotations[type==...] bodyId, not from
+# Pugliese's MANC table and not from a derived parquet. DNg100 L/R are the two
+# rows of annotations[type == "DNg100"] (10045 L, 10056 R). Pugliese DNg100_Stim
+# injects MANC T1 source_matrix_index 31 / source_body_id 10093 (type DNg100).
+# In that same MANC table, body 10056 is vMS16 — a different cell that shares
+# an integer with MaleCNS DNg100_R. MaleCNS bodyId 10093 is Am1.
+# A curated mancBodyid is correspondence, not identity.
 EXPECTED_WALKING_BODY_IDS = {
     "DNp09": {"L": (10783,), "R": (11177,)},
     "DNg100": {"L": (10045,), "R": (10056,)},

@@ -123,10 +123,13 @@ E4=IN03A006, E5=INXXX464) are resolved from **each bodyId's LegNp
 PreSyn+PostSyn counts**, not type-level ROI totals and not soma-Z.
 IN19A007 exists in MaleCNS but is **not** I2. Type explorer pages pool
 T1+T2+T3. DNg100 itself is two descending neurons, resolved from MaleCNS
-`type == DNg100`. Pugliese `DNg100_Stim` injects **MANC T1 matrix index
-31 / MANC body 10093** (type DNg100). In that MANC table, body 10056 is
-`vMS16`. The same integer can appear independently in MaleCNS as a
-different cell; do not collapse the namespaces.
+`type == DNg100`: bodyId **10045 L** and **10056 R**. Pugliese `DNg100_Stim`
+injects **MANC T1 matrix index 31 / MANC body 10093** (type DNg100). In that
+MANC table, body 10056 is `vMS16` — a different cell that shares an integer
+with MaleCNS DNg100_R. MaleCNS bodyId 10093 is Am1. Identity is
+`body-annotations-male-cns-v1.0-minconf-0.5.feather` column `bodyId`, not a
+derived parquet. A curated `mancBodyid` is correspondence to another
+specimen, not integer identity. Do not collapse the namespaces.
 Those names tag cells for measurement/lesion; they never mean
 `if DNg100: walk()`. `MODE_NEURAL_CPG` records E1/E2/I1 timing and does
 not move joints yet. There is **no** `walking_bout_s`

@@ -118,9 +118,11 @@ ASSUMPTIONS.md
 ## Honesty
 
 - The connectome is real. Membrane constants are not.
-- Identified DN types (DNp09, DNg100, DNa02, …) are resolved from annotations.
-  Mapping their rates onto the walking CPG is engineered. The published VNC
-  walking CPG is traced, not executed.
+- Identified DN types (DNp09, DNg100, DNa02, …) are resolved from the
+  official annotation feather `bodyId` column. MaleCNS DNg100 is
+  `type == DNg100` (two neurons). Pugliese's MANC DNg100 is a different
+  specimen (`source_body_id` 10093). Mapping their rates onto the walking
+  CPG is engineered. The published VNC walking CPG is traced, not executed.
 - VNC premotor cells use graded/rate dynamics by literature, not because
   MaleCNS measured that for each cell.
 - Learning is KC→MBON, not a global reward rule on every synapse.

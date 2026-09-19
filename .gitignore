@@ -27,6 +27,8 @@ data/malecns_v1/*
 !data/malecns_v1/README.md
 !data/malecns_v1/cpg_mapping.json
 !data/malecns_v1/cpg_mapping.INVALID_pre_roi.json
+!data/malecns_v1/cpg_mapping.INVALID_pre_namespace_fix.json
+!data/malecns_v1/male_cpg.INVALID_pre_namespace_fix.parquet
 syn-points-male-cns-*.feather
 syn-partners-male-cns-*.feather
 connectome-weights-*.feather

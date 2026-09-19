@@ -1,22 +1,18 @@
 """Per-bodyId MaleCNS LegNp innervation. Never type-level ROI totals.
 
-Type pages (IN17A001, INXXX466, …) pool T1+T2+T3. Each of those types has
-six neurons. Assignment must use that neuron's own synapses.
+Identity comes only from the official annotation feather:
 
-Namespaces are not a partition of integers. The same number can exist in
-MANC and in MaleCNS as different reconstructed cells:
+  body-annotations-male-cns-v1.0-minconf-0.5.feather
+  column bodyId  (not the NT table's `body`, not a derived parquet)
 
-  Pugliese DNg100_Stim  MANC_T1 matrix index 31, MANC body 10093, type DNg100
-  MANC table row 16     MANC body 10056, type vMS16
-  MaleCNS DNg100        annotations[type == "DNg100"] — one left, one right
+Syn-points use column `body`. Rename both to malecns_body_id before joining.
 
-Do not encode "10056 belongs to MaleCNS, 10093 belongs to MANC". Resolve
-MaleCNS DNg100 independently. There is no generic `dng100_body_id`.
+Pugliese DNg100_Stim is MANC_T1 matrix index 31 / MANC body 10093.
+That is recorded only under pugliese_reference. MaleCNS DNg100 is
+annotations[type == "DNg100"]. A curated mancBodyid/mancType field, if
+present, is stored separately as correspondence — not as identity.
 
-CPG cells store `malecns_body_id`. MANC body IDs must not appear in that
-field. Soma XYZ / somaNeuromere are never a fallback. If LegNp evidence
-is not dominant, assigned_segment is null and assignment_status is
-AMBIGUOUS.
+Soma XYZ / somaNeuromere are never a fallback.
 """
 
 from __future__ import annotations
@@ -45,6 +41,8 @@ PARQUET_CACHE = DEFAULT_DATA / "cpg_roi_innervation.parquet"
 LEGACY_PARQUET_CACHE = DEFAULT_DATA / "neuron_roi_innervation.parquet"
 MAPPING_PATH = DEFAULT_DATA / "cpg_mapping.json"
 INVALID_MAPPING_PATH = DEFAULT_DATA / "cpg_mapping.INVALID_pre_roi.json"
+INVALID_NAMESPACE_MAPPING_PATH = DEFAULT_DATA / "cpg_mapping.INVALID_pre_namespace_fix.json"
+INVALID_NAMESPACE_PARQUET_PATH = DEFAULT_DATA / "male_cpg.INVALID_pre_namespace_fix.parquet"
 METADATA_PATH = DEFAULT_DATA / "neuron_metadata.parquet"
 SYN_POINTS = DEFAULT_DATA / "syn-points-male-cns-v1.0-minconf-0.5.feather"
 PUGLIESE_MANC_T1_TABLE = (
@@ -61,7 +59,9 @@ NEUROMERES = ("T1", "T2", "T3")
 SIDES = ("L", "R")
 ROI_COLUMNS = tuple(f"{seg}_{side}_{kind}" for seg in NEUROMERES for side in SIDES for kind in ("pre", "post"))
 ASSIGNMENT_METHOD = "LegNp synaptic innervation"
+DNG100_ASSIGNMENT_METHOD = "MaleCNS annotation type == DNg100"
 FORBIDDEN_KEYS = {"id", "dng100_body_id"}
+PUGLIESE_MANC_STIM_BODY = 10093
 
 PAPER_SLOTS = ("LF", "RF", "LM", "RM", "LH", "RH")
 PAPER_LAYOUT = {
@@ -75,14 +75,20 @@ PAPER_LAYOUT = {
 PAPER_TO_INTERNAL = {"LF": "FL", "RF": "FR", "LM": "ML", "RM": "MR", "LH": "HL", "RH": "HR"}
 INTERNAL_TO_PAPER = {value: key for key, value in PAPER_TO_INTERNAL.items()}
 
-CPG_TYPES = (
-    "IN17A001",
-    "INXXX466",
-    "IN16B036",
-    "IN19B007",
-    "IN19B012",
-    "IN03A006",
-    "INXXX464",
+# Published core motif. Rebuild identity from these types + DNg100, never from parquet.
+CORE_CPG_TYPES = {
+    "E1": "IN17A001",
+    "E2": "INXXX466",
+    "E3": "IN19B012",
+    "I1": "IN16B036",
+    "I2": "IN19B007",
+}
+EXTENDED_CPG_TYPES = {
+    "E4": "IN03A006",
+    "E5": "INXXX464",
+}
+CPG_TYPES = tuple(CORE_CPG_TYPES[role] for role in ("E1", "E2", "I1", "I2", "E3")) + tuple(
+    EXTENDED_CPG_TYPES[role] for role in ("E4", "E5")
 )
 ROLE_FOR_TYPE = {
     "DNg100": "walking_command",
@@ -121,26 +127,66 @@ I2_TYPE_PROVENANCE = {
 # Best neuromere / (T1+T2+T3). Below this → AMBIGUOUS.
 CONFIDENCE_THRESHOLD = 0.70
 
+def _manc_record(
+    *,
+    source_matrix_index: int,
+    source_body_id: int,
+    type: str,
+    predicted_nt: str = "",
+    note: str | None = None,
+) -> dict:
+    """MANC-only identity. Never put these integers in malecns_body_id."""
+    rec = {
+        "source_dataset": "MANC_T1",
+        "source_matrix_index": int(source_matrix_index),
+        "source_body_id": int(source_body_id),
+        "type": type,
+        "predicted_nt": predicted_nt,
+        # Legacy aliases for older tests; mapping JSON uses the source_* keys.
+        "dataset": "MANC_T1",
+        "matrix_index": int(source_matrix_index),
+        "body_id": int(source_body_id),
+    }
+    if note:
+        rec["note"] = note
+    return rec
+
+
+def namespaced_manc_only(record: dict) -> dict:
+    """Drop legacy aliases so mapping JSON cannot be read as MaleCNS."""
+    out = {
+        "source_dataset": "MANC_T1",
+        "source_matrix_index": int(record.get("source_matrix_index", record.get("matrix_index"))),
+        "source_body_id": int(record.get("source_body_id", record.get("body_id"))),
+        "type": record.get("type"),
+    }
+    if record.get("predicted_nt"):
+        out["predicted_nt"] = record["predicted_nt"]
+    if record.get("note"):
+        out["note"] = record["note"]
+    return out
+
+
 # Pugliese configs/experiment/DNg100_Stim.yaml: stimNeurons: [[31]]
-PUGLIESE_DNG100_STIM = {
-    "dataset": "MANC_T1",
-    "matrix_index": 31,
-    "body_id": 10093,
-    "type": "DNg100",
-    "predicted_nt": "acetylcholine",
-}
-MANC_VMS16 = {
-    "dataset": "MANC_T1",
-    "matrix_index": 16,
-    "body_id": 10056,
-    "type": "vMS16",
-    "predicted_nt": "gaba",
-    "note": (
-        "Pugliese MANC T1 table row 16. Not DNg100. The same integer can "
-        "appear independently in MaleCNS as a different cell; do not copy "
-        "this MANC bodyId into malecns_body_id."
+PUGLIESE_DNG100_STIM = _manc_record(
+    source_matrix_index=31,
+    source_body_id=10093,
+    type="DNg100",
+    predicted_nt="acetylcholine",
+)
+MANC_VMS16 = _manc_record(
+    source_matrix_index=16,
+    source_body_id=10056,
+    type="vMS16",
+    predicted_nt="gaba",
+    note=(
+        "Pugliese MANC T1 table row 16 is vMS16, not DNg100. MaleCNS annotations "
+        "independently give bodyId 10056 type DNg100 (DNg100_R). Same integer, "
+        "different reconstructed specimen/dataset. Do not join on the integer. "
+        "MaleCNS DNg100_R's curated mancBodyid/mancType is correspondence to "
+        "MANC DNg100 10093, not to this vMS16 row."
     ),
-}
+)
 # Kept so existing imports keep working. Same object as MANC_VMS16.
 MANC_NOT_DNG100_10056 = MANC_VMS16
 
@@ -153,7 +199,7 @@ def namespaced_ids(
     malecns_body_id: int | None = None,
 ) -> dict:
     """Four ID fields. There is no generic `id` or `dng100_body_id`."""
-    if source_dataset not in {"MANC_T1", "MaleCNS_v1"}:
+    if source_dataset not in {"MANC_T1", "MaleCNS_v1", "MaleCNS_v1.0"}:
         raise ValueError(f"unknown source_dataset {source_dataset!r}")
     return {
         "source_dataset": source_dataset,
@@ -171,18 +217,11 @@ def malecns_body_id_of(entry: object) -> int | None:
         for forbidden in FORBIDDEN_KEYS:
             if forbidden in entry:
                 raise ValueError(f"generic field {forbidden!r} is forbidden")
+        dataset = str(entry.get("source_dataset") or entry.get("dataset") or "")
+        if dataset in {"MANC_T1", "MANC"}:
+            return None
         if entry.get("malecns_body_id") is not None:
             return int(entry["malecns_body_id"])
-        dataset = str(entry.get("dataset") or "")
-        if dataset == "MANC_T1":
-            return None
-        # MaleCNS DNg100 left/right records use `body_id` under malecns.*.
-        if (
-            entry.get("type") == "DNg100"
-            and _norm_side(entry.get("side")) in SIDES
-            and entry.get("body_id") is not None
-        ):
-            return int(entry["body_id"])
         return None
     return int(entry)
 
@@ -359,32 +398,117 @@ def assign_leg_from_row(row: dict[str, int]) -> dict:
     }
 
 
-def load_annotations(types: tuple[str, ...] | None = None) -> list[dict]:
+def cpg_wanted_types() -> set[str]:
+    return {"DNg100", *CORE_CPG_TYPES.values(), *EXTENDED_CPG_TYPES.values()}
+
+
+def load_raw_annotation_table():
+    """Official MaleCNS annotation feather. Not parquet. Not the NT table."""
+    import pandas as pd
+
     if not ANN_PATH.exists():
-        return []
-    wanted = set(types or (CPG_TYPES + ("DNg100",)))
-    table = feather.read_table(
-        ANN_PATH,
-        columns=["bodyId", "type", "instance", "somaSide", "somaNeuromere", "superclass"],
-    )
-    frame = table.to_pandas()
-    keep = frame["type"].isin(wanted)
-    if "superclass" in frame:
-        retain = frame["superclass"].notna() & frame["superclass"].astype(str).ne("")
-        keep = keep & retain
+        raise FileNotFoundError(ANN_PATH)
+    name = ANN_PATH.name.lower()
+    if ANN_PATH.suffix == ".parquet" or "neurotransmitter" in name or "syn-points" in name:
+        raise AssertionError(
+            f"refusing to treat {ANN_PATH} as MaleCNS annotations. "
+            "Identity is body-annotations-*.feather column bodyId."
+        )
+    raw = pd.read_feather(ANN_PATH)
+    if "bodyId" not in raw.columns:
+        raise AssertionError(
+            f"bodyId missing from {ANN_PATH}; columns={list(raw.columns)}; "
+            f"index.name={raw.index.name}. Wrong DataFrame: the NT table and "
+            "syn-points use column 'body', not 'bodyId'. Do not use the index."
+        )
+    dng = raw.loc[raw["type"].astype(str).str.strip().eq("DNg100")]
+    if len(dng) != 2:
+        raise AssertionError(f"expected exactly 2 MaleCNS DNg100 rows, got {len(dng)}")
+    if CORE_CPG_TYPES["I2"] != "IN19B007":
+        raise AssertionError("I2 must be IN19B007")
+    if "IN19A007" in CORE_CPG_TYPES.values():
+        raise AssertionError("IN19A007 is not I2")
+    return raw
+
+
+def raw_dng100_annotation_rows():
+    """The only authoritative MaleCNS DNg100 lookup: type == DNg100 on the feather."""
+    raw = load_raw_annotation_table()
+    cols = [c for c in ("bodyId", "type", "somaSide", "rootSide", "mancBodyid", "mancType", "instance") if c in raw.columns]
+    return raw.loc[raw["type"].astype(str).str.strip().eq("DNg100"), cols].copy()
+
+
+def malecns_dng100_body_ids() -> dict[str, int]:
+    """L/R malecns_body_id from annotations[type == DNg100]. Nothing else."""
+    dng = raw_dng100_annotation_rows()
+    out: dict[str, int] = {}
+    for rec in dng.itertuples(index=False):
+        side = _norm_side(getattr(rec, "somaSide", ""))
+        if not side:
+            instance = str(getattr(rec, "instance", "") or "")
+            if instance.endswith("_L"):
+                side = "L"
+            elif instance.endswith("_R"):
+                side = "R"
+        if side not in SIDES:
+            raise AssertionError(f"DNg100 bodyId {int(rec.bodyId)} has no L/R side")
+        if side in out:
+            raise AssertionError(f"duplicate MaleCNS DNg100 side {side}")
+        out[side] = int(rec.bodyId)
+    if set(out) != {"L", "R"}:
+        raise AssertionError(f"MaleCNS DNg100 sides {out} != {{L, R}}")
+    return out
+
+
+def load_annotations(types: tuple[str, ...] | None = None) -> list[dict]:
+    """MaleCNS identity from raw annotations[bodyId, type, ...]. ROI is joined later."""
+    import pandas as pd
+
+    raw = load_raw_annotation_table()
+    wanted = set(types) if types is not None else cpg_wanted_types()
+    keep = raw["type"].astype(str).str.strip().isin(wanted)
+    cells = raw.loc[keep].copy()
+    cells = cells.rename(columns={"bodyId": "malecns_body_id"})
     rows = []
-    for rec in frame.loc[keep].itertuples(index=False):
+    for rec in cells.itertuples(index=False):
+        manc = getattr(rec, "mancBodyid", None)
+        manc_id = None if manc is None or (isinstance(manc, float) and pd.isna(manc)) else int(manc)
         rows.append(
             {
-                "malecns_body_id": int(rec.bodyId),
-                "type": str(rec.type or ""),
+                "source_dataset": "MaleCNS_v1.0",
+                "malecns_body_id": int(rec.malecns_body_id),
+                "type": str(rec.type or "").strip(),
                 "instance": str(getattr(rec, "instance", "") or ""),
                 "side": _norm_side(getattr(rec, "somaSide", "")),
+                "root_side": _norm_side(getattr(rec, "rootSide", "")),
                 "soma_neuromere": _norm_neuromere(getattr(rec, "somaNeuromere", "")),
                 "superclass": str(getattr(rec, "superclass", "") or ""),
+                "manc_body_id": manc_id,
+                "manc_type": str(getattr(rec, "mancType", "") or "") or None,
             }
         )
     return rows
+
+
+def annotation_synpoint_rows(types: tuple[str, ...] | None = None) -> list[dict]:
+    """Join raw annotation bodyId onto syn-points ROI counts.
+
+    Never reads the derived CPG parquet for identity. syn-points column is
+    `body`; annotations column is `bodyId`; both become malecns_body_id.
+    """
+    anns = load_annotations(types)
+    rois = load_roi_json()
+    missing = [row["malecns_body_id"] for row in anns if row["malecns_body_id"] not in rois]
+    if missing and not rois:
+        raise FileNotFoundError(
+            f"{JSON_CACHE} missing; scan syn-points first: "
+            "python scripts/cache_malecns_roi_innervation.py --from-syn-points --write-mapping"
+        )
+    records = []
+    for ann in anns:
+        row = rois_to_row(rois.get(ann["malecns_body_id"], {}))
+        records.append({**ann, **row})
+    return records
 
 
 def load_predicted_nt(body_ids: set[int] | None = None) -> dict[int, dict]:
@@ -431,12 +555,7 @@ def load_roi_json() -> dict[int, dict[str, dict[str, int]]]:
 
 
 def parquet_from_json_and_annotations() -> pa.Table:
-    anns = load_annotations()
-    rois = load_roi_json()
-    records = []
-    for ann in anns:
-        row = rois_to_row(rois.get(ann["malecns_body_id"], {}))
-        records.append({**ann, **row})
+    records = annotation_synpoint_rows()
     if not records:
         schema_names = [
             "malecns_body_id",
@@ -460,18 +579,8 @@ def write_roi_parquet(table: pa.Table, path: Path = PARQUET_CACHE) -> Path:
 
 
 def load_roi_parquet(path: Path | None = None) -> list[dict]:
-    path = Path(path) if path is not None else (PARQUET_CACHE if PARQUET_CACHE.exists() else LEGACY_PARQUET_CACHE)
-    if not path.exists():
-        table = parquet_from_json_and_annotations()
-        if table.num_rows:
-            write_roi_parquet(table)
-            return table.to_pylist()
-        return []
-    rows = pq.read_table(path).to_pylist()
-    for row in rows:
-        if "malecns_body_id" not in row and row.get("bodyId") is not None:
-            row["malecns_body_id"] = int(row["bodyId"])
-    return rows
+    """Derived cache only. Mapping identity must use annotation_synpoint_rows()."""
+    return annotation_synpoint_rows()
 
 
 def load_roi_rows_by_body(path: Path | None = None) -> dict[int, dict]:
@@ -504,31 +613,52 @@ def verify_pugliese_manc_t1_dng100(path: Path = PUGLIESE_MANC_T1_TABLE) -> dict:
         )
     dng_rows = table[table["type"].astype(str).eq("DNg100")]
     return {
-        "pugliese_reference": dict(PUGLIESE_DNG100_STIM),
-        "manc_vms16": {
-            "dataset": "MANC_T1",
-            "matrix_index": int(not_dng.name),
-            "body_id": other_body,
-            "type": other_type,
-            "predicted_nt": str(not_dng.get("predictedNt") or ""),
-        },
-        "manc_t1_dng100": [
+        "pugliese_reference": namespaced_manc_only(PUGLIESE_DNG100_STIM),
+        "manc_vms16": namespaced_manc_only(
             {
-                "dataset": "MANC_T1",
-                "matrix_index": int(idx),
-                "body_id": int(row["bodyId"]),
-                "type": "DNg100",
-                "predicted_nt": str(row.get("predictedNt") or ""),
+                "source_dataset": "MANC_T1",
+                "source_matrix_index": int(not_dng.name),
+                "source_body_id": other_body,
+                "type": other_type,
+                "predicted_nt": str(not_dng.get("predictedNt") or ""),
+                "note": MANC_VMS16.get("note"),
             }
+        ),
+        "manc_t1_dng100": [
+            namespaced_manc_only(
+                {
+                    "source_dataset": "MANC_T1",
+                    "source_matrix_index": int(idx),
+                    "source_body_id": int(row["bodyId"]),
+                    "type": "DNg100",
+                    "predicted_nt": str(row.get("predictedNt") or ""),
+                }
+            )
             for idx, row in dng_rows.iterrows()
         ],
         "manc_body_ids": {int(v) for v in table["bodyId"].tolist()},
     }
 
 
-def _neuron_record(row: dict, assigned: dict) -> dict:
-    """One MaleCNS CPG cell. `malecns_body_id` is MaleCNS-only."""
+def _manc_correspondence(row: dict) -> dict | None:
+    mid = row.get("manc_body_id")
+    if mid is None:
+        return None
     return {
+        "source": "MaleCNS annotation fields mancBodyid / mancType",
+        "manc_body_id": int(mid),
+        "manc_type": row.get("manc_type") or None,
+        "note": (
+            "Curated cross-dataset correspondence. Same annotated cell type "
+            "on a different reconstructed specimen. Not integer identity of malecns_body_id."
+        ),
+    }
+
+
+def _neuron_record(row: dict, assigned: dict) -> dict:
+    """One MaleCNS CPG cell. malecns_body_id is from raw annotations.bodyId."""
+    rec = {
+        "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": int(row["malecns_body_id"]),
         "type": row.get("type") or "",
         "side": row.get("side") or "",
@@ -541,6 +671,10 @@ def _neuron_record(row: dict, assigned: dict) -> dict:
         "assigned_side": assigned["assigned_side"],
         "assigned_slot": assigned["assigned_slot"],
     }
+    corr = _manc_correspondence(row)
+    if corr:
+        rec["manc_correspondence"] = corr
+    return rec
 
 
 def _dng100_malecns_record(row: dict, assigned: dict, nt: dict) -> dict:
@@ -554,30 +688,36 @@ def _dng100_malecns_record(row: dict, assigned: dict, nt: dict) -> dict:
     body = int(row["malecns_body_id"])
     nt_row = nt.get(body) or {}
     conf = nt_row.get("predicted_nt_confidence")
-    return {
-        "body_id": body,
+    rec = {
+        "source_dataset": "MaleCNS_v1.0",
+        "malecns_body_id": body,
         "type": "DNg100",
         "side": side,
+        "root_side": row.get("root_side") or "",
         "instance": row.get("instance") or "",
         "predicted_nt": nt_row.get("predicted_nt") or nt_row.get("celltype_predicted_nt") or "",
         "predicted_nt_confidence": None if conf in (None, "") else float(conf),
         "roi_counts": assigned["roi_counts"],
         "assigned_segment": None,
         "assignment_confidence": assigned["assignment_confidence"],
-        "assignment_method": ASSIGNMENT_METHOD,
+        "assignment_method": DNG100_ASSIGNMENT_METHOD,
         "fallback_used": False,
         "assignment_status": "AMBIGUOUS",
         "innervation_side": innervation_side_of(row),
+        "manc_correspondence": _manc_correspondence(row),
         "note": (
-            "Descending; innervates all three ipsilateral neuropils. "
-            "Not a six-copy CPG cell. Side is the MaleCNS annotation "
-            "(DNg100_L / DNg100_R), not VNC innervation and not a MANC bodyId."
+            "MaleCNS annotations[type == DNg100]. Same annotated cell type as "
+            "Pugliese's MANC DNg100, different reconstructed specimen. "
+            "manc_correspondence is the curated mancBodyid field, not identity."
         ),
     }
+    return rec
 
 
 def build_cpg_mapping(rows: list[dict] | None = None) -> dict:
-    rows = rows if rows is not None else load_roi_parquet()
+    # Identity first: crash unless the raw feather has exactly two DNg100 bodyIds.
+    malecns_dng100_body_ids()
+    rows = rows if rows is not None else annotation_synpoint_rows()
     by_type: dict[str, list[dict]] = {}
     for row in rows:
         by_type.setdefault(str(row["type"]), []).append(row)
@@ -586,8 +726,8 @@ def build_cpg_mapping(rows: list[dict] | None = None) -> dict:
         pugliese = verify_pugliese_manc_t1_dng100()
     else:
         pugliese = {
-            "pugliese_reference": dict(PUGLIESE_DNG100_STIM),
-            "manc_vms16": dict(MANC_VMS16),
+            "pugliese_reference": namespaced_manc_only(PUGLIESE_DNG100_STIM),
+            "manc_vms16": namespaced_manc_only(MANC_VMS16),
             "manc_t1_dng100": [],
             "manc_body_ids": set(),
         }
@@ -605,10 +745,12 @@ def build_cpg_mapping(rows: list[dict] | None = None) -> dict:
             "DNg100": "DNg100",
         },
         "source": (
-            "Per-bodyId LegNp PreSyn+PostSyn counts from MaleCNS v1.0 syn-points "
-            "(cached as cpg_roi_innervation.parquet). Not type-level ROI totals. "
-            "Soma XYZ / somaNeuromere are not used. neuPrint is not queried. "
-            "MaleCNS DNg100 is annotations[type == 'DNg100'], not a MANC bodyId."
+            "Identity: body-annotations-male-cns-v1.0-minconf-0.5.feather "
+            "[type] via bodyId renamed malecns_body_id. "
+            "ROI: syn-points-male-cns-v1.0-minconf-0.5.feather column body, "
+            "joined on malecns_body_id. Not the derived CPG parquet. "
+            "Not type-level ROI totals. Soma XYZ / somaNeuromere unused. "
+            "Pugliese MANC IDs appear only under DNg100.pugliese_reference."
         ),
         "assignment": {
             "signal": "T#_score = PreSyn+PostSyn in LegNp(T#)(L)+LegNp(T#)(R); then L vs R",
@@ -656,7 +798,7 @@ def build_cpg_mapping(rows: list[dict] | None = None) -> dict:
             "n_expected": EXPECTED_COPIES.get(typename, 6),
             "n_in_annotations": len(by_type.get(typename, [])),
         }
-    validate_cpg_mapping(mapping, manc_body_ids=pugliese.get("manc_body_ids") or set())
+    validate_cpg_mapping(mapping)
     return mapping
 
 
@@ -676,8 +818,8 @@ def _dng100_block(rows: list[dict], pugliese: dict) -> dict:
         else:
             extras.append(record)
     return {
-        "pugliese_reference": pugliese["pugliese_reference"],
-        "manc_vms16": pugliese.get("manc_vms16") or dict(MANC_VMS16),
+        "pugliese_reference": namespaced_manc_only(pugliese["pugliese_reference"]),
+        "manc_vms16": namespaced_manc_only(pugliese.get("manc_vms16") or MANC_VMS16),
         "malecns": {
             "left": left,
             "right": right,
@@ -685,9 +827,10 @@ def _dng100_block(rows: list[dict], pugliese: dict) -> dict:
             "n_expected": 2,
             "n_in_annotations": len(rows),
             "note": (
-                "Looked up by type == DNg100 in MaleCNS annotations. "
-                "Same biological TYPE as Pugliese's MANC DNg100, not the same body ID. "
-                "Integer collision with MANC vMS16 (body 10056) is not identity."
+                "Looked up by type == DNg100 in the official MaleCNS annotation feather. "
+                "Same annotated cell type as Pugliese MANC DNg100, different specimen. "
+                "manc_correspondence copies mancBodyid/mancType; it is not identity. "
+                "MANC table body 10056 is vMS16. MaleCNS bodyId 10056 is independently DNg100_R."
             ),
         },
     }
@@ -734,24 +877,69 @@ def iter_dng100_malecns_records(mapping: dict) -> list[dict]:
 
 
 def validate_cpg_mapping(mapping: dict, *, manc_body_ids: set[int] | None = None) -> None:
-    """Four hard checks. Fail closed rather than guess."""
+    """Crash unless identity is proven by the raw annotation feather."""
+    import pandas as pd
+
     _assert_forbidden_keys(mapping)
+    if CORE_CPG_TYPES["I2"] != "IN19B007":
+        raise AssertionError("I2 must be IN19B007")
+    if "IN19A007" in CORE_CPG_TYPES.values():
+        raise AssertionError("IN19A007 is not I2")
+
+    raw = load_raw_annotation_table()
+    if "bodyId" not in raw.columns:
+        raise AssertionError("bodyId missing from raw annotations")
+    dng_raw = raw.loc[raw["type"].astype(str).str.strip().eq("DNg100")]
+    if len(dng_raw) != 2:
+        raise AssertionError(f"raw DNg100 count {len(dng_raw)} != 2")
 
     dng_records = iter_dng100_malecns_records(mapping)
-    if not dng_records:
-        raise ValueError("MaleCNS DNg100 entries are missing")
-    anns = {int(row["malecns_body_id"]): row for row in load_annotations(types=("DNg100", *CPG_TYPES, "IN19A007"))}
+    if len(dng_records) != 2:
+        raise ValueError(f"MaleCNS DNg100 entries: {len(dng_records)}")
+    raw_dng_ids = {int(v) for v in dng_raw["bodyId"]}
+    mapped_dng_ids = {int(rec["malecns_body_id"]) for rec in dng_records}
+    if mapped_dng_ids != raw_dng_ids:
+        raise AssertionError(
+            f"MaleCNS DNg100 mapping {mapped_dng_ids} != raw annotations[type==DNg100] {raw_dng_ids}"
+        )
     for rec in dng_records:
         if rec.get("type") != "DNg100":
             raise ValueError(f"MaleCNS DNg100 record has type={rec.get('type')!r}")
-        body = int(rec["body_id"])
-        ann = anns.get(body)
-        if ann is None or ann.get("type") != "DNg100":
-            raise ValueError(f"MaleCNS body {body} is not type DNg100 in annotations")
+        if rec.get("source_dataset") not in {"MaleCNS_v1.0", "MaleCNS_v1"}:
+            raise ValueError("MaleCNS DNg100 source_dataset must be MaleCNS_v1.0")
+        if rec.get("assignment_method") != DNG100_ASSIGNMENT_METHOD:
+            raise ValueError(f"DNg100 assignment_method={rec.get('assignment_method')!r}")
+        body = int(rec["malecns_body_id"])
+        source = raw.loc[raw["bodyId"] == body]
+        if len(source) != 1:
+            raise AssertionError(f"raw annotations bodyId={body} n={len(source)}")
+        if str(source.iloc[0]["type"]).strip() != "DNg100":
+            raise AssertionError(
+                f"malecns_body_id {body} is type {source.iloc[0]['type']} in raw annotations, not DNg100"
+            )
         if rec.get("fallback_used"):
             raise ValueError(f"DNg100 {body} used a fallback")
-        if rec.get("assignment_status") == "AMBIGUOUS" and rec.get("assigned_segment") is not None:
-            raise ValueError(f"DNg100 {body} is AMBIGUOUS but assigned_segment={rec.get('assigned_segment')}")
+        if rec.get("assigned_segment") is not None:
+            raise ValueError(f"DNg100 {body} must not be assigned a leg segment")
+        if "body_id" in rec or "dng100_body_id" in rec:
+            raise AssertionError("MaleCNS DNg100 must use malecns_body_id, not body_id")
+        pug = rec.get("manc_correspondence") or {}
+        if pug.get("manc_body_id") is not None:
+            expected = source.iloc[0]["mancBodyid"]
+            if pd.notna(expected) and int(expected) != int(pug["manc_body_id"]):
+                raise AssertionError("manc_correspondence does not match raw mancBodyid")
+
+    mapping_rows = list(iter_cpg_neuron_records(mapping)) + dng_records
+    for rec in mapping_rows:
+        mid = int(rec["malecns_body_id"])
+        claimed = str(rec.get("type") or "").strip()
+        source = raw.loc[raw["bodyId"] == mid]
+        if len(source) != 1:
+            raise AssertionError(f"mapping malecns_body_id {mid} not unique in raw annotations")
+        if str(source.iloc[0]["type"]).strip() != claimed:
+            raise AssertionError(
+                f"malecns_body_id {mid}: raw type {source.iloc[0]['type']} != mapping {claimed}"
+            )
 
     for rec in iter_cpg_neuron_records(mapping):
         if rec.get("fallback_used"):
@@ -761,39 +949,45 @@ def validate_cpg_mapping(mapping: dict, *, manc_body_ids: set[int] | None = None
             raise ValueError(f"CPG cell {rec.get('malecns_body_id')} assignment_method={method!r}")
         if rec.get("assignment_status") == "AMBIGUOUS" and rec.get("assigned_slot"):
             raise ValueError(f"CPG cell {rec.get('malecns_body_id')} is AMBIGUOUS but slotted")
-        body = int(rec["malecns_body_id"])
-        claimed = rec.get("type")
-        ann = anns.get(body)
-        if ann is not None and claimed and ann.get("type") != claimed:
-            raise ValueError(f"MaleCNS body {body} type {ann.get('type')} != mapping {claimed}")
 
     i2 = mapping.get("IN19B007") or {}
     if i2.get("role") != "I2" or i2.get("type") != "IN19B007":
         raise ValueError("I2 must be IN19B007")
     if mapping.get("IN19A007"):
         raise ValueError("IN19A007 must not appear as a mapping type key")
-    for rec in iter_cpg_neuron_records(mapping):
-        if rec.get("type") == "IN19A007":
-            raise ValueError("IN19A007 must not be labeled as a CPG cell")
-        if rec.get("role") == "I2" and rec.get("type") != "IN19B007":
-            raise ValueError("I2 record is not IN19B007")
     if (mapping.get("roles") or {}).get("I2") != "IN19B007":
         raise ValueError("roles.I2 must be IN19B007")
 
-    listed = collect_malecns_body_ids(mapping)
-    if manc_body_ids is None and PUGLIESE_MANC_T1_TABLE.exists():
-        manc_body_ids = verify_pugliese_manc_t1_dng100()["manc_body_ids"]
-    manc_body_ids = set(manc_body_ids or ())
-    overlap = sorted({int(v) for v in listed} & manc_body_ids)
-    if overlap:
-        raise ValueError(f"MANC bodyId appeared in malecns_body_id: {overlap}")
+    listed = {int(v) for v in collect_malecns_body_ids(mapping)}
+    if PUGLIESE_MANC_STIM_BODY in listed and PUGLIESE_MANC_STIM_BODY not in raw_dng_ids:
+        raise AssertionError(
+            "MANC stim body 10093 must not appear as malecns_body_id unless "
+            "raw MaleCNS annotations[type==DNg100] independently contain it "
+            f"(MaleCNS bodyId 10093 is {raw.loc[raw['bodyId'] == PUGLIESE_MANC_STIM_BODY]['type'].tolist()})"
+        )
+    pug = mapping.get("DNg100", {}).get("pugliese_reference") or {}
+    if pug.get("source_body_id") != 10093 or pug.get("source_dataset") != "MANC_T1":
+        raise AssertionError("Pugliese reference must be MANC_T1 source_body_id=10093")
+    if "malecns_body_id" in pug:
+        raise AssertionError("pugliese_reference must not carry malecns_body_id")
+
+
+def archive_invalid_namespace_artifacts() -> dict[str, Path]:
+    """Keep forensic copies. Never overwrite an existing INVALID_* file."""
+    written: dict[str, Path] = {}
+    if MAPPING_PATH.exists() and not INVALID_NAMESPACE_MAPPING_PATH.exists():
+        INVALID_NAMESPACE_MAPPING_PATH.write_text(MAPPING_PATH.read_text())
+        written["mapping"] = INVALID_NAMESPACE_MAPPING_PATH
+    if PARQUET_CACHE.exists() and not INVALID_NAMESPACE_PARQUET_PATH.exists():
+        INVALID_NAMESPACE_PARQUET_PATH.write_bytes(PARQUET_CACHE.read_bytes())
+        written["parquet"] = INVALID_NAMESPACE_PARQUET_PATH
+    return written
 
 
 def write_cpg_mapping(mapping: dict | None = None, path: Path = MAPPING_PATH) -> Path:
     mapping = mapping if mapping is not None else build_cpg_mapping()
-    _assert_forbidden_keys(mapping)
+    validate_cpg_mapping(mapping)
     path.parent.mkdir(parents=True, exist_ok=True)
-    archive_invalid_mapping(path)
     path.write_text(json.dumps(mapping, indent=2) + "\n")
     return path
 
@@ -828,22 +1022,31 @@ def load_cpg_mapping(path: Path = MAPPING_PATH) -> dict:
 
 
 def malecns_dng100_by_annotation_side(mapping: dict | None = None, side: str = "L") -> int | None:
-    """MaleCNS DNg100 body_id for annotation side L/R. Not a MANC ID."""
+    """MaleCNS DNg100 malecns_body_id for annotation side L/R."""
     mapping = mapping if mapping is not None else load_cpg_mapping()
     key = "left" if _norm_side(side) == "L" else "right" if _norm_side(side) == "R" else ""
     rec = ((mapping.get("DNg100") or {}).get("malecns") or {}).get(key) or {}
-    if rec.get("body_id") is None:
-        return None
-    return int(rec["body_id"])
+    return malecns_body_id_of(rec)
 
 
 def malecns_dng100_by_vnc_innervation(mapping: dict | None = None, side: str = "L") -> int | None:
-    """MaleCNS DNg100 whose LegNp synapses prefer this VNC side. Not Pugliese 10093."""
+    """MaleCNS DNg100 whose LegNp synapses prefer this VNC side."""
     mapping = mapping if mapping is not None else load_cpg_mapping()
     want = _norm_side(side)
     for rec in iter_dng100_malecns_records(mapping):
-        if rec.get("innervation_side") == want and rec.get("body_id") is not None:
-            return int(rec["body_id"])
+        if rec.get("innervation_side") == want:
+            return malecns_body_id_of(rec)
+    return None
+
+
+def malecns_dng100_matching_manc_body(manc_body_id: int, mapping: dict | None = None) -> int | None:
+    """MaleCNS DNg100 whose curated mancBodyid equals this MANC body."""
+    mapping = mapping if mapping is not None else load_cpg_mapping()
+    want = int(manc_body_id)
+    for rec in iter_dng100_malecns_records(mapping):
+        corr = rec.get("manc_correspondence") or {}
+        if corr.get("manc_body_id") == want:
+            return malecns_body_id_of(rec)
     return None
 
 

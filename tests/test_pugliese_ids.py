@@ -11,21 +11,21 @@ from organism.roi_innervation import (
 
 
 def test_pugliese_stim_is_matrix_index_31_body_10093_not_10056():
-    assert PUGLIESE_DNG100_STIM["dataset"] == "MANC_T1"
-    assert PUGLIESE_DNG100_STIM["matrix_index"] == 31
-    assert PUGLIESE_DNG100_STIM["body_id"] == 10093
+    assert PUGLIESE_DNG100_STIM["source_dataset"] == "MANC_T1"
+    assert PUGLIESE_DNG100_STIM["source_matrix_index"] == 31
+    assert PUGLIESE_DNG100_STIM["source_body_id"] == 10093
     assert PUGLIESE_DNG100_STIM["type"] == "DNg100"
-    assert PUGLIESE_DNG100_STIM["body_id"] != 10056
-    assert MANC_VMS16["body_id"] == 10056
-    assert MANC_VMS16["matrix_index"] == 16
+    assert PUGLIESE_DNG100_STIM["source_body_id"] != 10056
+    assert MANC_VMS16["source_body_id"] == 10056
+    assert MANC_VMS16["source_matrix_index"] == 16
     assert MANC_VMS16["type"] == "vMS16"
     assert MANC_NOT_DNG100_10056 is MANC_VMS16
 
     checked = verify_pugliese_manc_t1_dng100()
-    assert checked["pugliese_reference"]["matrix_index"] == 31
-    assert checked["pugliese_reference"]["body_id"] == 10093
+    assert checked["pugliese_reference"]["source_matrix_index"] == 31
+    assert checked["pugliese_reference"]["source_body_id"] == 10093
     assert checked["manc_vms16"]["type"] == "vMS16"
-    bodies = {row["body_id"] for row in checked["manc_t1_dng100"]}
+    bodies = {row["source_body_id"] for row in checked["manc_t1_dng100"]}
     assert 10093 in bodies
     assert 10056 not in bodies
 

@@ -137,12 +137,12 @@ def test_cpg_mapping_json_keeps_pugliese_and_malecns_ids_apart():
     assert mapping["assignment"]["fallback_used"] is False
     assert mapping["assignment"]["type_level_roi_pooling"] is False
     stim = mapping["DNg100"]["pugliese_reference"]
-    assert stim["matrix_index"] == 31
-    assert stim["body_id"] == 10093
-    assert stim["dataset"] == "MANC_T1"
+    assert stim["source_matrix_index"] == 31
+    assert stim["source_body_id"] == 10093
+    assert stim["source_dataset"] == "MANC_T1"
     assert stim["type"] == "DNg100"
-    assert PUGLIESE_DNG100_STIM["body_id"] == 10093
-    assert mapping["DNg100"]["manc_vms16"]["body_id"] == 10056
+    assert PUGLIESE_DNG100_STIM["source_body_id"] == 10093
+    assert mapping["DNg100"]["manc_vms16"]["source_body_id"] == 10056
     assert mapping["DNg100"]["manc_vms16"]["type"] == "vMS16"
     e1 = mapping["IN17A001"]["neurons"]
     assert set(e1) == {"LF", "RF", "LM", "RM", "LH", "RH"}
@@ -154,6 +154,11 @@ def test_cpg_mapping_json_keeps_pugliese_and_malecns_ids_apart():
     assert mapping["IN19B007"]["type"] == "IN19B007"
     assert "IN19A007" not in mapping
     assert "dng100_body_id" not in mapping["DNg100"]
+    left = mapping["DNg100"]["malecns"]["left"]
+    right = mapping["DNg100"]["malecns"]["right"]
+    assert "malecns_body_id" in left and "body_id" not in left
+    assert "malecns_body_id" in right and "body_id" not in right
+    assert mapping["DNg100"]["pugliese_reference"]["source_dataset"] == "MANC_T1"
 
 
 def test_e1_annotation_covers_six_leg_neuropils():
