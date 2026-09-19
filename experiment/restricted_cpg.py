@@ -3,6 +3,9 @@
 Identity is the official annotation feather. Edges are core-neuron outgoing
 contacts onto core cells and directly downstream motor readouts. Motor
 feedback and other populations are omitted.
+
+The rate-model transfer keeps both MaleCNS DNg100 cells in this graph
+(10045 and 10056) and stimulates only 10056.
 """
 
 from __future__ import annotations
@@ -19,9 +22,9 @@ from organism.roi_innervation import CORE_CPG_TYPES, assert_expected_annotation_
 def restricted_cpg_graph(*, dng100_bodies: tuple[int, ...] = (MALECNS_DNG100_L, MALECNS_DNG100_R)) -> Connectome:
     """Build the restricted anatomical experiment graph.
 
-    ``dng100_bodies`` selects which MaleCNS DNg100 cells are in the core.
-    The primary transfer test uses only DNg100_R 10056. Passing both
-    bodies reproduces the all-LIF milestone subgraph.
+    Default membership is both MaleCNS DNg100 cells plus six copies of each
+    core CPG type and downstream motor readouts. The primary rate transfer
+    stimulates only DNg100_R 10056 and does not pool 10045.
     """
     wanted = {int(b) for b in dng100_bodies}
     if not wanted.issubset({MALECNS_DNG100_L, MALECNS_DNG100_R}):
