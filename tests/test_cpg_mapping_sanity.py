@@ -84,7 +84,8 @@ def test_four_mapping_assertions():
         assert rec.get("fallback_used") is False
         assert rec["assigned_segment"] is None
         assert rec["source_dataset"] == "MaleCNS_v1.0"
-        assert rec["assignment_method"] == DNG100_ASSIGNMENT_METHOD
+        assert rec["identity_method"] == DNG100_ASSIGNMENT_METHOD or rec["identity_method"] == "raw annotation type == DNg100"
+        assert rec["identity_method"] == "raw annotation type == DNg100"
 
     for rec in iter_cpg_neuron_records(mapping):
         assert rec.get("fallback_used") is False
@@ -152,8 +153,12 @@ def test_cpg_records_are_per_body_roi_not_soma():
         best = rec["roi_counts"][winner]["pre"] + rec["roi_counts"][winner]["post"]
         rest = sum(rec["roi_counts"][seg]["pre"] + rec["roi_counts"][seg]["post"] for seg in others)
         assert best > rest
-    for rec in mapping["IN19B007"]["unassigned"]:
-        assert rec["type"] == "IN19B007"
+    i2 = mapping["IN19A007"]
+    assert i2["role"] == "I2"
+    assert i2["n_in_annotations"] == 6
+    assert i2["n_assigned"] + len(i2["unassigned"]) == 6
+    for rec in i2["unassigned"]:
+        assert rec["type"] == "IN19A007"
         assert rec["fallback_used"] is False
         assert rec["assignment_status"] == "AMBIGUOUS"
 
