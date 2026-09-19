@@ -99,12 +99,17 @@ def query_full_dataset_size_stats() -> dict:
         "avg(n.size) AS avg_s, percentileCont(n.size, 0.5) AS median_s"
     )
     n, min_s, max_s, avg_s, median_s = result["data"][0]
-    vnc = neuprint_cypher(
-        "MATCH (n :`male-cns_Neuron`) "
-        "WHERE n.size IS NOT NULL AND n.size > 0 AND n.VNC > 0 "
-        "RETURN count(n) AS n, percentileCont(n.size, 0.5) AS median_s"
-    )
-    vnc_n, vnc_median = vnc["data"][0]
+    vnc_n = None
+    vnc_median = None
+    try:
+        vnc = neuprint_cypher(
+            "MATCH (n :`male-cns_Neuron`) "
+            "WHERE n.size IS NOT NULL AND n.size > 0 AND n.VNC > 0 "
+            "RETURN count(n) AS n, percentileCont(n.size, 0.5) AS median_s"
+        )
+        vnc_n, vnc_median = vnc["data"][0]
+    except Exception:
+        vnc_n, vnc_median = None, None
     return {
         "dataset": NEUPRINT_DATASET,
         "volume_property": VOLUME_PROPERTY,
@@ -113,8 +118,8 @@ def query_full_dataset_size_stats() -> dict:
         "max_volume": float(max_s),
         "mean_volume": float(avg_s),
         "median_volume": float(median_s),
-        "vnc_n_neurons_with_size": int(vnc_n),
-        "vnc_median_volume": float(vnc_median),
+        "vnc_n_neurons_with_size": None if vnc_n is None else int(vnc_n),
+        "vnc_median_volume": None if vnc_median is None else float(vnc_median),
         "median_used_for_normalization": "full_MaleCNS_Neuron_size",
         "note": (
             "Pugliese normalize by the median of the modeled dataset, not the "

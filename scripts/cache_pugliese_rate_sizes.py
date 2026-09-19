@@ -45,7 +45,14 @@ def main(argv: list[str] | None = None) -> int:
 
     stats = query_full_dataset_size_stats()
     print("full-dataset n", stats["n_neurons_with_size"], "median", stats["median_volume"], flush=True)
-    print("VNC-synapse n", stats["vnc_n_neurons_with_size"], "median", stats["vnc_median_volume"], " (diagnostic only)", flush=True)
+    print(
+        "VNC-synapse n",
+        stats.get("vnc_n_neurons_with_size"),
+        "median",
+        stats.get("vnc_median_volume"),
+        " (diagnostic only)",
+        flush=True,
+    )
 
     graph = restricted_cpg_graph()
     dng = sorted(int(x) for x in graph.neuron_ids[graph.cell_type == "DNg100"])
