@@ -89,6 +89,50 @@ def test_size_normalization_divides_gain_and_multiplies_threshold():
     assert th[2] == pytest.approx(3.75)
 
 
+def test_set_sizes_uses_explicit_dataset_median_not_circuit_median():
+    gain = np.ones(3)
+    theta = np.full(3, 7.5)
+    sizes = np.array([10.0, 20.0, 30.0])
+    # circuit nanmedian would be 20; full-dataset median 10 must be used instead
+    a, th = set_sizes(sizes, gain, theta, median_size=10.0)
+    assert a[0] == pytest.approx(1.0)
+    assert a[1] == pytest.approx(0.5)
+    assert a[2] == pytest.approx(1.0 / 3.0)
+    a_wrong, _ = set_sizes(sizes, gain, theta)
+    assert a_wrong[0] != pytest.approx(a[0])
+
+
+def test_swc_is_refused_as_pugliese_size_source():
+    from flybrain.malecns_volume import assert_volume_size_source
+    from flybrain.pugliese_rate import neuron_sizes_from_swc
+
+    with pytest.raises(ValueError, match="neuPrint neuron volume"):
+        neuron_sizes_from_swc([10056])
+    with pytest.raises(ValueError, match="not 'swc'"):
+        assert_volume_size_source("MaleCNS SWC frustum volume (NeuTu coarse skeletons)")
+    with pytest.raises(ValueError, match="synapse count"):
+        assert_volume_size_source("synapse count")
+
+
+def test_volume_cache_schema_uses_full_dataset_median():
+    from flybrain.malecns_volume import PARQUET_COLUMNS, SIZE_CACHE, load_size_cache
+
+    if not SIZE_CACHE.exists():
+        pytest.skip("pugliese_rate_sizes.parquet is not in this checkout")
+    table = load_size_cache()
+    assert list(table.columns)[:6] == list(PARQUET_COLUMNS)
+    assert len(table) == 408
+    median = float(table["median_volume_reference"].iloc[0])
+    assert median == pytest.approx(178403737.0)
+    assert (table["median_volume_reference"] == median).all()
+    dng = table.set_index("malecns_body_id").loc[10056]
+    assert dng["volume_raw"] == pytest.approx(16542412146.0)
+    assert dng["normalized_size"] == pytest.approx(16542412146.0 / median)
+    circuit_median = float(table["volume_raw"].median())
+    assert circuit_median != pytest.approx(median)
+    assert "neuprint" in str(dng["source"]).lower()
+
+
 def test_reweight_transposes_pre_post_for_incoming_current():
     W = np.array([[0.0, 10.0], [0.0, 0.0]])  # pre 0 → post 1
     weighted = reweight_connectivity(W, 0.03, 0.03)
@@ -177,6 +221,13 @@ def test_primary_stim_is_malecns_10056_not_10045_or_manc_10093(tmp_path):
         run(tmp_path / "nope", stim_body=10045)
     with pytest.raises(ValueError, match="10056"):
         run(tmp_path / "nope", stim_body=10093)
+
+
+def test_male_cns_transfer_requires_passing_manc_portcheck(tmp_path):
+    from experiment.pugliese_rate_malecns import run
+
+    with pytest.raises(RuntimeError, match="MANC port check"):
+        run(tmp_path / "needs_port", stim_body=10056)
 
 
 def test_rate_transfer_refuses_existing_output(tmp_path):
