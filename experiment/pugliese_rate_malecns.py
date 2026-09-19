@@ -420,8 +420,31 @@ def run(
             }
         if not experiment_a.get("rhythm_reproduced"):
             raise RuntimeError("Pugliese MANC reference has not passed; refusing MaleCNS transfer")
-        graph = restricted_cpg_graph(dng100_bodies=(int(stim_body),))
-        print(f"restricted graph n={graph.n} edges={graph.n_edges} stim={stim_body}", flush=True)
+        if manc_portcheck is None:
+            raise RuntimeError(
+                "MaleCNS transfer requires a passing MANC port check (step 6). "
+                "Run python -m experiment.pugliese_rate_manc_portcheck and pass --manc-portcheck."
+            )
+        port_path = Path(manc_portcheck)
+        port_report = json.loads((port_path / "report.json" if port_path.is_dir() else port_path).read_text())
+        if not port_report.get("port_ok"):
+            raise RuntimeError(
+                f"MANC port check failed ({port_report.get('status')}). "
+                "A MaleCNS result would not be interpretable as connectome biology."
+            )
+        report["experiment_manc_portcheck"] = {
+            "path": str(port_path.resolve()),
+            "port_ok": True,
+            "status": port_report.get("status"),
+            "mean_trace_corrcoef": port_report.get("mean_trace_corrcoef"),
+        }
+        graph = restricted_cpg_graph()
+        dng = sorted(int(x) for x in graph.neuron_ids[graph.cell_type == "DNg100"])
+        if dng != [10045, 10056]:
+            raise RuntimeError(f"Transfer graph must keep both DNg100 cells, got {dng}")
+        if int(stim_body) not in set(graph.neuron_ids.astype(int)):
+            raise RuntimeError(f"Stimulated body {stim_body} is not in the restricted graph")
+        print(f"restricted graph n={graph.n} edges={graph.n_edges} stim={stim_body} dng={dng}", flush=True)
         if graph.n > 5000:
             raise RuntimeError("Refusing unexpectedly large graph; full MaleCNS is locked")
         sim = simulate_graph(
@@ -437,11 +460,18 @@ def run(
         report["subset"] = graph.report
         report["size_normalization"] = {
             "source": sim["size_info"]["source"],
+            "dataset_version": sim["size_info"]["dataset_version"],
+            "cache_path": sim["size_info"]["cache_path"],
             "n_missing": sim["size_info"]["n_missing"],
             "missing_malecns_body_ids": sim["size_info"]["missing_malecns_body_ids"],
-            "not_neuprint_volume_property": True,
-            "median_raw_size": float(np.nanmedian(sim["size_info"]["sizes"])),
+            "not_neuprint_volume_property": False,
+            "median_volume_reference": float(sim["size_info"]["median_volume_reference"]),
+            "median_of_restricted_circuit": float(np.nanmedian(sim["size_info"]["sizes"])),
+            "denominator": "full neuPrint male-cns:v1.0 Neuron.size median, not the 408-cell circuit",
+            "parameter_sampler": sim["parameter_sampler"],
         }
+        report["graph_dng100_body_ids"] = dng
+        report["stimulated_malecns_body_ids"] = [int(stim_body)]
         manc = manc_edge_families()
         male_families = malecns_edge_families(graph, sim["W"], dng100_body=int(stim_body))
         report["anatomy_comparison"] = {
@@ -482,9 +512,9 @@ def run(
             if report["rhythm_reproduced"]
             else (
                 "Restricted MaleCNS + published rate dynamics did not reproduce the "
-                "Pugliese E1/E2 rhythm. Compare the saved anatomy table "
-                "(DNg100→E1/E2, E1↔E2, inhibitory feedback, MN load, size values). "
-                "Do not retune Shiu LIF. Full MaleCNS remains locked."
+                "Pugliese E1/E2 rhythm after a passing MANC port check. Compare "
+                "edge families (DNg100→E1/E2, E1↔E2, E1/E2→I1/I2, I1/I2→E1/E2, "
+                "E3, CPG→MN), not parameters. Do not retune Shiu LIF. Full MaleCNS remains locked."
             )
         )
         np.savez_compressed(
@@ -493,6 +523,8 @@ def run(
             malecns_body_ids=graph.neuron_ids,
             W_signed=sim["W"],
             sizes=sim["size_info"]["sizes"],
+            median_volume_reference=np.float64(sim["size_info"]["median_volume_reference"]),
+            normalized_size=sim["size_info"]["normalized_size"],
         )
         _write_preview_figure(out, sim, params.dt, stim_body)
         save()
