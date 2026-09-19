@@ -73,6 +73,9 @@ def test_parameter_block_has_replicate_neuron_shape():
     assert np.all(drawn["tau"] > 0)
     assert np.all(drawn["fr_cap"] > 0)
     assert "split(PRNGKey" in drawn["sampler"] or "spawn(5)" in drawn["sampler"]
+
+
+def test_three_model_ids_are_distinct():
     params = PuglieseRateParams()
     assert SHIU_LIF_SANITY_MODEL == "shiu_lif_sanity_v1"
     assert PUGLIESE_CPG_MODEL == "pugliese_cpg_v1"
