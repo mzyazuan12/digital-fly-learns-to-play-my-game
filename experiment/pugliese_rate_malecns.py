@@ -338,10 +338,11 @@ def run(
     *,
     stim_body: int = MALECNS_DNG100_R,
     seed: int = 1,
-    n_replicates: int = 2,
+    n_replicates: int = 8,
     shuffle: bool = False,
     reference_metrics: Path = DEFAULT_REFERENCE,
     lif_report: Path = DEFAULT_LIF,
+    manc_portcheck: Path | None = None,
 ) -> dict:
     out = Path(out)
     if out.exists():
@@ -378,12 +379,20 @@ def run(
         "rtol": params.rtol,
         "atol": params.atol,
         "stim_amplitude": params.stim_amplitude,
-        "weight_transformation": "anatomical count × NT sign, then transpose × 0.03/0.03",
+        "stimulus_source": "transfer assumption",
+        "stimulus_source_note": (
+            "No mCNS DNg100 stimI yaml is in the cloned Pugliese repo. MANC "
+            "DNg100_Stim uses 250; FANC uses 150. The paper says CNS datasets "
+            "needed a larger DNg100 input because brain arbors increase DN "
+            "normalized size. Amplitude 250 is therefore a transfer assumption, "
+            "not a recovered mCNS convention."
+        ),
+        "weight_transformation": "anatomical count × NT sign, then W_rate = signed_W.T × 0.03/0.03",
         "rhythm_criterion": "authors compute_oscillation_score >= 0.5 for both E1 and E2; published 7-15 Hz is an annotation",
         "note": (
             "Restricted MaleCNS topology with published rate dynamics. "
-            "Not a Shiu-LIF retune. Not the intact CNS. Two replicates are an "
-            "execution check, not a 1024-replicate population study."
+            "Not a Shiu-LIF retune. Not the intact CNS. Not an exact mCNS "
+            "stimulus reproduction. Graph keeps both DNg100 cells; only 10056 is driven."
         ),
     }
 
