@@ -197,6 +197,9 @@ def test_restricted_graph_primary_transfer_excludes_left_dng100():
     assert 10045 not in set(graph.neuron_ids.astype(int))
     assert graph.n < 2000
     assert "motor feedback omitted" in graph.report["subset"]
+
+
+def test_swc_volume_is_positive_for_dng100_r():
     from pathlib import Path
 
     path = Path("data/malecns_v1/skeletons-swc/10056.swc")
