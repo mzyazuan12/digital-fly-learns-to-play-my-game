@@ -21,7 +21,7 @@ Literature (not a claim that our LIF model reproduces those recordings):
 - Halt: Foxglove/CB0890 walk-OFF, Bluebell/DNg60 walk-OFF, Brake/AN19A018
   (Sapkal et al. 2024). Foxglove is a FlyWire type; MaleCNS may not label it.
 - Core CPG, one copy per leg neuropil (Pugliese et al. 2025 bioRxiv preprint):
-  E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
+  E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19B007, E3=IN19B012,
   E4=IN03A006, E5=INXXX464. An older preprint passage appears to call E5
   INXXX466 (the E2 type); canonical mapping is INXXX464. These names are
   observation/lesion labels, not motor commands.
@@ -212,11 +212,11 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
     ),
     PathwaySpec(
         name="I2",
-        types=("IN19A007",),
+        types=("IN19B007",),
         aliases=("I2",),
         role="cpg_inhibitory_alt",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025: I2 (IN19A007) in the DNb08 five-cell motif",
+        literature="Pugliese et al. 2025: I2 (IN19B007). IN19A007 is not I2.",
         family="cpg",
     ),
 )
@@ -234,10 +234,20 @@ WALKING_CIRCUIT_TYPES = {
     "E1": "IN17A001",
     "E2": "INXXX466",
     "I1": "IN16B036",
-    "I2": "IN19A007",
+    "I2": "IN19B007",
     "E3": "IN19B012",
     "E4": "IN03A006",
     "E5": "INXXX464",
+}
+
+I2_TYPE_PROVENANCE = {
+    "canonical": "IN19B007",
+    "rejected_alias": "IN19A007",
+    "source": "Pugliese et al. 2025 (core CPG identities: E1=IN17A001, E2=INXXX466, E3=IN19B012, I1=IN16B036, I2=IN19B007)",
+    "note": (
+        "IN19A007 exists in MaleCNS with six T1/T2/T3 copies and has "
+        "connectivity around this circuit, but it is not the identified I2."
+    ),
 }
 
 E5_TYPE_PROVENANCE = {
@@ -261,7 +271,11 @@ SIDE_SLOTS = {
 }
 CPG_ROLES = ("E1", "E2", "I1", "I2", "E3", "E4", "E5")
 
-# Documented MaleCNS v1.0 body IDs (uint64). Lookup is still by type.
+# Documented MaleCNS v1.0 body IDs from annotations[type==...], not from
+# Pugliese's MANC table. Pugliese DNg100_Stim injects MANC T1 matrix index 31
+# / MANC body 10093 (type DNg100). In that same MANC table, body 10056 is
+# vMS16. MaleCNS DNg100 is resolved independently; the integer 10056 can
+# appear in both animals as different cells.
 EXPECTED_WALKING_BODY_IDS = {
     "DNp09": {"L": (10783,), "R": (11177,)},
     "DNg100": {"L": (10045,), "R": (10056,)},
@@ -542,8 +556,8 @@ class WalkingCircuit:
             - {""}
         )
         assignment = (
-            "MEASURED per-cell T1/T2/T3 × L/R from MaleCNS ROI innervation, "
-            "MN connectivity, or somaNeuromere annotation. Not soma XYZ rank. "
+            "MEASURED per-bodyId LegNp synapses_in (post). Not type-level ROI "
+            "totals and not soma-Z. AMBIGUOUS if the best neuropil is not dominant. "
             f"Sources used: {', '.join(sources_used) or 'none'}."
         )
         motor_pool = self._motor_by_slot()
@@ -658,7 +672,7 @@ class WalkingCircuit:
                 "Anatomy is MEASURED synapse counts. Oscillation is not implied.",
                 "Pugliese et al. 2025 bioRxiv: DNg100 → E1 is the main walking-CPG entry.",
                 "DNg100 is two neurons (one per side). The six-copy types are E1/E2/I1.",
-                "Leg slots are T1/T2/T3 × L/R from ROI innervation / MN connectivity / somaNeuromere, not soma XYZ.",
+                "Leg slots are per-bodyId LegNp PreSyn+PostSyn. Type-level ROI pages pool T1+T2+T3 and are not used. Soma-Z is not used.",
                 "Do not pool all IN17A001/INXXX466/IN16B036 into one CPG state; there are six leg copies.",
                 "DNp09 does not have to synapse on E1; it can recruit DNg100.",
                 "DNb08 enters via E4 (IN03A006) and E5 (INXXX464), then E1.",
@@ -679,7 +693,8 @@ class WalkingCircuit:
                     continue
                 rows.append(
                     {
-                        "dng100_body_id": dng_body,
+                        "source_dataset": "MaleCNS_v1",
+                        "malecns_body_id": dng_body,
                         "dng100_soma_side": dng_side,
                         "e1_slot": slot,
                         "e1_side": copy.side,

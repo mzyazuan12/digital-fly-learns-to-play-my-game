@@ -56,13 +56,17 @@ def rhythmicity_score(
         "cv": 0.0,
         "score": 0.0,
         "peak_hz": None,
+        "dominant_frequency": None,
         "fft_hz": None,
+        "spectral_peak_power": 0.0,
         "band_power_frac": 0.0,
+        "autocorrelation_peak": 0.0,
         "tonic_plateau": False,
         "silent_or_flat": True,
         "oscillatory": False,
         "exploding": False,
         "in_published_walk_band": False,
+        "frequency_forced": False,
     }
     if x.size < 16:
         return out
@@ -98,6 +102,7 @@ def rhythmicity_score(
         peak_i = int(np.argmax(spec[band_mask]))
         fft_hz = float(freqs[band_mask][peak_i])
         out["fft_hz"] = fft_hz
+        out["spectral_peak_power"] = float(spec[band_mask][peak_i])
         out["band_power_frac"] = float(spec[band_mask][peak_i] / total)
 
     ac = _autocorr(x)
@@ -112,6 +117,8 @@ def rhythmicity_score(
     peak_hz = 1.0 / (lag * dt_s) if lag > 0 else None
     out["score"] = score
     out["peak_hz"] = float(peak_hz) if peak_hz is not None else None
+    out["dominant_frequency"] = float(peak_hz) if peak_hz is not None else out.get("fft_hz")
+    out["autocorrelation_peak"] = score
     out["tonic_plateau"] = bool(mean > 0.35 and out["cv"] < 0.15 and score < 0.35)
     published = PUBLISHED_WALK_HZ
     in_band = bool(peak_hz is not None and published[0] <= peak_hz <= published[1])

@@ -1,0 +1,7 @@
+cwd_dir: /Users/mac/fly-learns-shiri/third_party/Pugliese_2026
+base_dir: /Users/mac/fly-learns-shiri/outputs/pugliese_hydra/${experiment.name}/${version}
+save_dir: ${multirun_save_dir:${paths.base_dir},${run_id}}
+log_dir: ${paths.save_dir}/logs/
+ckpt_dir: ${paths.save_dir}/ckpt/
+fig_dir: ${paths.save_dir}/figures/
+data_dir: /Users/mac/fly-learns-shiri/third_party/Pugliese_2026/data

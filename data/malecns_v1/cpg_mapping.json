@@ -1,0 +1,1173 @@
+{
+  "dataset": "MaleCNS v1.0",
+  "roles": {
+    "E1": "IN17A001",
+    "E2": "INXXX466",
+    "E3": "IN19B012",
+    "I1": "IN16B036",
+    "I2": "IN19B007",
+    "E4": "IN03A006",
+    "E5": "INXXX464",
+    "DNg100": "DNg100"
+  },
+  "source": "Per-bodyId LegNp PreSyn+PostSyn counts from MaleCNS v1.0 syn-points (cached as cpg_roi_innervation.parquet). Not type-level ROI totals. Soma XYZ / somaNeuromere are not used. neuPrint is not queried. MaleCNS DNg100 is annotations[type == 'DNg100'], not a MANC bodyId.",
+  "assignment": {
+    "signal": "T#_score = PreSyn+PostSyn in LegNp(T#)(L)+LegNp(T#)(R); then L vs R",
+    "confidence_threshold": 0.7,
+    "ambiguous_policy": "assigned_segment=null, assignment_status=AMBIGUOUS; never soma-Z or somaNeuromere",
+    "fallback_used": false,
+    "assignment_method": "LegNp synaptic innervation",
+    "type_level_roi_pooling": false
+  },
+  "i2_type_provenance": {
+    "canonical": "IN19B007",
+    "role": "I2",
+    "rejected_alias": "IN19A007",
+    "note": "Pugliese core CPG I2 is IN19B007. IN19A007 exists in MaleCNS (six T1/T2/T3 copies) and has connectivity around this circuit, but it is not the identified I2."
+  },
+  "DNg100": {
+    "pugliese_reference": {
+      "dataset": "MANC_T1",
+      "matrix_index": 31,
+      "body_id": 10093,
+      "type": "DNg100",
+      "predicted_nt": "acetylcholine"
+    },
+    "manc_vms16": {
+      "dataset": "MANC_T1",
+      "matrix_index": 16,
+      "body_id": 10056,
+      "type": "vMS16",
+      "predicted_nt": "gaba"
+    },
+    "malecns": {
+      "left": {
+        "body_id": 10045,
+        "type": "DNg100",
+        "side": "L",
+        "instance": "DNg100_L",
+        "predicted_nt": "acetylcholine",
+        "predicted_nt_confidence": 0.9529439618305637,
+        "roi_counts": {
+          "T1": {
+            "pre": 1770,
+            "post": 164
+          },
+          "T2": {
+            "pre": 1377,
+            "post": 98
+          },
+          "T3": {
+            "pre": 1307,
+            "post": 155
+          }
+        },
+        "assigned_segment": null,
+        "assignment_confidence": 0.39704372818723055,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "AMBIGUOUS",
+        "innervation_side": "R",
+        "note": "Descending; innervates all three ipsilateral neuropils. Not a six-copy CPG cell. Side is the MaleCNS annotation (DNg100_L / DNg100_R), not VNC innervation and not a MANC bodyId."
+      },
+      "right": {
+        "body_id": 10056,
+        "type": "DNg100",
+        "side": "R",
+        "instance": "DNg100_R",
+        "predicted_nt": "acetylcholine",
+        "predicted_nt_confidence": 0.9560235114457264,
+        "roi_counts": {
+          "T1": {
+            "pre": 1899,
+            "post": 124
+          },
+          "T2": {
+            "pre": 1492,
+            "post": 111
+          },
+          "T3": {
+            "pre": 1209,
+            "post": 171
+          }
+        },
+        "assigned_segment": null,
+        "assignment_confidence": 0.4041150619256892,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "AMBIGUOUS",
+        "innervation_side": "L",
+        "note": "Descending; innervates all three ipsilateral neuropils. Not a six-copy CPG cell. Side is the MaleCNS annotation (DNg100_L / DNg100_R), not VNC innervation and not a MANC bodyId."
+      },
+      "unassigned": [],
+      "n_expected": 2,
+      "n_in_annotations": 2,
+      "note": "Looked up by type == DNg100 in MaleCNS annotations. Same biological TYPE as Pugliese's MANC DNg100, not the same body ID. Integer collision with MANC vMS16 (body 10056) is not identity."
+    }
+  },
+  "IN17A001": {
+    "role": "E1",
+    "type": "IN17A001",
+    "neurons": {
+      "LF": {
+        "malecns_body_id": 800173,
+        "type": "IN17A001",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 2519,
+            "post": 9281
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LF"
+      },
+      "RF": {
+        "malecns_body_id": 800288,
+        "type": "IN17A001",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 2537,
+            "post": 6416
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RF"
+      },
+      "LM": {
+        "malecns_body_id": 800009,
+        "type": "IN17A001",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 2809,
+            "post": 11197
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LM"
+      },
+      "RM": {
+        "malecns_body_id": 818556,
+        "type": "IN17A001",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 2536,
+            "post": 8445
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RM"
+      },
+      "LH": {
+        "malecns_body_id": 800003,
+        "type": "IN17A001",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 2931,
+            "post": 12612
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LH"
+      },
+      "RH": {
+        "malecns_body_id": 800114,
+        "type": "IN17A001",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 2652,
+            "post": 10818
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RH"
+      }
+    },
+    "unassigned": [],
+    "n_assigned": 6,
+    "n_expected": 6,
+    "n_in_annotations": 6
+  },
+  "INXXX466": {
+    "role": "E2",
+    "type": "INXXX466",
+    "neurons": {
+      "LF": {
+        "malecns_body_id": 800863,
+        "type": "INXXX466",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 1492,
+            "post": 3424
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LF"
+      },
+      "RF": {
+        "malecns_body_id": 903216,
+        "type": "INXXX466",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 1440,
+            "post": 2489
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RF"
+      },
+      "LM": {
+        "malecns_body_id": 801728,
+        "type": "INXXX466",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 1545,
+            "post": 4315
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LM"
+      },
+      "RM": {
+        "malecns_body_id": 802025,
+        "type": "INXXX466",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 1458,
+            "post": 3340
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RM"
+      },
+      "LH": {
+        "malecns_body_id": 801149,
+        "type": "INXXX466",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1524,
+            "post": 4420
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LH"
+      },
+      "RH": {
+        "malecns_body_id": 801429,
+        "type": "INXXX466",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1336,
+            "post": 4026
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RH"
+      }
+    },
+    "unassigned": [],
+    "n_assigned": 6,
+    "n_expected": 6,
+    "n_in_annotations": 6
+  },
+  "IN16B036": {
+    "role": "I1",
+    "type": "IN16B036",
+    "neurons": {
+      "LF": {
+        "malecns_body_id": 801884,
+        "type": "IN16B036",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 982,
+            "post": 1176
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LF"
+      },
+      "RF": {
+        "malecns_body_id": 803183,
+        "type": "IN16B036",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 937,
+            "post": 836
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RF"
+      },
+      "LM": {
+        "malecns_body_id": 903139,
+        "type": "IN16B036",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 1356,
+            "post": 2104
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LM"
+      },
+      "RM": {
+        "malecns_body_id": 904079,
+        "type": "IN16B036",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 1210,
+            "post": 1635
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RM"
+      },
+      "LH": {
+        "malecns_body_id": 801257,
+        "type": "IN16B036",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1629,
+            "post": 2385
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LH"
+      },
+      "RH": {
+        "malecns_body_id": 801916,
+        "type": "IN16B036",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1741,
+            "post": 2509
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RH"
+      }
+    },
+    "unassigned": [],
+    "n_assigned": 6,
+    "n_expected": 6,
+    "n_in_annotations": 6
+  },
+  "IN19B007": {
+    "role": "I2",
+    "type": "IN19B007",
+    "neurons": {
+      "LF": null,
+      "RF": null,
+      "LM": null,
+      "RM": null,
+      "LH": null,
+      "RH": null
+    },
+    "unassigned": [
+      {
+        "malecns_body_id": 800814,
+        "type": "IN19B007",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 28,
+            "post": 24
+          },
+          "T3": {
+            "pre": 437,
+            "post": 1130
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 0.967881408276714,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "AMBIGUOUS",
+        "assigned_side": null,
+        "assigned_slot": null
+      },
+      {
+        "malecns_body_id": 801028,
+        "type": "IN19B007",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 30,
+            "post": 15
+          },
+          "T3": {
+            "pre": 350,
+            "post": 898
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 0.9651972157772621,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "AMBIGUOUS",
+        "assigned_side": null,
+        "assigned_slot": null
+      }
+    ],
+    "n_assigned": 0,
+    "n_expected": 2,
+    "n_in_annotations": 2
+  },
+  "IN19B012": {
+    "role": "E3",
+    "type": "IN19B012",
+    "neurons": {
+      "LF": {
+        "malecns_body_id": 800216,
+        "type": "IN19B012",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 1617,
+            "post": 6442
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LF"
+      },
+      "RF": {
+        "malecns_body_id": 801061,
+        "type": "IN19B012",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 1479,
+            "post": 5178
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RF"
+      },
+      "LM": {
+        "malecns_body_id": 800837,
+        "type": "IN19B012",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 1602,
+            "post": 9308
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LM"
+      },
+      "RM": {
+        "malecns_body_id": 800583,
+        "type": "IN19B012",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 1528,
+            "post": 7444
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RM"
+      },
+      "LH": {
+        "malecns_body_id": 800089,
+        "type": "IN19B012",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1571,
+            "post": 9247
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LH"
+      },
+      "RH": {
+        "malecns_body_id": 800879,
+        "type": "IN19B012",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1464,
+            "post": 8485
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RH"
+      }
+    },
+    "unassigned": [],
+    "n_assigned": 6,
+    "n_expected": 6,
+    "n_in_annotations": 6
+  },
+  "IN03A006": {
+    "role": "E4",
+    "type": "IN03A006",
+    "neurons": {
+      "LF": {
+        "malecns_body_id": 800663,
+        "type": "IN03A006",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 1465,
+            "post": 3925
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LF"
+      },
+      "RF": {
+        "malecns_body_id": 903211,
+        "type": "IN03A006",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 1002,
+            "post": 1827
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RF"
+      },
+      "LM": {
+        "malecns_body_id": 800557,
+        "type": "IN03A006",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 2,
+            "post": 8
+          },
+          "T2": {
+            "pre": 1593,
+            "post": 5657
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 0.9986225895316805,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LM"
+      },
+      "RM": {
+        "malecns_body_id": 800403,
+        "type": "IN03A006",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 1531,
+            "post": 5134
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RM"
+      },
+      "LH": {
+        "malecns_body_id": 800646,
+        "type": "IN03A006",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1678,
+            "post": 6091
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LH"
+      },
+      "RH": {
+        "malecns_body_id": 800897,
+        "type": "IN03A006",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 1555,
+            "post": 6089
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RH"
+      }
+    },
+    "unassigned": [],
+    "n_assigned": 6,
+    "n_expected": 6,
+    "n_in_annotations": 6
+  },
+  "INXXX464": {
+    "role": "E5",
+    "type": "INXXX464",
+    "neurons": {
+      "LF": {
+        "malecns_body_id": 800286,
+        "type": "INXXX464",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 2432,
+            "post": 10335
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LF"
+      },
+      "RF": {
+        "malecns_body_id": 800375,
+        "type": "INXXX464",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 2306,
+            "post": 7842
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T1",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RF"
+      },
+      "LM": {
+        "malecns_body_id": 800072,
+        "type": "INXXX464",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 2425,
+            "post": 13228
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LM"
+      },
+      "RM": {
+        "malecns_body_id": 800211,
+        "type": "INXXX464",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 2379,
+            "post": 12338
+          },
+          "T3": {
+            "pre": 0,
+            "post": 0
+          }
+        },
+        "assigned_segment": "T2",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RM"
+      },
+      "LH": {
+        "malecns_body_id": 929612,
+        "type": "INXXX464",
+        "side": "L",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 2005,
+            "post": 11163
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "L",
+        "assigned_slot": "LH"
+      },
+      "RH": {
+        "malecns_body_id": 902520,
+        "type": "INXXX464",
+        "side": "R",
+        "roi_counts": {
+          "T1": {
+            "pre": 0,
+            "post": 0
+          },
+          "T2": {
+            "pre": 0,
+            "post": 0
+          },
+          "T3": {
+            "pre": 2040,
+            "post": 10371
+          }
+        },
+        "assigned_segment": "T3",
+        "assignment_confidence": 1.0,
+        "assignment_method": "LegNp synaptic innervation",
+        "fallback_used": false,
+        "assignment_status": "ok",
+        "assigned_side": "R",
+        "assigned_slot": "RH"
+      }
+    },
+    "unassigned": [],
+    "n_assigned": 6,
+    "n_expected": 6,
+    "n_in_annotations": 6
+  }
+}

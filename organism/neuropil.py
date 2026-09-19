@@ -1,18 +1,18 @@
 """Map individual VNC cells onto T1/T2/T3 × L/R leg slots.
 
-Soma XYZ rank is not used. MaleCNS already annotates these CPG types across
-the three leg neuropils (somaNeuromere T1/T2/T3 and somaSide L/R). Per-cell
-LegNp ROI innervation and connectivity onto motor neurons of each neuromere
-are independent checks of that annotation.
+Each bodyId is assigned from *that cell's* LegNp PreSyn+PostSyn counts.
+Type-level ROI pages pool the six segmental copies and must not be used.
 
-DNg100 itself is two descending neurons (one per side), not six CPG copies.
-The six-copy types are E1/E2/I1 and the other named CPG interneurons.
+Soma XYZ is not used. If the best neuropil is not dominant, the cell is
+AMBIGUOUS. There is no silent soma-Z or somaNeuromere fallback.
+
+DNg100 itself is two descending neurons. Soma side is contralateral to VNC
+innervation. The six-copy types are E1/E2/I1 and the other named CPG cells.
 """
 
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -20,12 +20,27 @@ import numpy as np
 import pyarrow.feather as feather
 
 from flybrain.loader import ANN_FILE, DEFAULT_DATA, Connectome
+from organism.roi_innervation import (
+    CPG_TYPES as ROI_CPG_TYPES,
+    JSON_CACHE,
+    LEGNP_RE,
+    MAPPING_PATH,
+    PAPER_TO_INTERNAL,
+    PARQUET_CACHE,
+    assign_leg_from_row,
+    load_cpg_mapping,
+    load_roi_json,
+    malecns_body_id_of,
+    paper_slot_of,
+    parse_legnp,
+    rois_to_row,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 ANN_PATH = DEFAULT_DATA / ANN_FILE
 if not ANN_PATH.exists():
     ANN_PATH = ROOT / ANN_FILE
-ROI_CACHE = DEFAULT_DATA / "normalized" / "cpg_leg_roi.json"
+ROI_CACHE = JSON_CACHE
 
 LEG_SLOTS = ("FL", "FR", "ML", "MR", "HL", "HR")
 LEG_LAYOUT = {
@@ -39,17 +54,8 @@ LEG_LAYOUT = {
 SLOT_FROM_NEUROMERE = {value: key for key, value in LEG_LAYOUT.items()}
 NEUROMERES = ("T1", "T2", "T3")
 SIDES = ("L", "R")
-CPG_TYPES = (
-    "IN17A001",
-    "INXXX466",
-    "IN16B036",
-    "IN19A007",
-    "IN19B012",
-    "IN03A006",
-    "INXXX464",
-)
+CPG_TYPES = ROI_CPG_TYPES
 DNG100_TYPE = "DNg100"
-LEGNP_RE = re.compile(r"LegNp\((T[123])\)\(([LR])\)")
 
 
 def _norm_side(value: object) -> str:
@@ -68,15 +74,9 @@ def _norm_neuromere(value: object) -> str:
     return ""
 
 
-def parse_legnp(roi: str) -> tuple[str, str] | None:
-    match = LEGNP_RE.search(str(roi or ""))
-    if not match:
-        return None
-    return match.group(1), match.group(2)
-
-
 def slot_of(side: str, neuromere: str) -> str | None:
-    return SLOT_FROM_NEUROMERE.get((_norm_side(side), _norm_neuromere(neuromere)))
+    paper = paper_slot_of(side, neuromere)
+    return PAPER_TO_INTERNAL.get(paper) if paper else None
 
 
 @dataclass
@@ -90,6 +90,10 @@ class CellNeuropil:
     mn_contacts: dict[str, int] = field(default_factory=dict)
     mn_slot: str | None = None
     assigned_slot: str | None = None
+    assigned_leg: str | None = None
+    confidence: float = 0.0
+    second_best: str | None = None
+    assignment_status: str = "unassigned"
     assignment_source: str = ""
 
     def as_dict(self) -> dict:
@@ -103,7 +107,13 @@ class CellNeuropil:
             "mn_contacts": self.mn_contacts,
             "mn_slot": self.mn_slot,
             "assigned_slot": self.assigned_slot,
+            "assigned_leg": self.assigned_leg,
+            "confidence": self.confidence,
+            "second_best": self.second_best,
+            "assignment_status": self.assignment_status,
             "assignment_source": self.assignment_source,
+            "soma_z_used": False,
+            "fallback_used": False,
         }
 
 
@@ -134,33 +144,32 @@ def load_annotation_neuropil(*, types: tuple[str, ...] | None = None) -> dict[in
 
 
 def load_roi_cache() -> dict[int, dict[str, dict[str, int]]]:
+    cached = load_roi_json()
+    if cached:
+        return cached
     if not ROI_CACHE.exists():
         return {}
     payload = json.loads(ROI_CACHE.read_text())
     bodies = payload.get("bodies") or payload
     out: dict[int, dict[str, dict[str, int]]] = {}
     for key, rois in bodies.items():
-        out[int(key)] = {str(roi): {str(k): int(v) for k, v in counts.items()} for roi, counts in rois.items()}
+        if not isinstance(rois, dict):
+            continue
+        try:
+            body = int(key)
+        except (TypeError, ValueError):
+            continue
+        out[body] = {str(roi): {str(k): int(v) for k, v in counts.items()} for roi, counts in rois.items() if isinstance(counts, dict)}
     return out
 
 
 def roi_slot_from_counts(rois: dict[str, dict[str, int]]) -> tuple[str | None, dict[str, int]]:
-    scores = {slot: 0 for slot in LEG_SLOTS}
-    for name, counts in rois.items():
-        parsed = parse_legnp(name)
-        if parsed is None:
-            continue
-        neuromere, side = parsed
-        slot = slot_of(side, neuromere)
-        if slot is None:
-            continue
-        scores[slot] += int(counts.get("pre", 0)) + int(counts.get("post", 0))
-    total = sum(scores.values())
-    winner = _unique_argmax(scores, min_ratio=2.0)
-    if winner and total > 0 and scores[winner] < 0.55 * total:
-        # Descending neurons like DNg100 innervate all three neuropils on one side.
+    """Per-bodyId LegNp pre+post → internal slot, or None if AMBIGUOUS."""
+    assigned = assign_leg_from_row(rois_to_row(rois))
+    scores = {PAPER_TO_INTERNAL[slot]: int(count) for slot, count in assigned["synapses_in"].items()}
+    if assigned["status"] != "ok" or not assigned["assigned_slot"]:
         return None, scores
-    return winner, scores
+    return PAPER_TO_INTERNAL[assigned["assigned_slot"]], scores
 
 
 def _unique_argmax(scores: dict[str, int], *, min_ratio: float = 1.15) -> str | None:
@@ -182,26 +191,26 @@ def mn_slot_from_contacts(contacts: dict[str, int]) -> tuple[str | None, dict[st
 
 
 def assign_cell(cell: CellNeuropil) -> CellNeuropil:
-    """Prefer ROI innervation, then MN connectivity, then somaNeuromere annotation."""
-    roi_slot, _ = roi_slot_from_counts(cell.roi_counts)
-    cell.roi_slot = roi_slot
+    """Assign from this bodyId's LegNp input synapses only.
+
+    MN connectivity is a diagnostic, not a fallback. somaNeuromere / soma Z
+    are never used to fill an AMBIGUOUS ROI.
+    """
+    assigned = assign_leg_from_row(rois_to_row(cell.roi_counts))
+    paper_slot = assigned["assigned_slot"]
+    cell.confidence = float(assigned["confidence"])
+    cell.second_best = assigned["second_best"]
+    cell.assigned_leg = assigned["assigned_leg"]
+    cell.assignment_status = assigned["status"]
+    cell.roi_slot = PAPER_TO_INTERNAL.get(paper_slot) if paper_slot else None
     mn_slot, _ = mn_slot_from_contacts(cell.mn_contacts)
     cell.mn_slot = mn_slot
-    annotated = slot_of(cell.side, cell.soma_neuromere)
-    if roi_slot:
-        cell.assigned_slot = roi_slot
-        cell.assignment_source = "roi_innervation"
-        return cell
-    if mn_slot:
-        cell.assigned_slot = mn_slot
-        cell.assignment_source = "mn_connectivity"
-        return cell
-    if annotated:
-        cell.assigned_slot = annotated
-        cell.assignment_source = "somaNeuromere_annotation"
+    if assigned["status"] == "ok" and paper_slot:
+        cell.assigned_slot = PAPER_TO_INTERNAL[paper_slot]
+        cell.assignment_source = "roi_innervation_per_bodyId"
         return cell
     cell.assigned_slot = None
-    cell.assignment_source = "unassigned"
+    cell.assignment_source = "AMBIGUOUS" if assigned["status"] == "AMBIGUOUS" else "unassigned"
     return cell
 
 
@@ -264,14 +273,53 @@ def score_mn_contacts(connectome: Connectome, cells: dict[int, CellNeuropil]) ->
     return cells
 
 
+def apply_cpg_mapping(cells: dict[int, CellNeuropil], mapping: dict | None = None) -> dict[int, CellNeuropil]:
+    """Fill assigned slots from the human-readable per-bodyId mapping file."""
+    mapping = mapping if mapping is not None else load_cpg_mapping()
+    inverse: dict[int, tuple[str, str]] = {}
+    for typename in CPG_TYPES:
+        block = mapping.get(typename) or {}
+        for paper_slot, body in (block.get("neurons") or {}).items():
+            malecns_id = malecns_body_id_of(body)
+            if malecns_id is None:
+                continue
+            inverse[int(malecns_id)] = (typename, paper_slot)
+    for body, cell in cells.items():
+        hit = inverse.get(int(body))
+        if hit is None:
+            continue
+        typename, paper_slot = hit
+        cell.assigned_slot = PAPER_TO_INTERNAL.get(paper_slot, paper_slot)
+        cell.assigned_leg = {"LF": "T1", "RF": "T1", "LM": "T2", "RM": "T2", "LH": "T3", "RH": "T3"}.get(paper_slot)
+        record = ((mapping.get(typename) or {}).get("neurons") or {}).get(paper_slot) or {}
+        if isinstance(record, dict):
+            conf = record.get("assignment_confidence", record.get("confidence"))
+            if conf is not None:
+                cell.confidence = float(conf)
+            if record.get("second_best"):
+                cell.second_best = record["second_best"]
+            if record.get("assigned_segment"):
+                cell.assigned_leg = record["assigned_segment"]
+        cell.assignment_status = "ok"
+        cell.assignment_source = "cpg_mapping.json"
+        cell.roi_slot = cell.assigned_slot
+    return cells
+
+
 def resolve_cpg_cells(connectome: Connectome | None = None) -> dict[int, CellNeuropil]:
     cells = load_annotation_neuropil()
     attach_roi(cells)
+    if PARQUET_CACHE.exists() or MAPPING_PATH.exists():
+        apply_cpg_mapping(cells)
     if connectome is not None and connectome.n >= 10_000:
         score_mn_contacts(connectome, cells)
+        # Re-apply mapping after MN diagnostic so ROI/mapping still wins.
+        if PARQUET_CACHE.exists() or MAPPING_PATH.exists():
+            apply_cpg_mapping(cells)
     else:
         for cell in cells.values():
-            assign_cell(cell)
+            if not cell.assigned_slot:
+                assign_cell(cell)
     return cells
 
 
@@ -280,7 +328,7 @@ def assign_indices(
     indices: np.ndarray,
     cells: dict[int, CellNeuropil] | None = None,
 ) -> tuple[dict[str, int | None], dict[str, CellNeuropil | None]]:
-    """Map graph indices of one type onto the six leg slots. No soma XYZ."""
+    """Map graph indices of one type onto the six leg slots. No soma XYZ / soma-Z."""
     cells = cells if cells is not None else resolve_cpg_cells(connectome)
     slots: dict[str, int | None] = {name: None for name in LEG_SLOTS}
     details: dict[str, CellNeuropil | None] = {name: None for name in LEG_SLOTS}

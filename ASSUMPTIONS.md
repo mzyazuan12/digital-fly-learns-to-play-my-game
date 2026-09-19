@@ -118,15 +118,18 @@ CPG is pretrained scaffolding. Rest vs walk follows a continuous
 `locomotor_drive` decoded from identified walking DNs (DNp09, DNg100,
 DNg97/oDN1), labeled `ENGINEERED_NEURAL_MOTOR_INTERFACE`. DNb08 is
 traced but not decoded as walking. The published VNC CPG types
-(E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
-E4=IN03A006, E5=INXXX464) are resolved as **six per-leg copies**, not
-one pooled scalar. An older preprint passage appears to call E5
-`INXXX466`; canonical mapping is `INXXX464`. The DNg100 CPG study is a
-bioRxiv preprint, not a peer-reviewed article. DNg100 itself is two
-neurons; the six-copy types are the downstream CPG cells.
+(E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19B007, E3=IN19B012,
+E4=IN03A006, E5=INXXX464) are resolved from **each bodyId's LegNp
+PreSyn+PostSyn counts**, not type-level ROI totals and not soma-Z.
+IN19A007 exists in MaleCNS but is **not** I2. Type explorer pages pool
+T1+T2+T3. DNg100 itself is two descending neurons, resolved from MaleCNS
+`type == DNg100`. Pugliese `DNg100_Stim` injects **MANC T1 matrix index
+31 / MANC body 10093** (type DNg100). In that MANC table, body 10056 is
+`vMS16`. The same integer can appear independently in MaleCNS as a
+different cell; do not collapse the namespaces.
 Those names tag cells for measurement/lesion; they never mean
 `if DNg100: walk()`. `MODE_NEURAL_CPG` records E1/E2/I1 timing and does
-**not** move joints yet. There is **no** `walking_bout_s`
+not move joints yet. There is **no** `walking_bout_s`
 override on the default path. NO_SCAFFOLD **rejects** a timer, motor
 fallback, named gait command, or developer motor command rather than
 silently ignoring it. Standing is what happens when those DNs are

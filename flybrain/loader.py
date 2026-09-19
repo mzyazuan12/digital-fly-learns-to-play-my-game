@@ -425,12 +425,20 @@ def computational_graph_manifest(data_dir: Path | None = None) -> dict:
         "computational_graph_exists": cache.exists(),
         "computational_graph_bytes": int(cache.stat().st_size) if cache.exists() else 0,
         "soma_xyz": str(soma),
+        "neuron_metadata": str(data_dir / "neuron_metadata.parquet"),
+        "roi_innervation": str(data_dir / "cpg_roi_innervation.parquet"),
+        "cpg_mapping": str(data_dir / "cpg_mapping.json"),
+        "roi_in_graph_npz": False,
         "synapse_coordinate_tables_loaded": False,
         "synapse_coordinate_tables_on_disk": {
             name: (data_dir / name).exists() for name in SYNAPSE_COORDINATE_TABLES
         },
         "note": (
             "Walking experiments load data/malecns_v1/normalized/graph.npz. "
+            "Leg assignment is data/malecns_v1/cpg_mapping.json from per-bodyId "
+            "cpg_roi_innervation.parquet, not type-level ROI totals and not soma-Z. "
+            "Pugliese DNg100_Stim is MANC T1 matrix 31 / body 10093. MaleCNS DNg100 "
+            "is annotations[type==DNg100]. "
             "syn-points and syn-partners are inspector tables, not dynamics. "
             "zsh 'no matches found: data/malecns_v1/*.npz' is the parent glob, not a missing graph."
         ),

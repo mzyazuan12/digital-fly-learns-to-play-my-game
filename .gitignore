@@ -1,4 +1,5 @@
 .venv/
+.mamba/
 node_modules/
 __pycache__/
 *.py[cod]
@@ -24,6 +25,8 @@ htmlcov/
 third_party/
 data/malecns_v1/*
 !data/malecns_v1/README.md
+!data/malecns_v1/cpg_mapping.json
+!data/malecns_v1/cpg_mapping.INVALID_pre_roi.json
 syn-points-male-cns-*.feather
 syn-partners-male-cns-*.feather
 connectome-weights-*.feather

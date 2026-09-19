@@ -50,9 +50,15 @@ per-leg E1/E2/inhibition/MN oscillations. Joints still use FlyGym in
 actuate FlyBody yet.
 
 ```sh
-.venv/bin/python -m pytest tests/test_neural_walk.py tests/test_walking_dn_investigator.py tests/test_dng100_cpg_rhythm.py -q
-.venv/bin/python -m experiment.walking_dn_investigator --connectome malecns
-.venv/bin/python -m experiment.dng100_cpg_rhythm --connectome malecns
+.venv/bin/python -m pytest tests/test_neural_walk.py tests/test_walking_dn_investigator.py tests/test_dng100_cpg_rhythm.py tests/test_roi_innervation.py -q
+.venv/bin/python scripts/cache_malecns_roi_innervation.py
+.venv/bin/python -m experiment.dng100_cpg_rhythm --connectome malecns --stim left_vnc
+```
+
+Authors' MANC rate-ODE (conda `vnc-sim`, their Hydra entrypoint, not a reimplementation):
+
+```sh
+python src/run_hydra.py experiment=DNg100_Stim experiment.n_replicates=128 experiment.batch_size=16 paths=mac
 ```
 
 ## Body (optional)

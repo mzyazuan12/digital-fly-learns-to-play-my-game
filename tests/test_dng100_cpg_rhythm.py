@@ -14,11 +14,12 @@ from organism.toy import miniature_connectome
 from organism.walking_pathways import (
     CPG_INTERNEURONS,
     E5_TYPE_PROVENANCE,
+    I2_TYPE_PROVENANCE,
     WALKING_CIRCUIT_TYPES,
     WalkingCircuit,
 )
 from organism.neuropil import LEG_SLOTS as NEURO_SLOTS
-from organism.neuropil import assign_cell, load_annotation_neuropil
+from organism.neuropil import assign_cell, attach_roi, load_annotation_neuropil
 from experiment.dng100_cpg_rhythm import run
 from experiment import dng100_cpg_rhythm
 
@@ -27,17 +28,21 @@ def test_walking_circuit_types_use_published_e5():
     assert WALKING_CIRCUIT_TYPES["E1"] == "IN17A001"
     assert WALKING_CIRCUIT_TYPES["E2"] == "INXXX466"
     assert WALKING_CIRCUIT_TYPES["I1"] == "IN16B036"
-    assert WALKING_CIRCUIT_TYPES["I2"] == "IN19A007"
+    assert WALKING_CIRCUIT_TYPES["I2"] == "IN19B007"
     assert WALKING_CIRCUIT_TYPES["E3"] == "IN19B012"
     assert WALKING_CIRCUIT_TYPES["E4"] == "IN03A006"
     assert WALKING_CIRCUIT_TYPES["E5"] == "INXXX464"
     assert E5_TYPE_PROVENANCE["canonical"] == "INXXX464"
     assert E5_TYPE_PROVENANCE["rejected_alias"] == "INXXX466"
+    assert I2_TYPE_PROVENANCE["canonical"] == "IN19B007"
+    assert I2_TYPE_PROVENANCE["rejected_alias"] == "IN19A007"
     e2 = next(p for p in CPG_INTERNEURONS if p.name == "E2")
     e5 = next(p for p in CPG_INTERNEURONS if p.name == "E5")
+    i2 = next(p for p in CPG_INTERNEURONS if p.name == "I2")
     assert "E5" not in e2.aliases
     assert e2.types == ("INXXX466",)
     assert e5.types == ("INXXX464",)
+    assert i2.types == ("IN19B007",)
 
 
 def test_toy_has_six_leg_slots_and_fills_front_left():
@@ -98,14 +103,18 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert result["engineered_cpg_used"] is False
     assert result["graph_modified"] is False
     assert result["dynamics_retuned"] is False
+    assert result["frequency_forced"] is False
     assert result["motor_mode"] == "MODE_NEURAL_CPG"
     assert result["walking_circuit_types"]["E5"] == "INXXX464"
     assert result["dng100_n"] == 2
+    assert len(result["stimulated"]["body_ids"]) == 1
     intact = result["conditions"]["intact"]["summary"]
     assert "legs" in intact
     assert "FL" in intact["legs"]
     assert "E1" in intact["legs"]["FL"]
     assert "lesion_E1" in result["conditions"]
+    assert "lesion_I2" in result["conditions"]
+    assert "scrambled_connectome" in result["conditions"]
     assert result["answer"] in {"yes", "no"}
     if not result["oscillation_reproduced"]:
         assert "Do not change the graph" in result["next_step"] or "do not change the graph" in result["next_step"].lower()
@@ -113,6 +122,38 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     source = inspect.getsource(__import__("organism.walking_pathways", fromlist=["walking_pathways"]))
     assert "somaLocation Z" not in source
     assert "SOMA_Z" not in source
+    assert "somaNeuromere_annotation" not in inspect.getsource(assign_cell)
+
+
+def test_cpg_mapping_json_keeps_pugliese_and_malecns_ids_apart():
+    from pathlib import Path
+    import json
+    from organism.roi_innervation import PUGLIESE_DNG100_STIM, malecns_body_id_of
+
+    path = Path("data/malecns_v1/cpg_mapping.json")
+    if not path.exists():
+        return
+    mapping = json.loads(path.read_text())
+    assert mapping["assignment"]["fallback_used"] is False
+    assert mapping["assignment"]["type_level_roi_pooling"] is False
+    stim = mapping["DNg100"]["pugliese_reference"]
+    assert stim["matrix_index"] == 31
+    assert stim["body_id"] == 10093
+    assert stim["dataset"] == "MANC_T1"
+    assert stim["type"] == "DNg100"
+    assert PUGLIESE_DNG100_STIM["body_id"] == 10093
+    assert mapping["DNg100"]["manc_vms16"]["body_id"] == 10056
+    assert mapping["DNg100"]["manc_vms16"]["type"] == "vMS16"
+    e1 = mapping["IN17A001"]["neurons"]
+    assert set(e1) == {"LF", "RF", "LM", "RM", "LH", "RH"}
+    e1_ids = [malecns_body_id_of(value) for value in e1.values()]
+    if any(e1_ids):
+        assert len({i for i in e1_ids if i is not None}) == 6
+    assert mapping["roles"]["I2"] == "IN19B007"
+    assert mapping["IN19B007"]["role"] == "I2"
+    assert mapping["IN19B007"]["type"] == "IN19B007"
+    assert "IN19A007" not in mapping
+    assert "dng100_body_id" not in mapping["DNg100"]
 
 
 def test_e1_annotation_covers_six_leg_neuropils():
@@ -120,11 +161,16 @@ def test_e1_annotation_covers_six_leg_neuropils():
     if not cells:
         return
     assert len(cells) == 6
-    for cell in cells.values():
-        assign_cell(cell)
-    assert {cell.assigned_slot for cell in cells.values()} == set(NEURO_SLOTS)
+    attach_roi(cells)
+    assigned = {cell.assigned_slot for cell in cells.values() if cell.assigned_slot}
+    assert assigned == set(NEURO_SLOTS)
+    assert all(cell.assignment_source != "somaNeuromere_annotation" for cell in cells.values())
     dng = load_annotation_neuropil(types=("DNg100",))
     assert len(dng) == 2
+    attach_roi(dng)
     sides = {cell.side for cell in dng.values()}
     assert sides == {"L", "R"}
     assert all(not cell.soma_neuromere for cell in dng.values())
+    # Descending: all three neuropils on one side → not a single leg copy.
+    assert all(cell.assigned_slot is None for cell in dng.values())
+    assert all(cell.assignment_status == "AMBIGUOUS" for cell in dng.values())

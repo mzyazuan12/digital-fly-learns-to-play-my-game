@@ -26,7 +26,7 @@ Janelia MaleCNS v1.0 body IDs we resolve when present:
 - DNb05  L=10118  R=10065
 - DNb06  L=10888  R=11067
 - DNp09  L=10783  R=11177
-- DNg100 L=10045  R=10056
+- DNg100 L/R resolved from MaleCNS annotations[type==DNg100]; Pugliese stim is MANC T1 index 31 / body 10093
 - DNg97  L=13805  R=230783  (oDN1)
 - DNb08  L=12189,12550 R=12044,12075
 - DNg60  L=11374  R=188947  (Bluebell)
@@ -320,10 +320,10 @@ class MotorBridge:
         )
         self.cpg_i2 = self._resolve(
             "cpg_I2",
-            ("IN19A007",),
+            ("IN19B007",),
             None,
             maps_to="observe_only",
-            literature="Pugliese et al. 2025: I2 (IN19A007)",
+            literature="Pugliese et al. 2025: I2 (IN19B007)",
         )
         self.cpg_e3 = self._resolve(
             "cpg_E3",

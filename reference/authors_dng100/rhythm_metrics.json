@@ -1,0 +1,66 @@
+{
+  "source": "Pugliese_2026 src/run_hydra.py experiment=DNg100_Stim (authors' code, not a reimplementation)",
+  "rates_shape_raw": [
+    1,
+    128,
+    4604,
+    2001
+  ],
+  "rates_shape_mean": [
+    4604,
+    2001
+  ],
+  "n_replicates": 128,
+  "rs_path": "/Users/mac/fly-learns-shiri/outputs/pugliese_hydra/DNg100_Stim/default/run_id=authors_dng100/ckpt/DNg100_Stim_Rs.npz",
+  "n_active_mean_trace": 43,
+  "mean_rate_all": 0.04452464357018471,
+  "mean_rate_active": 4.3248209953308105,
+  "mean_trace_oscillation_score": 0.15145625174045563,
+  "mean_trace_frequency_hz": 10.158633813261986,
+  "per_replicate_mean_oscillation_score": null,
+  "per_replicate_mean_frequency_hz": 10.731320708146086,
+  "fraction_replicates_oscillation_ge_0.5": null,
+  "fraction_replicates_E1_oscillation_ge_0.5": 1.0,
+  "published_walk_hz": [
+    7.0,
+    15.0
+  ],
+  "frequency_forced": false,
+  "E1_mean_trace": {
+    "n": 2,
+    "oscillation_score": 0.5186880230903625,
+    "frequency_cycles_per_sample": 0.01149425283074379,
+    "frequency_hz": 11.49425283074379
+  },
+  "E1_per_replicate_mean": 0.9688530210405588,
+  "E2_per_replicate_mean": 0.9592887181788683,
+  "I1_per_replicate_mean": 0.9250290687195957,
+  "E1": {
+    "n": 2,
+    "oscillation_score": 0.5186880230903625,
+    "frequency_cycles_per_sample": 0.01149425283074379,
+    "frequency_hz": 11.49425283074379
+  },
+  "E2": {
+    "n": 2,
+    "oscillation_score": 0.48771199584007263,
+    "frequency_cycles_per_sample": 0.01123595517128706,
+    "frequency_hz": 11.23595517128706
+  },
+  "I1": {
+    "n": 2,
+    "oscillation_score": 0.20061199367046356,
+    "frequency_cycles_per_sample": 0.011363636702299118,
+    "frequency_hz": 11.363636702299118
+  },
+  "I2": {
+    "n": 0,
+    "oscillation_score": null,
+    "frequency_cycles_per_sample": null,
+    "frequency_hz": null
+  },
+  "I2_note": "I2 is IN19B007. The MANC T1 DN-to-MN table has no IN19B007 rows (n=0). IN19A007 is present in that table but is not I2.",
+  "mn_n": 148,
+  "rhythm_reproduced": true,
+  "note": "Authors report frequency as 1/lag_samples. Multiply by 1000 (1/dt) for Hz. Do not clamp onto 7\u201315 Hz. Phase-averaging 128 traces can wash out rhythm; per-replicate scores are the implementation test."
+}

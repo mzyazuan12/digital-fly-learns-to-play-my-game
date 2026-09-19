@@ -1,15 +1,12 @@
 """Sustained DNg100 current → per-leg VNC CPG traces.
 
-Question: does MixedDynamicsNetwork on this MaleCNS graph reproduce the
-bioRxiv DNg100 → E1/E2/inhibition → motor rhythm (Pugliese et al. 2025)?
+Question: does MixedDynamicsNetwork on this intact MaleCNS graph reproduce
+the bioRxiv DNg100 → E1/E2/inhibition → motor rhythm (Pugliese et al. 2025)?
 
-Stimulate the two real DNg100 body IDs. Let ordinary MaleCNS edges
-propagate. Record each E1/E2/I1 copy in its T1/T2/T3 × L/R slot.
-Do not hand-wire pairwise gains. Do not retune the graph. Do not drive
-FlyBody.
-
-Use the project interpreter (`.venv/bin/python` or
-`python -m experiment.dng100_cpg_rhythm`), not macOS system Python.
+Stimulate the single DNg100 that innervates the left VNC. Let ordinary
+MaleCNS edges propagate. Record each E1/E2/I1 copy in its T1/T2/T3 × L/R
+slot from per-bodyId LegNp innervation. Do not hand-wire pairwise gains.
+Do not retune the graph. Do not drive FlyBody.
 """
 
 from __future__ import annotations
@@ -20,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from flybrain.loader import DEFAULT_DATA, computational_graph_manifest
+from flybrain.loader import DEFAULT_DATA, computational_graph_manifest, shuffled_connectome
 from flybrain.network import MixedDynamicsNetwork, LIFParams, dataset_validation
 from organism.config import MODEL_VERSION, MotorMode, NO_SCAFFOLD, format_policy_banner
 from organism.cpg_rhythm import (
@@ -30,9 +27,18 @@ from organism.cpg_rhythm import (
     record_tick,
 )
 from organism.fly import VirtualFly, _json_ready
+from organism.roi_innervation import (
+    INTERNAL_TO_PAPER,
+    PUGLIESE_DNG100_STIM,
+    load_cpg_mapping,
+    left_vnc_dng100_malecns_body_id,
+    malecns_body_id_of,
+    malecns_dng100_by_vnc_innervation,
+)
 from organism.toy import miniature_connectome
 from organism.walking_pathways import (
     E5_TYPE_PROVENANCE,
+    I2_TYPE_PROVENANCE,
     LEG_SLOTS,
     NEURAL_CPG_DRIVES_JOINTS,
     WALKING_CIRCUIT_TYPES,
@@ -42,6 +48,76 @@ from organism.walking_pathways import (
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "outputs" / "dng100_cpg_rhythm.json"
 TRACES = ROOT / "outputs" / "dng100_cpg_rhythm_traces.npz"
+
+
+def stimulated_dng100(graph, circuit: WalkingCircuit, stim: str = "left_vnc") -> dict:
+    """Choose which MaleCNS DNg100 to inject. Default: left-VNC innervation.
+
+    Pugliese DNg100_Stim is the same biological TYPE on a different animal:
+    MANC_T1 matrix index 31, MANC body 10093. In that MANC table, body 10056
+    is vMS16. MaleCNS DNg100 is resolved from annotations[type == DNg100].
+    """
+    all_idx = circuit.indices("DNg100")
+    mapping = load_cpg_mapping() if graph.n >= 10_000 else {}
+    malecns_block = (mapping.get("DNg100") or {}).get("malecns") or {}
+    left_vnc = left_vnc_dng100_malecns_body_id(mapping) if mapping else None
+    right_vnc = malecns_dng100_by_vnc_innervation(mapping, "R") if mapping else None
+    by_side = {"L": [], "R": []}
+    for i in all_idx.tolist():
+        side = str(graph.side[int(i)]).upper()[:1]
+        if side in by_side:
+            by_side[side].append(int(i))
+    chosen = all_idx
+    note = "both MaleCNS DNg100 neurons"
+    if stim in {"both", "all"}:
+        chosen = all_idx
+        note = "both MaleCNS DNg100 neurons"
+    elif stim in {"left_vnc", "pugliese", "DNg100_left_vnc"}:
+        if left_vnc is not None:
+            chosen = np.asarray([graph.index_of(left_vnc)], dtype=np.int32)
+            note = (
+                f"MaleCNS DNg100 that innervates the left VNC "
+                f"(body_id={left_vnc}, annotation side is not this key). "
+                "Pugliese reference is MANC_T1 matrix_index=31 body_id=10093 "
+                "(same type, different animal). MANC body 10056 is vMS16."
+            )
+        elif by_side["L"]:
+            chosen = np.asarray(by_side["L"], dtype=np.int32)
+            note = "toy/annotation-left DNg100 (no ROI mapping)"
+        else:
+            chosen = all_idx[:1]
+            note = "first DNg100 (left-VNC mapping unavailable)"
+    elif stim in {"right_vnc"}:
+        if right_vnc is not None:
+            chosen = np.asarray([graph.index_of(right_vnc)], dtype=np.int32)
+            note = f"MaleCNS DNg100 that innervates the right VNC (body_id={right_vnc})"
+        elif by_side["R"]:
+            chosen = np.asarray(by_side["R"], dtype=np.int32)
+            note = "annotation-right DNg100"
+    elif stim in {"soma_left", "DNg100_L"}:
+        if by_side["L"]:
+            chosen = np.asarray(by_side["L"], dtype=np.int32)
+            note = "annotation-left instance DNg100_L"
+    elif stim in {"soma_right", "DNg100_R"}:
+        if by_side["R"]:
+            chosen = np.asarray(by_side["R"], dtype=np.int32)
+            note = "annotation-right instance DNg100_R"
+    bodies = [int(graph.neuron_ids[i]) for i in np.asarray(chosen).tolist()]
+    instances = []
+    for entry in (malecns_block.get("left"), malecns_block.get("right")):
+        if malecns_body_id_of(entry) in bodies:
+            instances.append((entry or {}).get("instance") or "")
+    return {
+        "dataset": "MaleCNS_v1" if graph.n >= 10_000 else "toy",
+        "malecns_body_ids": bodies,
+        "body_ids": bodies,
+        "indices": np.asarray(chosen, dtype=np.int32),
+        "instances": instances,
+        "stim": stim,
+        "note": note,
+        "pugliese_reference": dict(PUGLIESE_DNG100_STIM),
+        "all_n": int(all_idx.size),
+    }
 
 
 def malecns_available() -> bool:
@@ -125,6 +201,84 @@ def _lesion_effect(intact: dict, lesioned: dict) -> dict:
     }
 
 
+def _population_metrics(summary: dict) -> dict:
+    legs = summary.get("legs") or {}
+    e1_scores, e2_scores, i1_scores, i2_scores, mn_scores = [], [], [], [], []
+    freqs = []
+    mn_means = []
+    n_active = 0
+    for row in legs.values():
+        for role, bucket in (("E1", e1_scores), ("E2", e2_scores), ("I1", i1_scores), ("I2", i2_scores), ("MN", mn_scores)):
+            scored = row.get(role) or {}
+            bucket.append(float(scored.get("score") or 0.0))
+            hz = scored.get("dominant_frequency") or scored.get("peak_hz")
+            if hz:
+                freqs.append(float(hz))
+            if float(scored.get("mean") or 0.0) > 0.05 or scored.get("oscillatory"):
+                n_active += 1
+            if role == "MN":
+                mn_means.append(float(scored.get("mean") or 0.0))
+    mean_freq = float(np.mean(freqs)) if freqs else None
+    return {
+        "dominant_frequency": mean_freq,
+        "spectral_peak_power_mean": float(
+            np.mean(
+                [
+                    float((row.get(role) or {}).get("spectral_peak_power") or 0.0)
+                    for row in legs.values()
+                    for role in ("E1", "E2", "I1", "MN")
+                ]
+            )
+        )
+        if legs
+        else 0.0,
+        "autocorrelation_peak_mean": float(np.mean(e1_scores + e2_scores + i1_scores + mn_scores))
+        if (e1_scores or mn_scores)
+        else 0.0,
+        "rhythmicity_score_E1": float(np.mean(e1_scores)) if e1_scores else 0.0,
+        "rhythmicity_score_E2": float(np.mean(e2_scores)) if e2_scores else 0.0,
+        "rhythmicity_score_I1": float(np.mean(i1_scores)) if i1_scores else 0.0,
+        "rhythmicity_score_I2": float(np.mean(i2_scores)) if i2_scores else 0.0,
+        "rhythmicity_score_MN": float(np.mean(mn_scores)) if mn_scores else 0.0,
+        "mean_motor_firing_rate": float(np.mean(mn_means)) if mn_means else 0.0,
+        "active_neuron_count": int(n_active),
+        "frequency_forced": False,
+        "frequency_below_published_band": bool(mean_freq is not None and mean_freq < 7.0),
+    }
+
+
+def _plot_traces(recording, path: Path) -> Path | None:
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception:
+        return None
+    t = np.asarray(recording.t_ms)
+    fig, axes = plt.subplots(6, 1, figsize=(10, 9), sharex=True)
+    series = [
+        ("DNg100 stimulated", recording.dng100),
+        ("E1 LF", recording.legs.get("FL", {}).get("E1")),
+        ("E2 LF", recording.legs.get("FL", {}).get("E2")),
+        ("I1 LF", recording.legs.get("FL", {}).get("I1")),
+        ("MN LF", recording.legs.get("FL", {}).get("MN")),
+        ("I2 LF", recording.legs.get("FL", {}).get("I2")),
+    ]
+    for ax, (title, y) in zip(axes, series):
+        y = np.asarray(y) if y is not None else np.zeros_like(t)
+        ax.plot(t, y, color="black", lw=0.8)
+        ax.set_ylabel(title, fontsize=8)
+        ax.tick_params(labelsize=7)
+    axes[-1].set_xlabel("time (ms)")
+    fig.suptitle("MaleCNS DNg100 stim (no FlyBody)", fontsize=11)
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=120)
+    plt.close(fig)
+    return path
+
+
 def run(
     *,
     connectome: str = "toy",
@@ -133,6 +287,8 @@ def run(
     steps: int | None = None,
     warmup: int | None = None,
     lesions: bool = True,
+    scramble: bool = True,
+    stim: str = "left_vnc",
     out: Path = OUT,
 ) -> dict:
     graph = load_graph(connectome, seed)
@@ -143,7 +299,8 @@ def run(
     params = LIFParams(dt=1.0)
     net = MixedDynamicsNetwork(graph, params=params, seed=seed)
     circuit = WalkingCircuit(graph)
-    dng100 = circuit.indices("DNg100")
+    stim_info = stimulated_dng100(graph, circuit, stim=stim)
+    dng100 = stim_info["indices"]
     source = "experiment.optogenetic.DNg100"
     intact = run_condition(
         net,
@@ -160,11 +317,18 @@ def run(
             "summary": intact["summary"],
             "preview": intact["preview"],
             "stim_onset_ms": intact["stim_onset_ms"],
+            "metrics": _population_metrics(intact["summary"]),
         }
     }
     lesion_report = {}
     if lesions:
-        for name, key in (("E1", "E1"), ("E2", "E2"), ("I1", "I1")):
+        expected = {
+            "E1": "rhythm should collapse strongly (preprint full-network necessity)",
+            "E2": "rhythm should collapse strongly (preprint full-network necessity)",
+            "I1": "effect may be weaker; other inhibitory cells can compensate",
+            "I2": "whole-CNS minimal circuits used I1 or I2 with E1+E2",
+        }
+        for name, key in (("E1", "E1"), ("E2", "E2"), ("I1", "I1"), ("I2", "I2")):
             idx = circuit.indices(key)
             result = run_condition(
                 net,
@@ -180,22 +344,50 @@ def run(
                 "summary": result["summary"],
                 "preview": result["preview"],
                 "n_silenced": int(idx.size),
+                "metrics": _population_metrics(result["summary"]),
             }
             lesion_report[name] = _lesion_effect(intact["summary"], result["summary"])
-            expected = {
-                "E1": "rhythm should collapse strongly (preprint full-network necessity)",
-                "E2": "rhythm should collapse strongly (preprint full-network necessity)",
-                "I1": "effect may be weaker; other inhibitory cells can compensate",
-            }[name]
-            lesion_report[name]["published_expectation"] = expected
+            lesion_report[name]["published_expectation"] = expected[name]
             if not lesion_report[name]["interpretable"]:
                 lesion_report[name]["note"] = (
                     "Intact network did not oscillate; lesion comparison is "
                     "not a replication of the preprint necessity result."
                 )
+        if scramble:
+            rng = np.random.default_rng(seed + 17)
+            shuffled = shuffled_connectome(graph, rng)
+            shuffled_net = MixedDynamicsNetwork(shuffled, params=params, seed=seed)
+            shuffled_circuit = WalkingCircuit(shuffled)
+            shuffled_stim = stimulated_dng100(shuffled, shuffled_circuit, stim=stim)
+            result = run_condition(
+                shuffled_net,
+                shuffled_circuit,
+                dng100=shuffled_stim["indices"],
+                current=current,
+                steps=steps,
+                warmup=warmup,
+                source=source,
+            )
+            conditions["scrambled_connectome"] = {
+                "summary": result["summary"],
+                "preview": result["preview"],
+                "control": "shuffled_post_indices",
+                "metrics": _population_metrics(result["summary"]),
+            }
+            lesion_report["scrambled"] = _lesion_effect(intact["summary"], result["summary"])
+            lesion_report["scrambled"]["published_expectation"] = (
+                "Real topology should support rhythm more than a degree-matched shuffle"
+            )
 
     anatomy = circuit.anatomy()
     catalog = circuit.catalog()
+    mapping = load_cpg_mapping() if graph.n >= 10_000 else {}
+    metrics = _population_metrics(intact["summary"])
+    if metrics.get("frequency_below_published_band"):
+        interpretation["frequency_note"] = (
+            f"Dominant frequency {metrics.get('dominant_frequency')} Hz is below "
+            "the published 7–15 Hz locomotor band. Logged, not clamped."
+        )
     payload = {
         "model_version": MODEL_VERSION,
         "policy": NO_SCAFFOLD.name,
@@ -212,15 +404,28 @@ def run(
         "walk_api_called": False,
         "graph_modified": False,
         "dynamics_retuned": False,
+        "frequency_forced": False,
         "walking_circuit_types": dict(WALKING_CIRCUIT_TYPES),
         "e5_type_provenance": dict(E5_TYPE_PROVENANCE),
+        "i2_type_provenance": dict(I2_TYPE_PROVENANCE),
         "rhythmicity_threshold": RHYTHMICITY_THRESHOLD,
         "published_walk_hz": [7.0, 15.0],
         "source_status": "bioRxiv preprint (Pugliese et al. 2025), not a peer-reviewed article",
-        "dng100_n": int(dng100.size),
+        "dng100_n": int(circuit.indices("DNg100").size),
         "dng100_is_six_neurons": False,
-        "dng100_body_ids": [int(graph.neuron_ids[i]) for i in dng100.tolist()[:8]],
-        "dng100_sides": [str(graph.side[i]) for i in dng100.tolist()[:8]],
+        "malecns_dng100_body_ids": [int(graph.neuron_ids[i]) for i in circuit.indices("DNg100").tolist()[:8]],
+        "dng100_sides": [str(graph.side[i]) for i in circuit.indices("DNg100").tolist()[:8]],
+        "stimulated": stim_info,
+        "cpg_mapping_path": str(DEFAULT_DATA / "cpg_mapping.json"),
+        "cpg_mapping_roles": {
+            name: {
+                slot: malecns_body_id_of(entry)
+                for slot, entry in ((mapping.get(WALKING_CIRCUIT_TYPES[name]) or {}).get("neurons") or {}).items()
+            }
+            for name in ("E1", "E2", "I1", "I2", "E3", "E4", "E5")
+            if mapping
+        },
+        "paper_slots": {slot: INTERNAL_TO_PAPER.get(slot, slot) for slot in LEG_SLOTS},
         "catalog": {
             name: catalog[name]
             for name in ("DNg100", "DNb08", "E1", "E2", "I1", "I2", "E3", "E4", "E5")
@@ -234,6 +439,7 @@ def run(
             "I1_to_E1": anatomy["I1_to_E1"],
             "n_leg_copies_with_E1": anatomy["n_leg_copies_with_E1"],
         },
+        "metrics": metrics,
         "authors_vs_ours": {
             "authors": {
                 "graph": "MANC T1 DN-to-MN subgraph, 4604 neurons",
@@ -243,6 +449,12 @@ def run(
                 "weight_multiplier": 0.03,
                 "stim_current": 250,
                 "stim_index_in_their_W": 31,
+                "stim_manc_body_id": 10093,
+                "note": (
+                    "stimNeurons [[31]] is MANC T1 matrix index 31 = MANC body 10093 "
+                    "(type DNg100). Same biological type as MaleCNS DNg100, not the "
+                    "same body ID. MANC body 10056 is vMS16 in that table."
+                ),
                 "T_s": 2.0,
                 "oscillation_threshold": 0.5,
             },
@@ -252,7 +464,9 @@ def run(
                 "dt_ms": float(params.dt),
                 "contact_gain": float(params.contact_gain),
                 "stim_current": current,
-                "stimulated": "both DNg100 body IDs",
+                "stimulated": stim_info["note"],
+                "malecns_body_ids": stim_info.get("malecns_body_ids") or stim_info.get("body_ids"),
+                "pugliese_reference": stim_info.get("pugliese_reference"),
                 "retuned": False,
             },
         },
@@ -277,9 +491,13 @@ def run(
     for slot, traces in intact["recording"].legs.items():
         for role, tr in traces.items():
             arrays[f"{slot}.{role}"] = tr
-    np.savez_compressed(TRACES if out == OUT else out.with_suffix(".npz"), **arrays)
+    trace_path = TRACES if out == OUT else out.with_suffix(".npz")
+    np.savez_compressed(trace_path, **arrays)
+    plot_path = _plot_traces(intact["recording"], trace_path.with_suffix(".png"))
     payload["output"] = str(out)
-    payload["traces"] = str(TRACES if out == OUT else out.with_suffix(".npz"))
+    payload["traces"] = str(trace_path)
+    payload["trace_plot"] = str(plot_path) if plot_path else None
+    out.write_text(json.dumps(_json_ready(payload), indent=2))
     return payload
 
 
@@ -291,6 +509,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--steps", type=int, default=0, help="0 = toy 300 / MaleCNS 500")
     parser.add_argument("--warmup", type=int, default=0)
     parser.add_argument("--no-lesions", action="store_true")
+    parser.add_argument("--no-scramble", action="store_true")
+    parser.add_argument("--stim", default="left_vnc", help="left_vnc | right_vnc | both | soma_left | soma_right")
     parser.add_argument("--out", default=str(OUT))
     args = parser.parse_args(argv)
     if args.connectome == "malecns" and not malecns_available():
@@ -298,7 +518,7 @@ def main(argv: list[str] | None = None) -> int:
     print(format_policy_banner(NO_SCAFFOLD))
     print()
     print("DNg100 CPG rhythm (MODE_NEURAL_CPG, joints not actuated)")
-    print(f"connectome={args.connectome} current={args.current}")
+    print(f"connectome={args.connectome} current={args.current} stim={args.stim}")
     result = run(
         connectome=args.connectome,
         seed=args.seed,
@@ -306,9 +526,13 @@ def main(argv: list[str] | None = None) -> int:
         steps=args.steps or None,
         warmup=args.warmup or None,
         lesions=not args.no_lesions,
+        scramble=not args.no_scramble,
+        stim=args.stim,
         out=Path(args.out),
     )
     print(f"n={result['n_neurons']} steps={result['steps']} DNg100 n={result['dng100_n']}")
+    print(f"stimulated: {result.get('stimulated', {})}")
+    print(f"metrics: {result.get('metrics')}")
     print(f"E5 canonical type: {result['walking_circuit_types']['E5']}")
     print(f"leg copies with E1: {result['anatomy_core']['n_leg_copies_with_E1']}")
     print(f"question: {result['question']}")
