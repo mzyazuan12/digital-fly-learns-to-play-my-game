@@ -268,9 +268,14 @@ def _population_metrics(summary: dict) -> dict:
     mean_freq = float(np.mean(freqs)) if freqs else None
     if not valid:
         return {
+            "model_id": SHIU_LIF_SANITY_MODEL,
             "valid_dynamics": False,
             "valid_for_rhythm_analysis": False,
             "allow_lesions": False,
+            "dng100_voltage_physiological": bool(summary.get("dng100_voltage_physiological", False)),
+            "dng100_dynamics_valid": bool(summary.get("dng100_dynamics_valid", False)),
+            "dng100_voltage_exploding": bool(summary.get("dng100_voltage_exploding", True)),
+            "fft_executed": False,
             "dominant_frequency": None,
             "rhythmicity_score": None,
             "rhythmicity_score_E1": None,
