@@ -6,7 +6,10 @@ import pytest
 from experiment.dng100_cpg_rhythm import _population_metrics
 from flybrain.lif_sanity import (
     ISOLATED_STIM_CURRENT,
+    SCALE_RATIO_HI,
+    SCALE_RATIO_LO,
     SCALE_SYNAPSE_COUNT,
+    SYNAPSE_COUNT_SWEEP,
     assert_lif_sanity,
     cholinergic_depolarizes,
     gaba_hyperpolarizes,
@@ -16,6 +19,8 @@ from flybrain.lif_sanity import (
     pugliese_stim_is_not_shiu_current,
     quiet_net,
     run_lif_sanity,
+    run_single_synaptic_event,
+    synapse_count_scaling,
     tiny_cpg_numerical_sanity,
     transmitter_sign_table,
     weight_orientation,
@@ -25,13 +30,17 @@ from flybrain.neurons import (
     PUGLIESE_CPG_MODEL,
     PUGLIESE_CPG_STIM_AMPLITUDE,
     SHIU_LIF_SANITY_MODEL,
+    SYNAPTIC_STEP_MV,
     V_REST_MV,
     V_THRESHOLD_MV,
     VOLTAGE_UNIT,
     WSYN_MV,
     nt_sign,
+    valid_dynamics,
+    voltage_is_physiological,
+    voltages_finite,
 )
-from organism.cpg_rhythm import interpret_intact, rhythmicity_score
+from organism.cpg_rhythm import derive_rhythm_permissions, interpret_intact, rhythmicity_score
 
 
 def test_model_labels_are_distinct():
