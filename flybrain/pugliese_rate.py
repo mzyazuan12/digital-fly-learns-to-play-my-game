@@ -26,7 +26,6 @@ from pathlib import Path
 
 import numpy as np
 from scipy.integrate import solve_ivp
-from scipy.stats import truncnorm
 
 from flybrain.loader import Connectome, DEFAULT_DATA
 from flybrain.malecns_volume import (
