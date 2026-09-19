@@ -332,10 +332,67 @@ def class_conditional_shuffle(
     return out
 
 
+def rate_rhythmicity_score(trace: np.ndarray, dt_s: float) -> dict:
+    """Unrestricted FFT/autocorr on a firing-rate trace.
+
+    Does not use millivolt guardrails. Those apply only to shiu_lif_sanity_v1.
+    Published 7–15 Hz is an annotation, not a peak-selection prior.
+    """
+    x = np.asarray(trace, dtype=np.float64)
+    out = {
+        "n": int(x.size),
+        "mean": float(x.mean()) if x.size else 0.0,
+        "std": float(x.std()) if x.size else 0.0,
+        "min": float(x.min()) if x.size else 0.0,
+        "max": float(x.max()) if x.size else 0.0,
+        "score": None,
+        "rhythmicity_score": None,
+        "dominant_frequency": None,
+        "fft_hz": None,
+        "autocorrelation_peak": None,
+        "fft_executed": False,
+        "in_published_walk_band": False,
+        "model_id": PUGLIESE_RATE_MALECNS_V1,
+        "voltage_gate_applied": False,
+    }
+    if x.size < 16 or not np.all(np.isfinite(x)) or dt_s <= 0:
+        return out
+    mean = out["mean"]
+    std = out["std"]
+    if std < 1e-12:
+        out["score"] = 0.0
+        out["rhythmicity_score"] = 0.0
+        out["autocorrelation_peak"] = 0.0
+        return out
+    out["fft_executed"] = True
+    freqs = np.fft.rfftfreq(x.size, d=dt_s)
+    spec = np.abs(np.fft.rfft(x - mean)) ** 2
+    if spec.size > 1:
+        peak_i = 1 + int(np.argmax(spec[1:]))
+        out["fft_hz"] = float(freqs[peak_i])
+        out["dominant_frequency"] = out["fft_hz"]
+    xc = x - mean
+    ac = np.correlate(xc, xc, mode="full")[x.size - 1 :]
+    if ac[0] > 0:
+        ac = ac / ac[0]
+    lag_max = x.size // 3
+    interior = ac[1:lag_max]
+    if interior.size >= 3:
+        peaks = np.flatnonzero((interior[1:-1] > interior[:-2]) & (interior[1:-1] >= interior[2:])) + 2
+        if peaks.size:
+            lag = int(peaks[np.argmax(ac[peaks])])
+            score = float(max(0.0, ac[lag]))
+            hz = 1.0 / (lag * dt_s)
+            out["score"] = score
+            out["rhythmicity_score"] = score
+            out["autocorrelation_peak"] = score
+            out["autocorr_hz"] = hz
+            out["in_published_walk_band"] = bool(7.0 <= hz <= 15.0)
+    return out
+
+
 def population_rate_metrics(rates: np.ndarray, dt_s: float, recruited: np.ndarray | None = None) -> dict:
     """Census plus FFT/autocorr on the mean recruited trace. No walking-band clamp."""
-    from organism.cpg_rhythm import rhythmicity_score
-
     rates = np.asarray(rates, dtype=np.float64)
     if rates.ndim != 2:
         raise ValueError("rates must be (n_neurons, n_times)")
@@ -347,7 +404,7 @@ def population_rate_metrics(rates: np.ndarray, dt_s: float, recruited: np.ndarra
     if not np.any(legacy_active):
         legacy_active = mean_over_time > 0.1
     mean_trace = rates[recruited].mean(axis=0) if np.any(recruited) else np.zeros(t)
-    scored = rhythmicity_score(mean_trace, dt_s * 1000.0)
+    scored = rate_rhythmicity_score(mean_trace, dt_s)
     return {
         "n": int(n),
         "mean_activity": float(rates.mean()) if rates.size else 0.0,
