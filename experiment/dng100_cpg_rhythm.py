@@ -592,6 +592,7 @@ def run(
         "authors_vs_ours": {
             "authors": {
                 "graph": "MANC T1 DN-to-MN subgraph, 4604 neurons",
+                "model_id": PUGLIESE_CPG_MODEL,
                 "dynamics_model": PUGLIESE_CPG_MODEL,
                 "equations": "rate ODE dR/dt = (half-tanh(WR+I) - R)/tau with cell-size normalization",
                 "tau_s": 0.02,
@@ -643,6 +644,7 @@ def run(
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(_json_ready(payload), indent=2))
     arrays = {
+        "model_id": np.array(SHIU_LIF_SANITY_MODEL),
         "t_ms": intact["recording"].t_ms,
         "DNg100": intact["recording"].dng100,
         "DNg100_v": intact["recording"].dng100_v,
@@ -713,8 +715,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"n={result['n_neurons']} steps={result['steps']} DNg100 n={result['dng100_n']}")
     print(f"stimulated: {result.get('stimulated', {})}")
     print(f"metrics: {result.get('metrics')}")
-    print(f"dynamics_model={result.get('dynamics_model')} is_pugliese_reproduction={result.get('is_pugliese_reproduction')}")
-    if not result.get("valid_dynamics", result.get("valid_for_rhythm_analysis", True)):
+    print(f"model_id={result.get('model_id')} dynamics_model={result.get('dynamics_model')} is_pugliese_reproduction={result.get('is_pugliese_reproduction')}")
+    if not result.get("valid_for_rhythm_analysis", False):
         print("DYNAMICS INVALID — dominant_frequency and rhythmicity_score are None; lesions forbidden")
     print(f"E5 canonical type: {result['walking_circuit_types']['E5']}")
     print(f"leg copies with E1: {result['anatomy_core']['n_leg_copies_with_E1']}")
@@ -727,8 +729,11 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"DNg100 spikes mean={intact['DNg100'].get('mean'):.3f} "
         f"V mean={dng_v.get('mean')} min={dng_v.get('min')} max={dng_v.get('max')} "
-        f"exploding={dng_v.get('exploding') or intact.get('any_exploding')}"
+        f"physiological={intact.get('dng100_voltage_physiological')} "
+        f"dynamics_valid={intact.get('dng100_dynamics_valid')} "
+        f"exploding={intact.get('dng100_voltage_exploding') or dng_v.get('exploding') or intact.get('any_exploding')}"
     )
+    print(f"fft_executed={intact.get('fft_executed')} allow_lesions={intact.get('allow_lesions')}")
     print(
         f"oscillatory legs: {intact.get('n_oscillatory_legs')} "
         f"tonic_core: {intact.get('core_tonic_plateau')} exploding={intact.get('any_exploding')}"
