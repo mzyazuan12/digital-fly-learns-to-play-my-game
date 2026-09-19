@@ -141,6 +141,7 @@ def rhythmicity_score(
         out["tonic_plateau"] = bool(mean > 0.25)
         return out
 
+    out["fft_executed"] = True
     freqs = np.fft.rfftfreq(x.size, d=dt_s)
     spec = np.abs(np.fft.rfft(x - mean)) ** 2
     band_mask = (freqs >= band[0]) & (freqs <= band[1])
