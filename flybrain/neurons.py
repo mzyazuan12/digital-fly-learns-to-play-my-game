@@ -34,13 +34,17 @@ def nt_sign(name: str | None) -> int:
 NT_SIGN = nt_sign
 
 
-# Two different dynamical models. Do not treat a SHIU_LIF pass as a Pugliese CPG result.
-SHIU_LIF_SANITY_MODEL = "SHIU_LIF_SANITY_MODEL"
-PUGLIESE_CPG_MODEL = "PUGLIESE_CPG_MODEL"
+# SHIU_LIF_SANITY_MODEL.
+# Current-based LIF expressed entirely in mV/ms.
+# Used for numerical and connectome-integration sanity checks.
+# NOT the Pugliese CPG dynamical model.
+#
+# MixedDynamicsNetwork stores voltage in millivolts. The Shiu/DoomFly
+# reference implementation stores volts internally and multiplies by 1e3
+# only when plotting. Never mix -52e-3 into this solver.
+SHIU_LIF_SANITY_MODEL = "shiu_lif_sanity_v1"
+PUGLIESE_CPG_MODEL = "pugliese_cpg_reference_v1"
 
-# MixedDynamicsNetwork stores voltage in millivolts. The Shiu/DoomFly reference
-# implementation stores volts internally and multiplies by 1e3 only when plotting.
-# Never mix -52e-3 (volts) into this solver.
 VOLTAGE_UNIT = "mV"
 V_REST_MV = -52.0
 V_RESET_MV = -52.0
@@ -51,6 +55,7 @@ T_REF_MS = 2.2
 DELAY_MS = 1.8
 # Millivolts per anatomical synapse. Connectivity weight is synapse *count*.
 WSYN_MV = 0.275
+SYNAPTIC_STEP_MV = WSYN_MV
 # PUGLIESE_CPG_MODEL rate-ODE stimulus. Not a SHIU_LIF current and not mV.
 PUGLIESE_CPG_STIM_AMPLITUDE = 250.0
 
@@ -60,20 +65,32 @@ PHYSIOLOGICAL_V_UPPER_MV = 40.0
 EXPLOSION_ABS_MV = 150.0
 
 
-def valid_dynamics(v) -> bool:
-    """True iff V is finite and inside the Shiu-LIF sanity band (mV)."""
+def voltages_finite(v) -> bool:
+    """Numerical validity: no NaN/Inf."""
     x = np.asarray(v, dtype=np.float64)
     if x.size == 0:
         return True
-    return bool(
-        np.all(np.isfinite(x))
-        and float(np.min(x)) >= PHYSIOLOGICAL_V_LOWER_MV
-        and float(np.max(x)) <= PHYSIOLOGICAL_V_UPPER_MV
-    )
+    return bool(np.all(np.isfinite(x)))
 
 
 def voltage_is_physiological(v) -> bool:
-    return valid_dynamics(v)
+    """Membrane validity: finite and inside the Shiu-LIF debug band (mV)."""
+    x = np.asarray(v, dtype=np.float64)
+    if x.size == 0:
+        return True
+    if not voltages_finite(x):
+        return False
+    return bool(float(np.min(x)) >= PHYSIOLOGICAL_V_LOWER_MV and float(np.max(x)) <= PHYSIOLOGICAL_V_UPPER_MV)
+
+
+def valid_dynamics(v) -> bool:
+    """Numerical dynamics: finite and |V| below the explosion abs cutoff."""
+    x = np.asarray(v, dtype=np.float64)
+    if x.size == 0:
+        return True
+    if not voltages_finite(x):
+        return False
+    return bool(float(np.max(np.abs(x))) < EXPLOSION_ABS_MV)
 
 
 @dataclass(frozen=True)
@@ -115,6 +132,10 @@ class LIFParams:
     @property
     def wsyn_mv(self) -> float:
         return float(self.contact_gain)
+
+    @property
+    def model_id(self) -> str:
+        return SHIU_LIF_SANITY_MODEL
 
     @property
     def model_label(self) -> str:
