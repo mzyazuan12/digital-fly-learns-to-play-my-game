@@ -269,7 +269,16 @@ def swc_frustum_volume(path: Path) -> float:
 
 
 def neuron_sizes_from_swc(body_ids, swc_dir: Path = SWC_DIR) -> dict:
-    """Per-body SWC volume plus provenance. Missing files are NaN (median-filled later)."""
+    """SWC frustum volume. Not a Pugliese size source. Do not pass to set_sizes."""
+    raise ValueError(
+        "Pugliese MANC/mCNS size is neuPrint neuron volume. "
+        "Do not derive size from SWC skeletons, synapse count, cable length, "
+        "soma size, or partner count."
+    )
+
+
+def _swc_frustum_volume_for_tests(body_ids, swc_dir: Path = SWC_DIR) -> dict:
+    """Kept only so tests can show SWC is the wrong size source."""
     sizes = np.full(len(body_ids), np.nan, dtype=np.float64)
     missing = []
     for i, body in enumerate(body_ids):
