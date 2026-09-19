@@ -1,0 +1,142 @@
+"""Raw-data, fail-closed neural milestone; never loads the full simulation graph."""
+from __future__ import annotations
+import hashlib
+import json
+import platform
+import subprocess
+from dataclasses import asdict
+from datetime import datetime, timezone
+from pathlib import Path
+import numpy as np
+import pyarrow.dataset as ds
+import pyarrow.feather as feather
+from flybrain.loader import ANN_FILE, NT_FILE, EDGE_FILE, DEFAULT_DATA, Connectome, _coo_to_csr
+from flybrain.lif_sanity import assert_lif_sanity
+from flybrain.network import MixedDynamicsNetwork
+from flybrain.neurons import SHIU_LIF_SANITY_MODEL, nt_sign, shiu_lif_params, voltage_is_physiological, voltages_finite
+from organism.roi_innervation import (CORE_CPG_TYPES, assert_expected_annotation_counts, load_annotations,
+    scan_syn_points, rois_to_row, build_cpg_mapping, validate_cpg_mapping)
+from organism.cpg_rhythm import rhythmicity_score
+
+
+def raw_subgraph():
+    raw = feather.read_table(DEFAULT_DATA / ANN_FILE).to_pandas()
+    assert_expected_annotation_counts(raw)
+    core = raw[raw['type'].isin(['DNg100', *CORE_CPG_TYPES.values()])].copy()
+    ids = np.sort(core.bodyId.to_numpy(dtype=np.uint64))
+    chunks = []
+    # Only source edges of the biological core; no full connectome allocation.
+    dataset = ds.dataset(str(DEFAULT_DATA / EDGE_FILE), format='feather')
+    for batch in dataset.scanner(columns=['body_pre', 'body_post', 'weight'],
+                                 filter=ds.field('body_pre').isin(ids.tolist()), batch_size=65536).to_batches():
+        if batch.num_rows:
+            chunks.append(batch.to_pandas())
+    import pandas as pd
+    edges = pd.concat(chunks, ignore_index=True)
+    # Motor readouts directly downstream of the core, selected by raw superclass.
+    motor_ids = set(raw.loc[raw.superclass.astype(str).str.contains('motor', case=False), 'bodyId'].astype(int))
+    downstream = set(edges.body_post.astype(int)) & motor_ids
+    ids = np.array(sorted(set(ids.tolist()) | downstream), dtype=np.uint64)
+    edges = edges[edges.body_post.isin(ids)]
+    ann = raw.set_index('bodyId').loc[ids]
+    nt = feather.read_table(DEFAULT_DATA / NT_FILE, columns=['body', 'consensus_nt']).to_pandas().set_index('body').consensus_nt
+    tx = np.array([str(nt.get(int(i), 'missing')) for i in ids], dtype=object)
+    pre = np.searchsorted(ids, edges.body_pre.to_numpy(dtype=np.uint64))
+    post = np.searchsorted(ids, edges.body_post.to_numpy(dtype=np.uint64))
+    ptr, post, weights = _coo_to_csr(pre, post, edges.weight.to_numpy(dtype=np.uint32), len(ids))
+    signs = np.repeat(np.array([nt_sign(t) for t in tx], dtype=np.int8), np.diff(ptr))
+    def col(name): return ann[name].fillna('').astype(str).to_numpy(dtype=object)
+    graph = Connectome(ids, ptr, post, weights, signs, col('superclass'), col('type'), col('class'), col('somaSide'), tx,
+                       {'dataset_id':'MaleCNS_v1.0', 'subset':'32 core neurons plus directly downstream motor readouts; motor feedback omitted'})
+    return graph
+
+
+def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
+    out.mkdir(parents=True, exist_ok=False)
+    report = {'model_id': SHIU_LIF_SANITY_MODEL, 'valid_for_rhythm_analysis':False, 'allow_lesions':False,
+              'dominant_frequency':None, 'rhythmicity_score':None, 'fft_executed':False,
+              'full_malecns_allowed':False, 'status':'running'}
+    def save(): (out/'report.json').write_text(json.dumps(report, indent=2, allow_nan=False)+'\n')
+    save()
+    try:
+        report['sanity'] = assert_lif_sanity()
+        print('LIF sanity PASS', flush=True)
+        anns = load_annotations()
+        counts = scan_syn_points({r['malecns_body_id'] for r in anns}, progress=True)
+        mapping = build_cpg_mapping([{**r, **rois_to_row(counts[r['malecns_body_id']])} for r in anns])
+        validate_cpg_mapping(mapping)
+        mapping_bytes = (json.dumps(mapping, sort_keys=True, indent=2)+'\n').encode()
+        (out/'cpg_mapping.json').write_bytes(mapping_bytes)
+        (out/'roi_counts.json').write_text(json.dumps(counts, indent=2)+'\n')
+        report['mapping_sha256'] = hashlib.sha256(mapping_bytes).hexdigest()
+        report['identity_mapping_valid'] = True
+        report['mapping_unassigned'] = {role:len(mapping[typ]['unassigned']) for role,typ in CORE_CPG_TYPES.items()}
+        print('Raw identity and ROI mapping PASS', flush=True)
+        graph = raw_subgraph()
+        params = shiu_lif_params(dt=1.0)
+        report.update(dataset='MaleCNS_v1.0', n_neurons=graph.n, n_edges=graph.n_edges,
+                      neural_parameters=asdict(params), seed=seed, dt_ms=1.0, steps=steps, warmup_steps=warmup,
+                      current_mv_drive=current, voltage_unit='mV', weight_transformation='anatomical count × presynaptic NT sign × 0.275 mV',
+                      nt_sign_rules={str(t):nt_sign(t) for t in graph.neurotransmitter},
+                      git_commit=subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+                      working_tree_diff=subprocess.check_output(['git','diff'], text=True),
+                      software={'python':platform.python_version(),'numpy':np.__version__}, subset=graph.report)
+        conditions = {}
+        roles = {'DNg100':'DNg100', **CORE_CPG_TYPES}
+        indices = {role:np.flatnonzero(graph.cell_type == typ) for role,typ in roles.items()}
+        indices['MN'] = np.flatnonzero(np.char.find(graph.superclass.astype(str), 'motor') >= 0)
+        for body in (10045,10056):
+            net=MixedDynamicsNetwork(graph, params=params, seed=seed)
+            net.intrinsic_noise_std=0.0
+            net.reset()
+            v=np.zeros((steps,graph.n)); activity=np.zeros_like(v); spikes=np.zeros_like(v,dtype=bool)
+            for t in range(steps):
+                if t == warmup: net.add_drive([graph.index_of(body)],current,source='validation.DNg100')
+                net.step(1)
+                v[t]=net.v; spikes[t]=net.last_spikes
+                activity[t]=np.where(net.is_graded,net.graded_output,net.last_spikes)
+            dng=v[:,indices['DNg100']]
+            finite=voltages_finite(dng); phys=voltage_is_physiological(dng)
+            network_valid=voltage_is_physiological(v)
+            census={}
+            for role,idx in indices.items():
+                a=activity[warmup:,idx]
+                census[role]={'n':len(idx),'active_neuron_count':int(np.any(a>1e-8,axis=0).sum()),
+                              'mean_activity':float(a.mean()) if a.size else 0.0,
+                              'spikes':int(spikes[warmup:,idx].sum()),
+                              'mean_firing_rate_hz':float(spikes[warmup:,idx].mean()*1000) if a.size else 0.0,
+                              'recruited':bool(a.size and np.any(a>1e-8))}
+            allowed=bool(finite and phys and network_valid and all(census[r]['recruited'] for r in ('DNg100','E1','E2','I1','I2','MN')))
+            row={'stimulated_malecns_body_ids':[body], 'dng_finite':finite,'dng_physiological':phys,
+                 'dng_dynamics_valid':finite and phys,'network_dynamics_valid':network_valid,
+                 'all_dynamics_valid':finite and phys and network_valid,
+                 'valid_for_rhythm_analysis':allowed,'allow_lesions':allowed,'census':census,
+                 'v_min_mv':float(v.min()),'v_max_mv':float(v.max()),'dominant_frequency':None,'rhythmicity_score':None,
+                 'fft_executed':False}
+            np.savez_compressed(out/f'DNg100_{body}.npz',model_id=SHIU_LIF_SANITY_MODEL,
+                                malecns_body_ids=graph.neuron_ids, source_dataset='MaleCNS_v1.0',v_mv=v, activity=activity, spikes=spikes, dt_ms=1.0)
+            if allowed:
+                row['rhythm']={role:rhythmicity_score(activity[warmup:,idx].mean(axis=1),1.0) for role,idx in indices.items() if len(idx)}
+                row['fft_executed']=any(m['fft_executed'] for m in row['rhythm'].values())
+            conditions[str(body)]=row
+            print(f'DNg100 {body}: voltage_valid={network_valid}, recruitment='+str({r:c['recruited'] for r,c in census.items()}),flush=True)
+        report['conditions']=conditions
+        report['valid_for_rhythm_analysis']=all(r['valid_for_rhythm_analysis'] for r in conditions.values())
+        report['allow_lesions']=report['valid_for_rhythm_analysis']
+        report['status']='tiny_gate_passed' if report['valid_for_rhythm_analysis'] else 'blocked_at_tiny_circuit'
+        report['next_step']='Review tiny-circuit gate and separately establish Pugliese reference before full graph or embodiment.'
+        save()
+        return report
+    except Exception as exc:
+        report.update(status='error',error=f'{type(exc).__name__}: {exc}',valid_for_rhythm_analysis=False,allow_lesions=False)
+        save()
+        raise
+
+if __name__=='__main__':
+    import argparse
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--out',type=Path,default=Path('outputs')/('neural_validation_'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')))
+    args=parser.parse_args()
+    result=run(args.out)
+    print(args.out.resolve())
+    raise SystemExit(0 if result['valid_for_rhythm_analysis'] else 2)
