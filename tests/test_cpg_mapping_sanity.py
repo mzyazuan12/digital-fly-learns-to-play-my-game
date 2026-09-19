@@ -5,6 +5,7 @@ from organism.roi_innervation import (
     ASSIGNMENT_METHOD,
     CORE_CPG_TYPES,
     DNG100_ASSIGNMENT_METHOD,
+    EXPECTED_COUNTS,
     INVALID_MAPPING_PATH,
     INVALID_NAMESPACE_MAPPING_PATH,
     INVALID_NAMESPACE_PARQUET_PATH,
@@ -16,6 +17,8 @@ from organism.roi_innervation import (
     iter_dng100_malecns_records,
     load_cpg_mapping,
     load_raw_annotation_table,
+    lookup_malecns,
+    lookup_manc,
     malecns_dng100_body_ids,
     raw_dng100_annotation_rows,
     validate_cpg_mapping,
@@ -84,24 +87,24 @@ def test_four_mapping_assertions():
         assert rec.get("fallback_used") is False
         assert rec["assigned_segment"] is None
         assert rec["source_dataset"] == "MaleCNS_v1.0"
-        assert rec["identity_method"] == DNG100_ASSIGNMENT_METHOD or rec["identity_method"] == "raw annotation type == DNg100"
         assert rec["identity_method"] == "raw annotation type == DNg100"
+        assert rec["assignment_method"] == DNG100_ASSIGNMENT_METHOD
 
     for rec in iter_cpg_neuron_records(mapping):
         assert rec.get("fallback_used") is False
         assert rec.get("assignment_method") == ASSIGNMENT_METHOD
         assert "soma" not in rec.get("assignment_method", "").lower()
-        assert rec.get("type") != "IN19A007"
+        assert rec.get("type") != "IN19B007"
         mid = rec["malecns_body_id"]
         source = raw.loc[raw["bodyId"] == mid]
         assert len(source) == 1
         assert str(source.iloc[0]["type"]).strip() == rec["type"]
 
-    assert CORE_CPG_TYPES["I2"] == "IN19B007"
-    assert "IN19A007" not in CORE_CPG_TYPES.values()
-    assert mapping["IN19B007"]["role"] == "I2"
-    assert mapping["roles"]["I2"] == "IN19B007"
-    assert "IN19A007" not in mapping
+    assert CORE_CPG_TYPES["I2"] == "IN19A007"
+    assert "IN19B007" not in CORE_CPG_TYPES.values()
+    assert mapping["IN19A007"]["role"] == "I2"
+    assert mapping["roles"]["I2"] == "IN19A007"
+    assert "IN19B007" not in mapping
 
     listed = collect_malecns_body_ids(mapping)
     assert 10093 not in listed
