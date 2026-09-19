@@ -200,19 +200,30 @@ def _load_existing_lif(path: Path) -> dict:
     return report
 
 
+_authors_score_fn = False
+
+
 def _try_authors_oscillation_score(activity: np.ndarray, active_mask: np.ndarray):
     """Authors' score when their repo is importable. Not required for the transfer ODE."""
-    repo = ROOT / "third_party" / "Pugliese_2026"
-    if not (repo / "src" / "utils" / "sim_utils.py").exists():
+    global _authors_score_fn
+    if _authors_score_fn is False:
+        repo = ROOT / "third_party" / "Pugliese_2026"
+        fn = None
+        if (repo / "src" / "utils" / "sim_utils.py").exists():
+            if str(repo) not in sys.path:
+                sys.path.insert(0, str(repo))
+            try:
+                from src.utils.sim_utils import compute_oscillation_score as fn  # type: ignore
+            except Exception:
+                fn = None
+        _authors_score_fn = fn
+    if _authors_score_fn is None:
         return None
-    if str(repo) not in sys.path:
-        sys.path.insert(0, str(repo))
     try:
         import jax.numpy as jnp
-        from src.utils.sim_utils import compute_oscillation_score
     except Exception:
         return None
-    score, freq = compute_oscillation_score(jnp.asarray(activity), jnp.asarray(active_mask), 0.05)
+    score, freq = _authors_score_fn(jnp.asarray(activity), jnp.asarray(active_mask), 0.05)
     freq = float(freq)
     return {
         "oscillation_score": float(score) if np.isfinite(float(score)) else None,
@@ -259,12 +270,13 @@ def simulate_graph(
     W = signed_weight_matrix(graph)
     size_info = neuron_sizes_from_swc(graph.neuron_ids)
     rng = np.random.default_rng(seed)
+    W_sim = W
     if shuffle:
         is_dn = np.array(["descending" in str(s).lower() for s in graph.superclass], dtype=bool)
         is_mn = np.array(["motor" in str(s).lower() for s in graph.superclass], dtype=bool)
         is_exc = graph.neurotransmitter.astype(str) == "acetylcholine"
-        W = class_conditional_shuffle(W, is_dn=is_dn, is_mn=is_mn, is_exc=is_exc, rng=rng)
-    weighted = reweight_connectivity(W, params.exc_multiplier, params.inh_multiplier)
+        W_sim = class_conditional_shuffle(W, is_dn=is_dn, is_mn=is_mn, is_exc=is_exc, rng=rng)
+    weighted = reweight_connectivity(W_sim, params.exc_multiplier, params.inh_multiplier)
     stim_idx = graph.index_of(stim_body)
     inputs = make_input(graph.n, [stim_idx], params.stim_amplitude)
     idx = role_indices(graph)
@@ -298,6 +310,7 @@ def simulate_graph(
         replicates.append({"row": row, "rates": rates})
     return {
         "W": W,
+        "W_sim": W_sim,
         "size_info": size_info,
         "replicates": replicates,
         "stim_index": int(stim_idx),
