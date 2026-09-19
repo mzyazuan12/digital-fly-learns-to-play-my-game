@@ -138,12 +138,16 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
 
 def test_tiny_cpg_run_is_shiu_lif_not_pugliese_and_skips_lesions():
     result = run(connectome="tiny_cpg", seed=1, current=40.0, steps=80, warmup=10, lesions=True)
-    assert result["dynamics_model"] == "SHIU_LIF_SANITY_MODEL"
+    assert result["dynamics_model"] == SHIU_LIF_SANITY_MODEL
+    assert result["model_id"] == SHIU_LIF_SANITY_MODEL
     assert result["is_pugliese_reproduction"] is False
     assert result["n_neurons"] == 7
     assert result["valid_dynamics"] is True
     assert "lesion_E1" not in result["conditions"]
     intact = result["conditions"]["intact"]["summary"]
+    assert intact["dng100_voltage_physiological"] is True
+    assert intact["dng100_dynamics_valid"] is True
+    assert intact["dng100_voltage_exploding"] is False
     assert intact["DNg100_v"]["min"] >= -100.0
     assert intact["DNg100_v"]["max"] <= 40.0
     assert intact["any_exploding"] is False
