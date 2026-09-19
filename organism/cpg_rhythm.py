@@ -16,7 +16,10 @@ from flybrain.neurons import (
     EXPLOSION_ABS_MV,
     PHYSIOLOGICAL_V_LOWER_MV,
     PHYSIOLOGICAL_V_UPPER_MV,
+    SHIU_LIF_SANITY_MODEL,
     valid_dynamics,
+    voltage_is_physiological,
+    voltages_finite,
 )
 from organism.walking_pathways import CPG_ROLES, LEG_SLOTS, WalkingCircuit
 
@@ -39,6 +42,71 @@ def _autocorr(x: np.ndarray) -> np.ndarray:
     return ac / ac[0]
 
 
+def derive_rhythm_permissions(
+    *,
+    dng_voltage_physiological: bool,
+    dng_dynamics_valid: bool,
+    all_network_voltages_valid: bool,
+) -> dict:
+    """Rhythm/lesion flags are derived. They never start as True."""
+    dng_v_exploding = not (
+        bool(dng_voltage_physiological) and bool(dng_dynamics_valid)
+    )
+    valid_for_rhythm_analysis = (
+        bool(dng_dynamics_valid)
+        and not dng_v_exploding
+        and bool(all_network_voltages_valid)
+    )
+    return {
+        "dng100_voltage_physiological": bool(dng_voltage_physiological),
+        "dng100_dynamics_valid": bool(dng_dynamics_valid),
+        "dng100_voltage_exploding": bool(dng_v_exploding),
+        "all_network_voltages_valid": bool(all_network_voltages_valid),
+        "valid_for_rhythm_analysis": bool(valid_for_rhythm_analysis),
+        "allow_lesions": bool(valid_for_rhythm_analysis),
+        "fft_allowed": bool(valid_for_rhythm_analysis),
+    }
+
+
+def _trace_stats(trace: np.ndarray) -> dict:
+    """Numerical/membrane census. Never FFT."""
+    x = np.asarray(trace, dtype=np.float64)
+    finite = voltages_finite(x)
+    phys = voltage_is_physiological(x)
+    dyn = valid_dynamics(x)
+    exploding = bool(x.size) and not (phys and dyn)
+    mean = float(x.mean()) if x.size else 0.0
+    std = float(x.std()) if x.size else 0.0
+    return {
+        "n": int(x.size),
+        "mean": mean,
+        "std": std,
+        "min": float(x.min()) if x.size else 0.0,
+        "max": float(x.max()) if x.size else 0.0,
+        "cv": float(std / abs(mean)) if x.size and abs(mean) > 1e-9 else 0.0,
+        "score": None,
+        "rhythmicity_score": None,
+        "peak_hz": None,
+        "dominant_frequency": None,
+        "fft_hz": None,
+        "spectral_peak_power": None,
+        "band_power_frac": None,
+        "autocorrelation_peak": None,
+        "tonic_plateau": False,
+        "silent_or_flat": True,
+        "oscillatory": False,
+        "exploding": exploding,
+        "voltage_finite": finite,
+        "voltage_physiological": phys,
+        "valid_dynamics": dyn,
+        "valid_for_rhythm_analysis": False,
+        "allow_lesions": False,
+        "fft_executed": False,
+        "in_published_walk_band": False,
+        "model_id": SHIU_LIF_SANITY_MODEL,
+    }
+
+
 def rhythmicity_score(
     trace: np.ndarray,
     dt_ms: float,
@@ -48,65 +116,28 @@ def rhythmicity_score(
     """Autocorr peak in `band` plus a tonic/silent classifier.
 
     score in [0, 1] is the autocorrelation at the strongest lag in-band.
+    FFT does not run on exploding or non-physiological traces.
+    Rhythm/lesion permissions are not granted here.
     """
     x = np.asarray(trace, dtype=np.float64)
     dt_s = float(dt_ms) / 1000.0
-    out = {
-        "n": int(x.size),
-        "mean": float(x.mean()) if x.size else 0.0,
-        "std": float(x.std()) if x.size else 0.0,
-        "min": float(x.min()) if x.size else 0.0,
-        "max": float(x.max()) if x.size else 0.0,
-        "cv": 0.0,
-        "score": 0.0,
-        "peak_hz": None,
-        "dominant_frequency": None,
-        "fft_hz": None,
-        "spectral_peak_power": 0.0,
-        "band_power_frac": 0.0,
-        "autocorrelation_peak": 0.0,
-        "tonic_plateau": False,
-        "silent_or_flat": True,
-        "oscillatory": False,
-        "exploding": False,
-        "valid_dynamics": True,
-        "valid_for_rhythm_analysis": True,
-        "allow_lesions": True,
-        "in_published_walk_band": False,
-    }
+    out = _trace_stats(x)
     if x.size < 16:
         return out
-    mean = float(x.mean())
-    std = float(x.std())
-    out["mean"] = mean
-    out["std"] = std
-    out["min"] = float(x.min())
-    out["max"] = float(x.max())
-    out["cv"] = float(std / abs(mean)) if abs(mean) > 1e-9 else 0.0
-    span = float(x.max() - x.min())
-    finite = np.isfinite(x)
-    exploding = bool(
-        (not np.all(finite))
-        or abs(out["min"]) >= EXPLOSION_ABS_MV
-        or abs(out["max"]) >= EXPLOSION_ABS_MV
-        or (np.isfinite(x).any() and (np.max(np.abs(x[finite])) >= EXPLOSION_ABS_MV))
-        or (not valid_dynamics(x))
-    )
-    out["exploding"] = exploding
-    out["valid_dynamics"] = not exploding
-    out["valid_for_rhythm_analysis"] = not exploding
-    out["allow_lesions"] = not exploding
+    mean = out["mean"]
+    std = out["std"]
+    span = float(out["max"] - out["min"])
+    exploding = bool(out["exploding"])
     flat = std < 1e-8 or span < 1e-8
     out["silent_or_flat"] = bool(flat and not exploding)
     if exploding:
-        out["dominant_frequency"] = None
-        out["peak_hz"] = None
-        out["fft_hz"] = None
-        out["score"] = None
-        out["rhythmicity_score"] = None
-        out["autocorrelation_peak"] = None
         return out
     if flat:
+        out["score"] = 0.0
+        out["rhythmicity_score"] = 0.0
+        out["autocorrelation_peak"] = 0.0
+        out["spectral_peak_power"] = 0.0
+        out["band_power_frac"] = 0.0
         out["tonic_plateau"] = bool(mean > 0.25)
         return out
 
