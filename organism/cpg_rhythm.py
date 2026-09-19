@@ -12,14 +12,18 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from flybrain.neurons import (
+    EXPLOSION_ABS_MV,
+    PHYSIOLOGICAL_V_LOWER_MV,
+    PHYSIOLOGICAL_V_UPPER_MV,
+    valid_dynamics,
+)
 from organism.walking_pathways import CPG_ROLES, LEG_SLOTS, WalkingCircuit
 
 PUBLISHED_WALK_HZ = (7.0, 15.0)
 SEARCH_BAND_HZ = (5.0, 20.0)
 RHYTHMICITY_THRESHOLD = 0.5
 PREVIEW_POINTS = 60
-# LIF rest is −52 mV. |V| far outside this range is not a walking rhythm.
-EXPLOSION_ABS_MV = 150.0
 
 
 def _autocorr(x: np.ndarray) -> np.ndarray:
@@ -65,8 +69,10 @@ def rhythmicity_score(
         "silent_or_flat": True,
         "oscillatory": False,
         "exploding": False,
+        "valid_dynamics": True,
+        "valid_for_rhythm_analysis": True,
+        "allow_lesions": True,
         "in_published_walk_band": False,
-        "frequency_forced": False,
     }
     if x.size < 16:
         return out
@@ -84,11 +90,21 @@ def rhythmicity_score(
         or abs(out["min"]) >= EXPLOSION_ABS_MV
         or abs(out["max"]) >= EXPLOSION_ABS_MV
         or (np.isfinite(x).any() and (np.max(np.abs(x[finite])) >= EXPLOSION_ABS_MV))
+        or (not valid_dynamics(x))
     )
     out["exploding"] = exploding
+    out["valid_dynamics"] = not exploding
+    out["valid_for_rhythm_analysis"] = not exploding
+    out["allow_lesions"] = not exploding
     flat = std < 1e-8 or span < 1e-8
     out["silent_or_flat"] = bool(flat and not exploding)
     if exploding:
+        out["dominant_frequency"] = None
+        out["peak_hz"] = None
+        out["fft_hz"] = None
+        out["score"] = None
+        out["rhythmicity_score"] = None
+        out["autocorrelation_peak"] = None
         return out
     if flat:
         out["tonic_plateau"] = bool(mean > 0.25)
@@ -108,14 +124,17 @@ def rhythmicity_score(
     ac = _autocorr(x)
     lag_min = max(2, int(round(1.0 / band[1] / dt_s)))
     lag_max = min(max(lag_min + 1, x.size // 3), int(round(1.0 / band[0] / dt_s)))
-    if lag_max <= lag_min:
+    if lag_max <= lag_min or lag_min >= x.size:
         return out
     segment = ac[lag_min : lag_max + 1]
+    if segment.size == 0:
+        return out
     rel = int(np.argmax(segment))
     score = float(max(0.0, segment[rel]))
     lag = lag_min + rel
     peak_hz = 1.0 / (lag * dt_s) if lag > 0 else None
     out["score"] = score
+    out["rhythmicity_score"] = score
     out["peak_hz"] = float(peak_hz) if peak_hz is not None else None
     out["dominant_frequency"] = float(peak_hz) if peak_hz is not None else out.get("fft_hz")
     out["autocorrelation_peak"] = score
@@ -172,6 +191,7 @@ class RhythmRecording:
         stim = self.t_ms >= stim_onset_ms
         dng_spikes = _window_score(self.dng100, stim, dt_ms)
         dng_v = self.dng100_v[stim] if stim.size == self.dng100_v.size and np.any(stim) else self.dng100_v
+        dng_v_exploding = bool(dng_v.size and not valid_dynamics(dng_v))
         report = {
             "DNg100": dng_spikes,
             "DNg100_L": _window_score(self.dng100_l, stim, dt_ms),
@@ -181,10 +201,9 @@ class RhythmRecording:
                 "std": float(dng_v.std()) if dng_v.size else 0.0,
                 "min": float(dng_v.min()) if dng_v.size else 0.0,
                 "max": float(dng_v.max()) if dng_v.size else 0.0,
-                "exploding": bool(
-                    dng_v.size
-                    and (abs(float(dng_v.min())) >= EXPLOSION_ABS_MV or abs(float(dng_v.max())) >= EXPLOSION_ABS_MV)
-                ),
+                "exploding": dng_v_exploding,
+                "finite": bool(dng_v.size == 0 or np.all(np.isfinite(dng_v))),
+                "physiological": bool(dng_v.size == 0 or valid_dynamics(dng_v)),
             },
             "legs": {},
         }
@@ -213,7 +232,13 @@ class RhythmRecording:
         report["n_oscillatory_legs"] = n_osc_legs
         report["any_leg_oscillatory"] = any_osc
         report["any_exploding"] = any_explode
+        report["valid_dynamics"] = not any_explode
+        report["valid_for_rhythm_analysis"] = not any_explode
+        report["allow_lesions"] = not any_explode
         report["core_tonic_plateau"] = bool(any_tonic and not any_osc and not any_explode)
+        report["physiological_v_lower"] = PHYSIOLOGICAL_V_LOWER_MV
+        report["physiological_v_upper"] = PHYSIOLOGICAL_V_UPPER_MV
+        report["physiological_bound_is_debug_guardrail"] = True
         return report
 
     def previews(self) -> dict:
@@ -283,24 +308,41 @@ def record_tick(rec: RhythmRecording, net, circuit: WalkingCircuit, t: int, t_ms
         rec.legs[slot]["MN"][t] = population_signal(net, copy.motor_indices)
 
 
+def _role_flag(summary: dict, role: str, field: str) -> bool:
+    legs = summary.get("legs") or {}
+    return any(bool((row.get(role) or {}).get(field)) for row in legs.values())
+
+
 def interpret_intact(summary: dict) -> dict:
     n_osc = int(summary.get("n_oscillatory_legs") or 0)
     tonic = bool(summary.get("core_tonic_plateau"))
     exploding = bool(summary.get("any_exploding"))
-    reproduced = n_osc >= 1 and not exploding
-    if exploding:
+    e1_osc = _role_flag(summary, "E1", "oscillatory")
+    e2_osc = _role_flag(summary, "E2", "oscillatory")
+    mn_osc = _role_flag(summary, "MN", "oscillatory")
+    valid = bool(summary.get("valid_dynamics", summary.get("valid_for_rhythm_analysis", not exploding))) and not exploding
+    # MN-only oscillation is not the published E1/E2 CPG mechanism.
+    reproduced = bool(valid and n_osc >= 1 and (e1_osc or e2_osc))
+    if exploding or not valid:
         answer = "no"
         next_step = (
             "DNg100 stimulation produced an unstable explosion or "
-            "non-physiological voltage, not a 7–15 Hz rhythm. Do not change "
-            "the graph. Compare MixedDynamicsNetwork equations/gains to the "
-            "authors' MANC rate-ODE VNC simulator."
+            "non-physiological voltage, not a 7–15 Hz rhythm. dominant_frequency "
+            "is invalid. Do not run lesions. Run isolated DNg100 LIF sanity "
+            "(W=0) before another MaleCNS load. Do not change the graph."
         )
     elif reproduced:
         answer = "yes"
         next_step = (
-            "Oscillation is present under DNg100 current. Compare E1/E2/I1 "
-            "lesions to Pugliese et al. 2025 bioRxiv, then consider MN→FlyBody."
+            "Oscillation is present under DNg100 current in E1 or E2. Compare "
+            "E1/E2/I1/I2 lesions to Pugliese et al. 2025 bioRxiv, then consider MN→FlyBody."
+        )
+    elif mn_osc and not (e1_osc or e2_osc):
+        answer = "no"
+        next_step = (
+            "Some MN traces are non-flat, but E1 and E2 rhythmicity are both "
+            "zero. That is not evidence the published E1/E2 CPG generated a "
+            "rhythm. Do not interpret dominant_frequency. Do not change the graph."
         )
     elif tonic:
         answer = "no"
@@ -323,6 +365,11 @@ def interpret_intact(summary: dict) -> dict:
         ),
         "answer": answer,
         "oscillation_reproduced": reproduced,
+        "valid_dynamics": valid,
+        "valid_for_rhythm_analysis": valid,
+        "allow_lesions": valid,
+        "e1_rhythmic": e1_osc,
+        "e2_rhythmic": e2_osc,
         "graph_modified": False,
         "dynamics_retuned": False,
         "next_step": next_step,

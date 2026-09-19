@@ -17,8 +17,24 @@ from pathlib import Path
 
 import numpy as np
 
+from flybrain.lif_sanity import (
+    assert_lif_sanity,
+    format_lif_sanity,
+    format_tiny_cpg,
+    run_lif_sanity,
+    tiny_cpg_connectome,
+    tiny_cpg_numerical_sanity,
+)
 from flybrain.loader import DEFAULT_DATA, computational_graph_manifest, shuffled_connectome
-from flybrain.network import MixedDynamicsNetwork, LIFParams, dataset_validation
+from flybrain.network import MixedDynamicsNetwork, dataset_validation
+from flybrain.neurons import (
+    PUGLIESE_CPG_MODEL,
+    PUGLIESE_CPG_STIM_AMPLITUDE,
+    SHIU_LIF_SANITY_MODEL,
+    VOLTAGE_UNIT,
+    WSYN_MV,
+    shiu_lif_params,
+)
 from organism.config import MODEL_VERSION, MotorMode, NO_SCAFFOLD, format_policy_banner
 from organism.cpg_rhythm import (
     RHYTHMICITY_THRESHOLD,
@@ -153,6 +169,8 @@ def malecns_available() -> bool:
 def load_graph(connectome: str, seed: int):
     if connectome in {"synthetic", "toy", "miniature"}:
         return miniature_connectome(seed)
+    if connectome in {"tiny_cpg", "cpg_subgraph"}:
+        return tiny_cpg_connectome()
     if connectome in {"malecns", "malecns_v1", "full"}:
         return VirtualFly._load_graph("malecns", seed=seed)
     raise ValueError(f"Unknown connectome '{connectome}'")
@@ -220,7 +238,9 @@ def _lesion_effect(intact: dict, lesioned: dict) -> dict:
         ),
         "score_drop": float(before - after),
         "interpretable": bool(
-            intact.get("any_leg_oscillatory") and not intact.get("any_exploding")
+            intact.get("any_leg_oscillatory")
+            and not intact.get("any_exploding")
+            and intact.get("allow_lesions", intact.get("valid_dynamics", True))
         ),
     }
 
@@ -231,20 +251,51 @@ def _population_metrics(summary: dict) -> dict:
     freqs = []
     mn_means = []
     n_active = 0
+    exploding = bool(summary.get("any_exploding"))
+    valid = bool(summary.get("valid_dynamics", summary.get("valid_for_rhythm_analysis", not exploding))) and not exploding
     for row in legs.values():
         for role, bucket in (("E1", e1_scores), ("E2", e2_scores), ("I1", i1_scores), ("I2", i2_scores), ("MN", mn_scores)):
             scored = row.get(role) or {}
-            bucket.append(float(scored.get("score") or 0.0))
+            raw = scored.get("score")
+            bucket.append(None if raw is None else float(raw or 0.0))
             hz = scored.get("dominant_frequency") or scored.get("peak_hz")
-            if hz:
+            if hz and valid:
                 freqs.append(float(hz))
             if float(scored.get("mean") or 0.0) > 0.05 or scored.get("oscillatory"):
                 n_active += 1
             if role == "MN":
                 mn_means.append(float(scored.get("mean") or 0.0))
     mean_freq = float(np.mean(freqs)) if freqs else None
+    if not valid:
+        return {
+            "valid_dynamics": False,
+            "valid_for_rhythm_analysis": False,
+            "allow_lesions": False,
+            "dominant_frequency": None,
+            "rhythmicity_score": None,
+            "rhythmicity_score_E1": None,
+            "rhythmicity_score_E2": None,
+            "rhythmicity_score_I1": None,
+            "rhythmicity_score_I2": None,
+            "rhythmicity_score_MN": None,
+            "spectral_peak_power_mean": None,
+            "autocorrelation_peak_mean": None,
+            "mean_motor_firing_rate": float(np.mean(mn_means)) if mn_means else 0.0,
+            "active_neuron_count": int(n_active),
+            "frequency_below_published_band": False,
+            "invalid_reason": "non-physiological or non-finite voltage; FFT/autocorr peaks are not a CPG rhythm",
+        }
+
+    def _mean(values: list) -> float:
+        nums = [float(v) for v in values if v is not None]
+        return float(np.mean(nums)) if nums else 0.0
+
     return {
+        "valid_dynamics": True,
+        "valid_for_rhythm_analysis": True,
+        "allow_lesions": True,
         "dominant_frequency": mean_freq,
+        "rhythmicity_score": _mean(e1_scores + e2_scores + i1_scores + mn_scores),
         "spectral_peak_power_mean": float(
             np.mean(
                 [
@@ -256,18 +307,16 @@ def _population_metrics(summary: dict) -> dict:
         )
         if legs
         else 0.0,
-        "autocorrelation_peak_mean": float(np.mean(e1_scores + e2_scores + i1_scores + mn_scores))
-        if (e1_scores or mn_scores)
-        else 0.0,
-        "rhythmicity_score_E1": float(np.mean(e1_scores)) if e1_scores else 0.0,
-        "rhythmicity_score_E2": float(np.mean(e2_scores)) if e2_scores else 0.0,
-        "rhythmicity_score_I1": float(np.mean(i1_scores)) if i1_scores else 0.0,
-        "rhythmicity_score_I2": float(np.mean(i2_scores)) if i2_scores else 0.0,
-        "rhythmicity_score_MN": float(np.mean(mn_scores)) if mn_scores else 0.0,
+        "autocorrelation_peak_mean": _mean(e1_scores + e2_scores + i1_scores + mn_scores),
+        "rhythmicity_score_E1": _mean(e1_scores),
+        "rhythmicity_score_E2": _mean(e2_scores),
+        "rhythmicity_score_I1": _mean(i1_scores),
+        "rhythmicity_score_I2": _mean(i2_scores),
+        "rhythmicity_score_MN": _mean(mn_scores),
         "mean_motor_firing_rate": float(np.mean(mn_means)) if mn_means else 0.0,
         "active_neuron_count": int(n_active),
-        "frequency_forced": False,
         "frequency_below_published_band": bool(mean_freq is not None and mean_freq < 7.0),
+        "invalid_reason": None,
     }
 
 
@@ -316,11 +365,23 @@ def run(
     out: Path = OUT,
 ) -> dict:
     graph = load_graph(connectome, seed)
+    assert_lif_sanity()
+    tiny = connectome in {"tiny_cpg", "cpg_subgraph"}
+    if connectome in {"malecns", "malecns_v1", "full"}:
+        cpg = tiny_cpg_numerical_sanity()
+        if not cpg["ok"]:
+            raise RuntimeError(
+                "Tiny CPG is not numerically sane. Refusing MaleCNS. "
+                + str(cpg.get("next") or "")
+            )
+    if tiny:
+        lesions = False
+        scramble = False
     if steps is None:
-        steps = 300 if graph.n < 1000 else 500
+        steps = 120 if tiny else (300 if graph.n < 1000 else 500)
     if warmup is None:
         warmup = min(50, max(10, steps // 8))
-    params = LIFParams(dt=1.0)
+    params = shiu_lif_params(dt=1.0)
     net = MixedDynamicsNetwork(graph, params=params, seed=seed)
     circuit = WalkingCircuit(graph)
     stim_info = stimulated_dng100(graph, circuit, stim=stim)
@@ -345,6 +406,21 @@ def run(
         }
     }
     lesion_report = {}
+    if lesions or scramble:
+        allow = bool(
+            intact["summary"].get("allow_lesions", intact["summary"].get("valid_dynamics", True))
+        ) and not intact["summary"].get("any_exploding")
+        if not allow:
+            lesion_report["skipped"] = {
+                "reason": (
+                    "Intact voltage is non-physiological or non-finite. "
+                    "Lesions and scramble are uninterpretable. Fix isolated LIF sanity first."
+                ),
+                "requested_lesions": bool(lesions),
+                "requested_scramble": bool(scramble),
+            }
+            lesions = False
+            scramble = False
     if lesions:
         expected = {
             "E1": "rhythm should collapse strongly (Pugliese: E1 necessary)",
@@ -435,7 +511,11 @@ def run(
         "walk_api_called": False,
         "graph_modified": False,
         "dynamics_retuned": False,
-        "frequency_forced": False,
+        "dynamics_model": SHIU_LIF_SANITY_MODEL,
+        "pugliese_cpg_model": PUGLIESE_CPG_MODEL,
+        "is_pugliese_reproduction": False,
+        "voltage_unit": VOLTAGE_UNIT,
+        "wsyn_mv": WSYN_MV,
         "walking_circuit_types": dict(WALKING_CIRCUIT_TYPES),
         "identity_lock": {
             "CORE_CPG_TYPES": dict(CORE_CPG_TYPES),
@@ -478,29 +558,58 @@ def run(
             "n_leg_copies_with_E1": anatomy["n_leg_copies_with_E1"],
         },
         "metrics": metrics,
+        "valid_dynamics": bool(metrics.get("valid_dynamics")),
+        "valid_for_rhythm_analysis": bool(metrics.get("valid_for_rhythm_analysis")),
+        "allow_lesions": bool(metrics.get("allow_lesions")),
+        "discarded_prior_malecns_run": {
+            "scientific_status": "invalid",
+            "i2_type": "IN19B007",
+            "src": "toy_single_ipsilateral_as_T1",
+            "dng100_voltage": {"mean": -421.47, "min": -589.32, "max": -379.24},
+            "dng100_spikes": 0,
+            "dominant_frequency": 17.427,
+            "reason": (
+                "Wrong I2 identity and non-physiological DNg100 voltage. "
+                "Do not interpret the 17.4 Hz peak. Canonical I2 is IN19A007; "
+                "MaleCNS DNg100 is {10045, 10056}."
+            ),
+        },
         "authors_vs_ours": {
             "authors": {
                 "graph": "MANC T1 DN-to-MN subgraph, 4604 neurons",
-                "equations": "rate ODE dR/dt = (half-tanh(WR+I) - R)/tau",
+                "dynamics_model": PUGLIESE_CPG_MODEL,
+                "equations": "rate ODE dR/dt = (half-tanh(WR+I) - R)/tau with cell-size normalization",
                 "tau_s": 0.02,
                 "threshold": 7.5,
                 "weight_multiplier": 0.03,
-                "stim_current": 250,
+                "stim_current": PUGLIESE_CPG_STIM_AMPLITUDE,
                 "stim_index_in_their_W": 31,
                 "stim_manc_body_id": 10093,
                 "note": (
                     "stimNeurons [[31]] is MANC T1 matrix index 31 = MANC body 10093 "
                     "(type DNg100). Same biological type as MaleCNS DNg100, not the "
-                    "same body ID. MANC body 10056 is vMS16 in that table."
+                    "same body ID. MANC body 10056 is vMS16 in that table. "
+                    "Amplitude 250 is this rate-ODE convention; size normalization "
+                    "changes the required DNg100 stim. Do not copy 250 into SHIU_LIF."
                 ),
                 "T_s": 2.0,
                 "oscillation_threshold": 0.5,
             },
             "ours": {
-                "graph": "full MaleCNS sparse graph, ordinary edges, no extra CPG wiring",
-                "equations": "MixedDynamicsNetwork LIF + graded VNC premotor",
+                "graph": (
+                    "tiny CPG subgraph"
+                    if tiny
+                    else "full MaleCNS sparse graph, ordinary edges, no extra CPG wiring"
+                    if graph.n >= 10_000
+                    else "toy/miniature graph"
+                ),
+                "dynamics_model": SHIU_LIF_SANITY_MODEL,
+                "equations": "MixedDynamicsNetwork current-based LIF (mV) + graded VNC premotor",
+                "not_a_pugliese_reproduction": True,
                 "dt_ms": float(params.dt),
+                "wsyn_mv": float(params.wsyn_mv),
                 "contact_gain": float(params.contact_gain),
+                "voltage_unit": VOLTAGE_UNIT,
                 "stim_current": current,
                 "stimulated": stim_info["note"],
                 "malecns_body_ids": stim_info.get("malecns_body_ids") or stim_info.get("body_ids"),
@@ -541,16 +650,33 @@ def run(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--connectome", default="toy", choices=("toy", "synthetic", "malecns"))
+    parser.add_argument("--connectome", default="toy", choices=("toy", "synthetic", "tiny_cpg", "malecns"))
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--current", type=float, default=40.0)
-    parser.add_argument("--steps", type=int, default=0, help="0 = toy 300 / MaleCNS 500")
+    parser.add_argument("--steps", type=int, default=0, help="0 = toy 300 / tiny CPG 120 / MaleCNS 500")
     parser.add_argument("--warmup", type=int, default=0)
     parser.add_argument("--no-lesions", action="store_true")
     parser.add_argument("--no-scramble", action="store_true")
     parser.add_argument("--stim", default="left_vnc", help="left_vnc | right_vnc | both | soma_left | soma_right")
     parser.add_argument("--out", default=str(OUT))
+    parser.add_argument(
+        "--sanity",
+        action="store_true",
+        help="SHIU_LIF_SANITY_MODEL isolated tests. Does not load MaleCNS.",
+    )
+    parser.add_argument(
+        "--tiny-cpg",
+        action="store_true",
+        help="After isolated tests, run DNg100+E1/E2/E3/I1/I2 numerical sanity. Not MaleCNS.",
+    )
     args = parser.parse_args(argv)
+    if args.sanity:
+        print(format_lif_sanity(run_lif_sanity()))
+        return 0
+    if args.tiny_cpg:
+        print(format_lif_sanity(run_lif_sanity()))
+        print(format_tiny_cpg(tiny_cpg_numerical_sanity()))
+        return 0
     if args.connectome == "malecns" and not malecns_available():
         raise SystemExit("MaleCNS files are not in data/malecns_v1")
     print(format_policy_banner(NO_SCAFFOLD))
@@ -571,6 +697,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"n={result['n_neurons']} steps={result['steps']} DNg100 n={result['dng100_n']}")
     print(f"stimulated: {result.get('stimulated', {})}")
     print(f"metrics: {result.get('metrics')}")
+    print(f"dynamics_model={result.get('dynamics_model')} is_pugliese_reproduction={result.get('is_pugliese_reproduction')}")
+    if not result.get("valid_dynamics", result.get("valid_for_rhythm_analysis", True)):
+        print("DYNAMICS INVALID — dominant_frequency and rhythmicity_score are None; lesions forbidden")
     print(f"E5 canonical type: {result['walking_circuit_types']['E5']}")
     print(f"leg copies with E1: {result['anatomy_core']['n_leg_copies_with_E1']}")
     print(f"question: {result['question']}")
@@ -593,8 +722,9 @@ def main(argv: list[str] | None = None) -> int:
         e1 = row.get("E1") or {}
         if not e1:
             continue
+        score = e1.get("score")
         print(
-            f"  {slot} E1 score={e1.get('score'):.3f} hz={e1.get('peak_hz')} "
+            f"  {slot} E1 score={score} hz={e1.get('peak_hz')} "
             f"tonic={e1.get('tonic_plateau')} osc={e1.get('oscillatory')}"
         )
     if result.get("lesions"):

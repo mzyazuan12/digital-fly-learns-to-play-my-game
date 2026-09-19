@@ -156,6 +156,9 @@ def run(*, n_replicates: int = 1, T: float = 2.0, stim_current: float = 250.0) -
     payload = {
         "ok": True,
         "source": "Pugliese et al. 2025 bioRxiv; github.com/smpuglie/Pugliese_2026",
+        "dynamics_model": "PUGLIESE_CPG_MODEL",
+        "not_shiu_lif": True,
+        "includes_cell_size_normalization": True,
         "experiment": "DNg100_Stim parameters on authors' JAX rate-ODE code",
         "n_neurons": n_neurons,
         "stim_index": int(stim_idx),

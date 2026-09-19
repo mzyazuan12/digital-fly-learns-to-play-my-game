@@ -84,6 +84,8 @@ def test_rhythmicity_detects_sine_tonic_and_explosion():
     exploded = rhythmicity_score(boom, dt)
     assert exploded["exploding"]
     assert exploded["oscillatory"] is False
+    assert exploded["valid_for_rhythm_analysis"] is False
+    assert exploded["dominant_frequency"] is None
 
 
 def test_neural_cpg_mode_does_not_hand_joints_to_flygym():
@@ -103,11 +105,17 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert result["engineered_cpg_used"] is False
     assert result["graph_modified"] is False
     assert result["dynamics_retuned"] is False
-    assert result["frequency_forced"] is False
+    assert "frequency_forced" not in result
+    assert "frequency_forced" not in result["metrics"]
+    assert result["dynamics_model"] == "SHIU_LIF_SANITY_MODEL"
+    assert result["is_pugliese_reproduction"] is False
+    assert result["voltage_unit"] == "mV"
     assert result["motor_mode"] == "MODE_NEURAL_CPG"
     assert result["walking_circuit_types"]["I2"] == "IN19A007"
     assert result["identity_lock"]["I2"] == "IN19A007"
     assert result["identity_lock"]["MALECNS_DNG100_BODY_IDS"] == [10045, 10056]
+    assert result["discarded_prior_malecns_run"]["scientific_status"] == "invalid"
+    assert "valid_for_rhythm_analysis" in result
     assert result["dng100_n"] == 2
     assert len(result["stimulated"]["body_ids"]) == 1
     intact = result["conditions"]["intact"]["summary"]
@@ -126,6 +134,19 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert "somaLocation Z" not in source
     assert "SOMA_Z" not in source
     assert "somaNeuromere_annotation" not in inspect.getsource(assign_cell)
+
+
+def test_tiny_cpg_run_is_shiu_lif_not_pugliese_and_skips_lesions():
+    result = run(connectome="tiny_cpg", seed=1, current=40.0, steps=80, warmup=10, lesions=True)
+    assert result["dynamics_model"] == "SHIU_LIF_SANITY_MODEL"
+    assert result["is_pugliese_reproduction"] is False
+    assert result["n_neurons"] == 7
+    assert result["valid_dynamics"] is True
+    assert "lesion_E1" not in result["conditions"]
+    intact = result["conditions"]["intact"]["summary"]
+    assert intact["DNg100_v"]["min"] >= -100.0
+    assert intact["DNg100_v"]["max"] <= 40.0
+    assert intact["any_exploding"] is False
 
 
 def test_cpg_mapping_json_keeps_pugliese_and_malecns_ids_apart():

@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
+
 
 # Drosophila central-synapse sign convention used by several connectome LIF
 # models: acetylcholine excitatory; GABA, glutamate, and histamine inhibitory.
@@ -32,29 +34,91 @@ def nt_sign(name: str | None) -> int:
 NT_SIGN = nt_sign
 
 
+# Two different dynamical models. Do not treat a SHIU_LIF pass as a Pugliese CPG result.
+SHIU_LIF_SANITY_MODEL = "SHIU_LIF_SANITY_MODEL"
+PUGLIESE_CPG_MODEL = "PUGLIESE_CPG_MODEL"
+
+# MixedDynamicsNetwork stores voltage in millivolts. The Shiu/DoomFly reference
+# implementation stores volts internally and multiplies by 1e3 only when plotting.
+# Never mix -52e-3 (volts) into this solver.
+VOLTAGE_UNIT = "mV"
+V_REST_MV = -52.0
+V_RESET_MV = -52.0
+V_THRESHOLD_MV = -45.0
+TAU_M_MS = 20.0
+TAU_SYN_MS = 5.0
+T_REF_MS = 2.2
+DELAY_MS = 1.8
+# Millivolts per anatomical synapse. Connectivity weight is synapse *count*.
+WSYN_MV = 0.275
+# PUGLIESE_CPG_MODEL rate-ODE stimulus. Not a SHIU_LIF current and not mV.
+PUGLIESE_CPG_STIM_AMPLITUDE = 250.0
+
+# Debug guardrail for SHIU_LIF_SANITY_MODEL. Not a measured Drosophila bound.
+PHYSIOLOGICAL_V_LOWER_MV = -100.0
+PHYSIOLOGICAL_V_UPPER_MV = 40.0
+EXPLOSION_ABS_MV = 150.0
+
+
+def valid_dynamics(v) -> bool:
+    """True iff V is finite and inside the Shiu-LIF sanity band (mV)."""
+    x = np.asarray(v, dtype=np.float64)
+    if x.size == 0:
+        return True
+    return bool(
+        np.all(np.isfinite(x))
+        and float(np.min(x)) >= PHYSIOLOGICAL_V_LOWER_MV
+        and float(np.max(x)) <= PHYSIOLOGICAL_V_UPPER_MV
+    )
+
+
+def voltage_is_physiological(v) -> bool:
+    return valid_dynamics(v)
+
+
 @dataclass(frozen=True)
 class LIFParams:
-    """Current-based leaky-integrate-and-fire parameters.
+    """SHIU_LIF_SANITY_MODEL current-based LIF.
 
-    Units: millivolts and milliseconds. `dt` is the integration step.
+    Units: millivolts and milliseconds. Not PUGLIESE_CPG_MODEL (that JAX/ODE
+    model uses gain, threshold, tau, firing-rate cap, and cell-size
+    normalization). Rest and reset are both −52 mV; threshold is −45 mV.
+    `contact_gain` is Wsyn = 0.275 mV per anatomical synapse.
     """
 
-    v_rest: float = -52.0
-    v_threshold: float = -45.0
-    tau_m: float = 20.0
-    tau_g: float = 5.0
-    t_ref: float = 2.2
-    delay: float = 1.8
-    contact_gain: float = 0.275
+    v_rest: float = V_REST_MV
+    v_threshold: float = V_THRESHOLD_MV
+    tau_m: float = TAU_M_MS
+    tau_g: float = TAU_SYN_MS
+    t_ref: float = T_REF_MS
+    delay: float = DELAY_MS
+    contact_gain: float = WSYN_MV
     dt: float = 0.1
 
     def __post_init__(self) -> None:
+        if abs(self.v_rest) < 1.0 or abs(self.v_threshold) < 1.0:
+            raise ValueError(
+                "LIFParams are millivolts (V_rest=-52.0), not volts (-0.052). "
+                "Do not mix Shiu plotting units into the solver."
+            )
         if self.dt <= 0 or self.tau_m <= 0 or self.tau_g <= 0:
             raise ValueError("Time constants and dt must be positive.")
         if self.t_ref < 0 or self.delay < 0:
             raise ValueError("Refractory period and delay cannot be negative.")
         if self.contact_gain <= 0:
             raise ValueError("Contact gain must be positive.")
+
+    @property
+    def voltage_unit(self) -> str:
+        return VOLTAGE_UNIT
+
+    @property
+    def wsyn_mv(self) -> float:
+        return float(self.contact_gain)
+
+    @property
+    def model_label(self) -> str:
+        return SHIU_LIF_SANITY_MODEL
 
     @property
     def alpha_v(self) -> float:
@@ -86,6 +150,20 @@ LIF_PARAMS = LIFParams()
 # DoomFly uses coupling = (exp(-dt/20)-exp(-dt/5))/3 at dt=0.1, tau_m=20, tau_g=5.
 # That equals (av-ag)/(tau_m/tau_g - 1) * something? They hardcode /3 because
 # tau_m/tau_g = 4, and (4-1)=3. Keep an identical schedule when those taus match.
+
+
+def shiu_lif_params(*, dt: float = 1.0) -> LIFParams:
+    """Organism-step Shiu LIF (mV). dt=1 ms matches the closed-loop tick."""
+    return LIFParams(
+        v_rest=V_REST_MV,
+        v_threshold=V_THRESHOLD_MV,
+        tau_m=TAU_M_MS,
+        tau_g=TAU_SYN_MS,
+        t_ref=T_REF_MS,
+        delay=DELAY_MS,
+        contact_gain=WSYN_MV,
+        dt=dt,
+    )
 
 
 def shiu_coupling(params: LIFParams) -> float:
