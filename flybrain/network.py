@@ -49,7 +49,7 @@ import numpy as np
 
 from flybrain.loader import Connectome
 from flybrain.neuron_model import NeuronKind, NeuronModelTable, ParameterProvenance, assign_neuron_models
-from flybrain.neurons import LIFParams, shiu_coupling
+from flybrain.neurons import LIFParams, SHIU_LIF_SANITY_MODEL, shiu_coupling
 
 # Learning may scale a synapse, not invert it. Sign stays with synaptic_effect_sign.
 MIN_PLASTIC_FACTOR = 0.05
@@ -295,6 +295,10 @@ class MixedDynamicsNetwork:
             )
             drive = drive + noise
             self.drive_sources["intrinsic.membrane_noise"] = float(self.intrinsic_noise_std)
+        # SHIU_LIF_SANITY_MODEL.
+        # Current-based LIF expressed entirely in mV/ms.
+        # Used for numerical and connectome-integration sanity checks.
+        # NOT the Pugliese CPG dynamical model.
         self.v[integrable] = (
             self.v_rest
             + (self.v[integrable] - self.v_rest) * self.alpha_v
