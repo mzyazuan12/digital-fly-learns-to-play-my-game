@@ -493,6 +493,8 @@ def pugliese_stim_is_not_shiu_current() -> dict:
         and PUGLIESE_CPG_STIM_AMPLITUDE != WSYN_MV
         and PUGLIESE_CPG_STIM_AMPLITUDE != ISOLATED_STIM_CURRENT
         and SHIU_LIF_SANITY_MODEL != PUGLIESE_CPG_MODEL
+        and SHIU_LIF_SANITY_MODEL != PUGLIESE_RATE_MALECNS_V1
+        and PUGLIESE_CPG_MODEL != PUGLIESE_RATE_MALECNS_V1
     )
     return {
         "ok": bool(ok),
