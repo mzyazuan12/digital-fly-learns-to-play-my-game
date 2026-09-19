@@ -103,8 +103,9 @@ def test_gaba_weights_are_negative_and_hyperpolarizing_in_the_rate_rhs():
     gain = np.ones(n)
     theta = np.full(n, 0.0)
     fr = np.full(n, 200.0)
-    # Drive the inhibitory cell; postsynaptic target should get negative input.
-    R = np.array([0.0, 50.0, 0.0])
+    # Inhibitory input onto an already-active cell must drive its rate down
+    # (half-tanh cannot go negative, so rest stays at 0).
+    R = np.array([0.0, 50.0, 40.0])
     dR = rate_equation_half_tanh(
         0.1,
         R,
@@ -187,7 +188,15 @@ def test_full_malecns_remains_locked(monkeypatch):
         experiment.run(connectome="malecns")
 
 
-def test_swc_volume_is_positive_for_dng100_r():
+def test_restricted_graph_primary_transfer_excludes_left_dng100():
+    from experiment.restricted_cpg import restricted_cpg_graph
+
+    graph = restricted_cpg_graph(dng100_bodies=(10056,))
+    dng = graph.neuron_ids[graph.cell_type == "DNg100"]
+    assert list(dng.astype(int)) == [10056]
+    assert 10045 not in set(graph.neuron_ids.astype(int))
+    assert graph.n < 2000
+    assert "motor feedback omitted" in graph.report["subset"]
     from pathlib import Path
 
     path = Path("data/malecns_v1/skeletons-swc/10056.swc")

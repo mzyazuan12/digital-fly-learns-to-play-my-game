@@ -136,8 +136,10 @@ def signed_weight_matrix(connectome: Connectome) -> np.ndarray:
     n = connectome.n
     W = np.zeros((n, n), dtype=np.float64)
     pre = np.repeat(np.arange(n, dtype=np.int64), np.diff(connectome.pre_ptr))
-    W[pre, connectome.post.astype(np.int64)] = (
-        connectome.anatomical.astype(np.float64) * connectome.sign.astype(np.float64)
+    np.add.at(
+        W,
+        (pre, connectome.post.astype(np.int64)),
+        connectome.anatomical.astype(np.float64) * connectome.sign.astype(np.float64),
     )
     return W
 
