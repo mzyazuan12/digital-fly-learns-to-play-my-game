@@ -234,6 +234,7 @@ def isolated_positive_stimulus(current: float = ISOLATED_STIM_CURRENT, steps: in
     return {
         "ok": bool(ok),
         "name": "isolated_positive_stimulus",
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "dynamics_model": SHIU_LIF_SANITY_MODEL,
         "voltage_unit": VOLTAGE_UNIT,
         "current": float(current),
@@ -342,6 +343,82 @@ def gaba_hyperpolarizes() -> dict:
     return rec
 
 
+def run_single_synaptic_event(
+    *,
+    synapse_count: int,
+    transmitter: str = "acetylcholine",
+) -> dict:
+    """One isolated postsynaptic neuron, exactly one presynaptic spike."""
+    rec = _pair_psp(transmitter, synapse_count=int(synapse_count))
+    rec["name"] = "run_single_synaptic_event"
+    rec["expected_scale_mv"] = float(synapse_count) * SYNAPTIC_STEP_MV
+    rec["measured"] = rec["dv_post"]
+    return rec
+
+
+def synapse_count_scaling() -> dict:
+    """N-synapse sweep: sign, monotonic |ΔV|, and |ΔV_20/ΔV_10| in (1.5, 2.5)."""
+    by_transmitter = {}
+    ok = True
+    for transmitter in ("acetylcholine", "gaba"):
+        rows = []
+        delta_v = []
+        g_post = []
+        n_pre = []
+        for n_syn in SYNAPSE_COUNT_SWEEP:
+            rec = run_single_synaptic_event(synapse_count=n_syn, transmitter=transmitter)
+            rows.append(
+                {
+                    "n_syn": n_syn,
+                    "expected_scale_mv": rec["expected_scale_mv"],
+                    "measured": rec["measured"],
+                    "g_post": rec["g_post"],
+                    "n_pre_spikes": rec["n_pre_spikes"],
+                    "weight": rec["weight"],
+                }
+            )
+            delta_v.append(float(rec["dv_post"]))
+            g_post.append(float(rec["g_post"]))
+            n_pre.append(int(rec["n_pre_spikes"]))
+        mag = [abs(x) for x in delta_v]
+        counts = list(SYNAPSE_COUNT_SWEEP)
+        idx = {n: i for i, n in enumerate(counts)}
+        monotonic = bool(mag[idx[1]] < mag[idx[5]] < mag[idx[10]] < mag[idx[20]])
+        dv10 = delta_v[idx[10]]
+        dv20 = delta_v[idx[20]]
+        ratio = abs(dv20 / dv10) if dv10 != 0 else float("inf")
+        ratio_ok = bool(SCALE_RATIO_LO < ratio < SCALE_RATIO_HI)
+        sign_ok = all(v > 0 for v in delta_v) if transmitter == "acetylcholine" else all(v < 0 for v in delta_v)
+        one_event = all(n == 1 for n in n_pre)
+        g10 = g_post[idx[10]]
+        g20 = g_post[idx[20]]
+        g_ratio = abs(g20 / g10) if g10 != 0 else float("inf")
+        g_linear = bool(abs(g_ratio - 2.0) < 0.05)
+        tx_ok = bool(monotonic and ratio_ok and sign_ok and one_event and g_linear)
+        by_transmitter[transmitter] = {
+            "rows": rows,
+            "delta_v": delta_v,
+            "ratio_20_over_10": ratio,
+            "g_ratio_20_over_10": g_ratio,
+            "monotonic": monotonic,
+            "ratio_ok": ratio_ok,
+            "sign_ok": sign_ok,
+            "one_presynaptic_event": one_event,
+            "ok": tx_ok,
+        }
+        ok = ok and tx_ok
+    return {
+        "ok": bool(ok),
+        "name": "synapse_count_scaling",
+        "model_id": SHIU_LIF_SANITY_MODEL,
+        "dynamics_model": SHIU_LIF_SANITY_MODEL,
+        "synaptic_step_mv": SYNAPTIC_STEP_MV,
+        "counts": list(SYNAPSE_COUNT_SWEEP),
+        "ratio_window": [SCALE_RATIO_LO, SCALE_RATIO_HI],
+        "by_transmitter": by_transmitter,
+    }
+
+
 def weight_orientation() -> dict:
     """TEST 4: CSR is outgoing. A → B exists, B → A does not."""
     forward = _pair_psp("acetylcholine", reverse=False)
@@ -364,6 +441,7 @@ def weight_orientation() -> dict:
     return {
         "ok": bool(ok),
         "name": "weight_orientation",
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "dynamics_model": SHIU_LIF_SANITY_MODEL,
         "outgoing_from_A": outgoing_a,
         "outgoing_from_B": outgoing_b,
@@ -398,6 +476,7 @@ def pugliese_stim_is_not_shiu_current() -> dict:
     return {
         "ok": bool(ok),
         "name": "pugliese_stim_is_not_shiu_current",
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "shiu_model": SHIU_LIF_SANITY_MODEL,
         "pugliese_model": PUGLIESE_CPG_MODEL,
         "pugliese_cpg_stim": PUGLIESE_CPG_STIM_AMPLITUDE,
@@ -468,6 +547,7 @@ def tiny_cpg_connectome(*, synapse_count: int = SCALE_SYNAPSE_COUNT) -> Connecto
         neurotransmitter=transmitters,
         report={
             "dataset_id": "tiny_cpg",
+            "model_id": SHIU_LIF_SANITY_MODEL,
             "dynamics_model": SHIU_LIF_SANITY_MODEL,
             "not_pugliese_cpg_model": True,
             "synapse_count": w,
