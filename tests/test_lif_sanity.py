@@ -44,15 +44,75 @@ from organism.cpg_rhythm import derive_rhythm_permissions, interpret_intact, rhy
 
 
 def test_model_labels_are_distinct():
-    assert SHIU_LIF_SANITY_MODEL == "SHIU_LIF_SANITY_MODEL"
-    assert PUGLIESE_CPG_MODEL == "PUGLIESE_CPG_MODEL"
+    assert SHIU_LIF_SANITY_MODEL == "shiu_lif_sanity_v1"
+    assert PUGLIESE_CPG_MODEL == "pugliese_cpg_reference_v1"
     assert SHIU_LIF_SANITY_MODEL != PUGLIESE_CPG_MODEL
+    assert LIFParams().model_id == SHIU_LIF_SANITY_MODEL
     assert LIFParams().model_label == SHIU_LIF_SANITY_MODEL
     assert LIFParams().voltage_unit == VOLTAGE_UNIT == "mV"
-    assert LIFParams().wsyn_mv == WSYN_MV == 0.275
+    assert LIFParams().wsyn_mv == WSYN_MV == SYNAPTIC_STEP_MV == 0.275
 
 
-def test_solver_rejects_volt_scale_rest():
+def test_physiological_and_dynamics_are_not_the_same_check():
+    rest = np.full(32, -52.0)
+    mild = np.full(32, -120.0)
+    boom = np.full(32, -400.0)
+    nan = np.array([-52.0, np.nan])
+    assert voltages_finite(rest)
+    assert voltage_is_physiological(rest)
+    assert valid_dynamics(rest)
+    assert voltages_finite(mild)
+    assert not voltage_is_physiological(mild)
+    assert valid_dynamics(mild)
+    assert voltages_finite(boom)
+    assert not voltage_is_physiological(boom)
+    assert not valid_dynamics(boom)
+    assert not voltages_finite(nan)
+    assert not voltage_is_physiological(nan)
+    assert not valid_dynamics(nan)
+    scored_mild = rhythmicity_score(mild, 1.0)
+    assert scored_mild["voltage_physiological"] is False
+    assert scored_mild["valid_dynamics"] is True
+    assert scored_mild["exploding"] is True
+    assert scored_mild["fft_executed"] is False
+    assert scored_mild["allow_lesions"] is False
+    scored_boom = rhythmicity_score(boom, 1.0)
+    assert scored_boom["voltage_physiological"] is False
+    assert scored_boom["valid_dynamics"] is False
+    assert scored_boom["exploding"] is True
+    assert scored_boom["fft_executed"] is False
+
+
+def test_rhythm_permissions_are_derived_and_default_false():
+    permissions = derive_rhythm_permissions(
+        dng_voltage_physiological=True,
+        dng_dynamics_valid=True,
+        all_network_voltages_valid=True,
+    )
+    assert permissions["dng100_voltage_exploding"] is False
+    assert permissions["valid_for_rhythm_analysis"] is True
+    assert permissions["allow_lesions"] is True
+    denied = derive_rhythm_permissions(
+        dng_voltage_physiological=False,
+        dng_dynamics_valid=True,
+        all_network_voltages_valid=False,
+    )
+    assert denied["dng100_voltage_physiological"] is False
+    assert denied["dng100_dynamics_valid"] is True
+    assert denied["dng100_voltage_exploding"] is True
+    assert denied["valid_for_rhythm_analysis"] is False
+    assert denied["allow_lesions"] is False
+    interpreted = interpret_intact(
+        {
+            "n_oscillatory_legs": 0,
+            "any_leg_oscillatory": False,
+            "any_exploding": False,
+            "core_tonic_plateau": False,
+            "legs": {},
+        }
+    )
+    assert interpreted["valid_for_rhythm_analysis"] is False
+    assert interpreted["allow_lesions"] is False
     with pytest.raises(ValueError, match="millivolts"):
         LIFParams(v_rest=-52e-3, v_threshold=-45e-3)
 
