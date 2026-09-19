@@ -481,18 +481,22 @@ def malecns_dng100_body_ids() -> dict[str, int]:
 
 def lookup_malecns(body_id: int) -> dict:
     """One MaleCNS annotation row. bodyId is only unique inside MaleCNS_v1.0."""
+    import pandas as pd
+
     raw = load_raw_annotation_table()
     hit = raw.loc[raw["bodyId"] == int(body_id)]
     if len(hit) != 1:
         raise KeyError(f"MaleCNS bodyId {body_id} n={len(hit)}")
     row = hit.iloc[0]
+    manc = row.get("mancBodyid")
+    manc_id = None if manc is None or pd.isna(manc) else int(manc)
     return {
         "source_dataset": "MaleCNS_v1.0",
         "malecns_body_id": int(body_id),
         "type": str(row["type"] or "").strip(),
         "side": _norm_side(row.get("somaSide")),
         "instance": str(row.get("instance") or ""),
-        "manc_body_id": None if row.get("mancBodyid") is None or row.get("mancBodyid") != row.get("mancBodyid") else int(row["mancBodyid"]),
+        "manc_body_id": manc_id,
         "manc_type": str(row.get("mancType") or "") or None,
     }
 
