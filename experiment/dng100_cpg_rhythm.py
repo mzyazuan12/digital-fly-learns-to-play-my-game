@@ -240,7 +240,7 @@ def _lesion_effect(intact: dict, lesioned: dict) -> dict:
         "interpretable": bool(
             intact.get("any_leg_oscillatory")
             and not intact.get("any_exploding")
-            and intact.get("allow_lesions", intact.get("valid_dynamics", True))
+            and intact.get("allow_lesions", False)
         ),
     }
 
@@ -251,8 +251,8 @@ def _population_metrics(summary: dict) -> dict:
     freqs = []
     mn_means = []
     n_active = 0
-    exploding = bool(summary.get("any_exploding"))
-    valid = bool(summary.get("valid_dynamics", summary.get("valid_for_rhythm_analysis", not exploding))) and not exploding
+    exploding = bool(summary.get("any_exploding") or summary.get("dng100_voltage_exploding"))
+    valid = bool(summary.get("valid_for_rhythm_analysis", False)) and not exploding
     for row in legs.values():
         for role, bucket in (("E1", e1_scores), ("E2", e2_scores), ("I1", i1_scores), ("I2", i2_scores), ("MN", mn_scores)):
             scored = row.get(role) or {}
