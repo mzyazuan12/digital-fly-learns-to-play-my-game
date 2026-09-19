@@ -166,8 +166,16 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None, *, output
             return {"n": 0, "oscillation_score": None, "frequency_cycles_per_sample": None, "frequency_hz": None}
         sc, f = compute_oscillation_score(jnp.asarray(activity[mask]), jnp.asarray(mask_active[mask]), 0.05)
         f = float(f)
+        pop_activity = activity[mask]
+        recruited = np.any(pop_activity > 1e-8, axis=1)
+        recruited_score, recruited_freq = compute_oscillation_score(jnp.asarray(pop_activity), jnp.asarray(recruited), 0.05)
         return {
             "n": int(mask.sum()),
+            "mean_activity": float(pop_activity.mean()),
+            "active_neuron_count": int(recruited.sum()),
+            "scoring_active_neuron_count": int(mask_active[mask].sum()),
+            "recruited_oscillation_score": float(recruited_score),
+            "recruited_frequency_hz": float(recruited_freq) / dt_s if np.isfinite(float(recruited_freq)) and float(recruited_freq) > 0 else None,
             "oscillation_score": float(sc),
             "frequency_cycles_per_sample": f if np.isfinite(f) else None,
             "frequency_hz": f / dt_s if np.isfinite(f) and f > 0 else None,
@@ -189,6 +197,7 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None, *, output
                     "E1": sc_e1,
                     "E2": _pop("INXXX466", act, am),
                     "I1": _pop("IN16B036", act, am),
+                    "I2": _pop("IN19A007", act, am),
                 }
             )
     e1_osc = sum(1 for row in per_rep if (row["E1"].get("oscillation_score") or 0) >= 0.5)
@@ -235,6 +244,10 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None, *, output
             "IN19B007 is not I2."
         ),
         "mn_n": int(mn_mask.sum()),
+        "mn_mean_activity": float(motor_rates.mean()) if motor_rates.size else None,
+        "mn_active_neuron_count": int(np.any(motor_rates > 1e-8, axis=1).sum()),
+        "DNg100": _pop("DNg100", mean_rates, active_mask),
+        "activity_policy": "recruitment: any rate >1e-8; legacy score mask: mean rate >1, fallback >0.1 only if whole network inactive; recruited scores reported separately",
         "rhythm_reproduced": bool(
             (both_osc / len(per_rep) >= 0.5) if per_rep else False
         ),
