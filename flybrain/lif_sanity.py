@@ -502,7 +502,7 @@ def pugliese_stim_is_not_shiu_current() -> dict:
         "name": "pugliese_stim_is_not_shiu_current",
         "model_id": SHIU_LIF_SANITY_MODEL,
         "shiu_model": SHIU_LIF_SANITY_MODEL,
-        "pugliese_model": PUGLIESE_CPG_MODEL,
+        "pugliese_rate_malecns": PUGLIESE_RATE_MALECNS_V1,
         "pugliese_cpg_stim": PUGLIESE_CPG_STIM_AMPLITUDE,
         "shiu_wsyn_mv": WSYN_MV,
         "shiu_isolated_current": ISOLATED_STIM_CURRENT,

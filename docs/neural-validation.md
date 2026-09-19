@@ -12,6 +12,15 @@ Run from the repository root using its Python environment:
 
 The biological validator creates a new timestamped directory, scans raw synaptic ROI data in batches, saves the mapping, builds a restricted biological graph, and runs each DNg100 side separately. Exit status 2 means a scientific gate failed; inspect its report and preserved traces. No full connectome simulation is launched.
 
+The next scientific gate transfers published Pugliese rate dynamics onto that restricted MaleCNS graph. It does not retune Shiu LIF:
+
+```sh
+.venv/bin/python -m experiment.pugliese_rate_malecns
+.venv/bin/python -m experiment.pugliese_rate_malecns --shuffle
+```
+
+Primary stimulated cell is MaleCNS DNg100_R `10056` (MANC homolog `10093`). Existing output directories are refused. A passing transfer still does not unlock full MaleCNS.
+
 For the original-code reference, choose a new run ID:
 
 ```sh

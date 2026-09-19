@@ -32,8 +32,14 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
     ),
     Assumption(
         id="lif_dynamics",
-        statement="Unlabeled cells use model_id=shiu_lif_sanity_v1 (current-based LIF in millivolts: Vrest=-52, Vthresh=-45, tau_m=20 ms, tau_syn=5 ms, delay=1.8 ms, Wsyn=0.275 mV/synapse). That is not model_id=pugliese_cpg_reference_v1 (JAX rate ODE with gain, threshold, firing-rate cap, and cell-size normalization). Passing a Shiu isolated-neuron test is not a Pugliese CPG reproduction. PHYSIOLOGICAL_V_LOWER_MV=-100 is a debug guardrail, not a measured Drosophila bound.",
+        statement="Unlabeled cells use model_id=shiu_lif_sanity_v1 (current-based LIF in millivolts: Vrest=-52, Vthresh=-45, tau_m=20 ms, tau_syn=5 ms, delay=1.8 ms, Wsyn=0.275 mV/synapse). That is not model_id=pugliese_cpg_v1 (authors' MANC JAX rate ODE) and not model_id=pugliese_rate_malecns_v1 (the same published half-tanh rate equation, size normalization, and amplitude 250 transferred onto restricted MaleCNS topology). Passing a Shiu isolated-neuron test is not a Pugliese CPG reproduction. PHYSIOLOGICAL_V_LOWER_MV=-100 is a debug guardrail, not a measured Drosophila bound, and it does not apply to rate traces.",
         used_by="flybrain.network.MixedDynamicsNetwork",
+    ),
+    Assumption(
+        id="pugliese_rate_malecns",
+        statement="pugliese_rate_malecns_v1 uses the Pugliese half-tanh rate ODE, truncated-normal (tau, gain, threshold, rmax) draws, excitatory/inhibitory multipliers 0.03, and median-normalized neuron size (gain / size, threshold * size). MaleCNS volume is SWC frustum volume from official NeuTu skeletons because the released annotation feather has no neuPrint size column. Stimulus 250 is this rate-ODE convention. The primary transfer cell is MaleCNS DNg100_R 10056, curated homolog of MANC T1 body 10093 / matrix index 31. Left DNg100 10045 is a different MANC correspondence (10339) and is not pooled with 10056. A rhythm on this restricted graph is a transfer test, not an intact-CNS result, and does not unlock full MaleCNS or body control.",
+        used_by="flybrain.pugliese_rate / experiment.pugliese_rate_malecns",
+        biological=True,
     ),
     Assumption(
         id="graded_vnc_premotor",
