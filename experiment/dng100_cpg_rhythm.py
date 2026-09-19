@@ -29,7 +29,11 @@ from organism.cpg_rhythm import (
 from organism.fly import VirtualFly, _json_ready
 from organism.roi_innervation import (
     INTERNAL_TO_PAPER,
+    CORE_CPG_TYPES,
+    MALECNS_DNG100_BODY_IDS,
     PUGLIESE_DNG100_STIM,
+    PUGLIESE_MANC_STIM_BODY,
+    PUGLIESE_MANC_STIM_INDEX,
     load_cpg_mapping,
     left_vnc_dng100_malecns_body_id,
     malecns_body_id_of,
@@ -433,6 +437,13 @@ def run(
         "dynamics_retuned": False,
         "frequency_forced": False,
         "walking_circuit_types": dict(WALKING_CIRCUIT_TYPES),
+        "identity_lock": {
+            "CORE_CPG_TYPES": dict(CORE_CPG_TYPES),
+            "MALECNS_DNG100_BODY_IDS": sorted(MALECNS_DNG100_BODY_IDS),
+            "PUGLIESE_MANC_STIM_INDEX": PUGLIESE_MANC_STIM_INDEX,
+            "PUGLIESE_MANC_STIM_BODY": PUGLIESE_MANC_STIM_BODY,
+            "I2": CORE_CPG_TYPES["I2"],
+        },
         "e5_type_provenance": dict(E5_TYPE_PROVENANCE),
         "i2_type_provenance": dict(I2_TYPE_PROVENANCE),
         "rhythmicity_threshold": RHYTHMICITY_THRESHOLD,

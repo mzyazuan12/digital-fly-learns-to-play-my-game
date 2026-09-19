@@ -61,7 +61,9 @@ ROI_COLUMNS = tuple(f"{seg}_{side}_{kind}" for seg in NEUROMERES for side in SID
 ASSIGNMENT_METHOD = "LegNp synaptic innervation"
 DNG100_ASSIGNMENT_METHOD = "MaleCNS annotation type == DNg100"
 FORBIDDEN_KEYS = {"id", "dng100_body_id"}
+PUGLIESE_MANC_STIM_INDEX = 31
 PUGLIESE_MANC_STIM_BODY = 10093
+MALECNS_DNG100_BODY_IDS = {10045, 10056}
 
 PAPER_SLOTS = ("LF", "RF", "LM", "RM", "LH", "RH")
 PAPER_LAYOUT = {
@@ -103,7 +105,6 @@ ROLE_FOR_TYPE = {
 TYPE_FOR_ROLE = {role: typename for typename, role in ROLE_FOR_TYPE.items() if role != "walking_command"}
 TYPE_FOR_ROLE["DNg100"] = "DNg100"
 EXPECTED_COUNTS = {
-    "DNg100": 2,
     "IN17A001": 6,
     "INXXX466": 6,
     "IN19B012": 6,
@@ -111,9 +112,10 @@ EXPECTED_COUNTS = {
     "IN19A007": 6,
 }
 EXPECTED_COPIES = {
-    **{typename: EXPECTED_COUNTS[typename] for typename in EXPECTED_COUNTS},
+    **EXPECTED_COUNTS,
     "IN03A006": 6,
     "INXXX464": 6,
+    "DNg100": 2,
 }
 
 I2_TYPE_PROVENANCE = {
@@ -177,8 +179,8 @@ def namespaced_manc_only(record: dict) -> dict:
 
 # Pugliese configs/experiment/DNg100_Stim.yaml: stimNeurons: [[31]]
 PUGLIESE_DNG100_STIM = _manc_record(
-    source_matrix_index=31,
-    source_body_id=10093,
+    source_matrix_index=PUGLIESE_MANC_STIM_INDEX,
+    source_body_id=PUGLIESE_MANC_STIM_BODY,
     type="DNg100",
     predicted_nt="acetylcholine",
 )
@@ -444,6 +446,11 @@ def assert_expected_annotation_counts(raw) -> None:
     if "IN19B007" in CORE_CPG_TYPES.values():
         raise AssertionError("IN19B007 is not I2")
     types = raw["type"].astype(str).str.strip()
+    dng_ids = set(int(v) for v in raw.loc[types.eq("DNg100"), "bodyId"])
+    if dng_ids != MALECNS_DNG100_BODY_IDS:
+        raise AssertionError(
+            f"MaleCNS DNg100 bodyIds {dng_ids} != {MALECNS_DNG100_BODY_IDS}"
+        )
     for cell_type, expected in EXPECTED_COUNTS.items():
         found = raw.loc[types.eq(cell_type)]
         if len(found) != expected:
@@ -977,13 +984,15 @@ def validate_cpg_mapping(mapping: dict, *, manc_body_ids: set[int] | None = None
     if "bodyId" not in raw.columns:
         raise AssertionError("bodyId missing from raw annotations")
     dng_raw = raw.loc[raw["type"].astype(str).str.strip().eq("DNg100")]
-    if len(dng_raw) != 2:
-        raise AssertionError(f"raw DNg100 count {len(dng_raw)} != 2")
+    raw_dng_ids = {int(v) for v in dng_raw["bodyId"]}
+    if raw_dng_ids != MALECNS_DNG100_BODY_IDS:
+        raise AssertionError(
+            f"raw DNg100 bodyIds {raw_dng_ids} != {MALECNS_DNG100_BODY_IDS}"
+        )
 
     dng_records = iter_dng100_malecns_records(mapping)
     if len(dng_records) != 2:
         raise ValueError(f"MaleCNS DNg100 entries: {len(dng_records)}")
-    raw_dng_ids = {int(v) for v in dng_raw["bodyId"]}
     mapped_dng_ids = {int(rec["malecns_body_id"]) for rec in dng_records}
     if mapped_dng_ids != raw_dng_ids:
         raise AssertionError(
@@ -1055,8 +1064,14 @@ def validate_cpg_mapping(mapping: dict, *, manc_body_ids: set[int] | None = None
             f"(MaleCNS bodyId 10093 is {raw.loc[raw['bodyId'] == PUGLIESE_MANC_STIM_BODY]['type'].tolist()})"
         )
     pug = mapping.get("DNg100", {}).get("pugliese_reference") or {}
-    if pug.get("source_body_id") != 10093 or pug.get("source_dataset") != "MANC_T1":
-        raise AssertionError("Pugliese reference must be MANC_T1 source_body_id=10093")
+    if pug.get("source_body_id") != PUGLIESE_MANC_STIM_BODY or pug.get("source_dataset") != "MANC_T1":
+        raise AssertionError(
+            f"Pugliese reference must be MANC_T1 source_body_id={PUGLIESE_MANC_STIM_BODY}"
+        )
+    if pug.get("source_matrix_index") != PUGLIESE_MANC_STIM_INDEX:
+        raise AssertionError(
+            f"Pugliese reference must be source_matrix_index={PUGLIESE_MANC_STIM_INDEX}"
+        )
     if "malecns_body_id" in pug:
         raise AssertionError("pugliese_reference must not carry malecns_body_id")
 

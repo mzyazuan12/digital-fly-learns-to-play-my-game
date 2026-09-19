@@ -105,7 +105,9 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert result["dynamics_retuned"] is False
     assert result["frequency_forced"] is False
     assert result["motor_mode"] == "MODE_NEURAL_CPG"
-    assert result["walking_circuit_types"]["E5"] == "INXXX464"
+    assert result["walking_circuit_types"]["I2"] == "IN19A007"
+    assert result["identity_lock"]["I2"] == "IN19A007"
+    assert result["identity_lock"]["MALECNS_DNG100_BODY_IDS"] == [10045, 10056]
     assert result["dng100_n"] == 2
     assert len(result["stimulated"]["body_ids"]) == 1
     intact = result["conditions"]["intact"]["summary"]

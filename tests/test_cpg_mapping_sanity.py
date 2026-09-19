@@ -6,6 +6,7 @@ from organism.roi_innervation import (
     CORE_CPG_TYPES,
     DNG100_ASSIGNMENT_METHOD,
     EXPECTED_COUNTS,
+    MALECNS_DNG100_BODY_IDS,
     INVALID_MAPPING_PATH,
     INVALID_NAMESPACE_MAPPING_PATH,
     INVALID_NAMESPACE_PARQUET_PATH,
@@ -37,6 +38,8 @@ def test_raw_annotations_have_bodyId_and_two_dng100():
     assert len(dng) == 2
     ids = malecns_dng100_body_ids()
     assert ids == {"L": 10045, "R": 10056}
+    assert set(ids.values()) == MALECNS_DNG100_BODY_IDS
+    assert set(int(v) for v in dng["bodyId"]) == MALECNS_DNG100_BODY_IDS
     assert 10093 not in set(ids.values())
     # Curated correspondence, not identity:
     right = dng.loc[dng["somaSide"].astype(str).str.upper().eq("R")].iloc[0]
@@ -179,6 +182,7 @@ def test_i2_is_in19a007_and_integer_10056_is_namespaced():
     assert CORE_CPG_TYPES["I2"] == "IN19A007"
     raw = load_raw_annotation_table()
     types = raw["type"].astype(str).str.strip()
+    assert set(raw.loc[types.eq("DNg100"), "bodyId"].astype(int)) == MALECNS_DNG100_BODY_IDS
     for cell_type, expected in EXPECTED_COUNTS.items():
         assert int((types == cell_type).sum()) == expected
     assert lookup_malecns(10056)["type"] == "DNg100"
