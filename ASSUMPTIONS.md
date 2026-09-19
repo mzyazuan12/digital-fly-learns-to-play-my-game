@@ -118,10 +118,10 @@ CPG is pretrained scaffolding. Rest vs walk follows a continuous
 `locomotor_drive` decoded from identified walking DNs (DNp09, DNg100,
 DNg97/oDN1), labeled `ENGINEERED_NEURAL_MOTOR_INTERFACE`. DNb08 is
 traced but not decoded as walking. The published VNC CPG types
-(E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19B007, E3=IN19B012,
+(E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
 E4=IN03A006, E5=INXXX464) are resolved from **each bodyId's LegNp
 PreSyn+PostSyn counts**, not type-level ROI totals and not soma-Z.
-IN19A007 exists in MaleCNS but is **not** I2. Type explorer pages pool
+IN19B007 exists in MaleCNS (two neurons) but is **not** I2. Type explorer pages pool
 T1+T2+T3. DNg100 itself is two descending neurons, resolved from MaleCNS
 `type == DNg100`: bodyId **10045 L** and **10056 R**. Pugliese `DNg100_Stim`
 injects **MANC T1 matrix index 31 / MANC body 10093** (type DNg100). In that
