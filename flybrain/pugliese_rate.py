@@ -29,6 +29,11 @@ from scipy.integrate import solve_ivp
 from scipy.stats import truncnorm
 
 from flybrain.loader import Connectome, DEFAULT_DATA
+from flybrain.malecns_volume import (
+    VOLUME_SOURCE,
+    assert_volume_size_source,
+    sizes_for_body_ids,
+)
 from flybrain.neurons import (
     PUGLIESE_ATOL,
     PUGLIESE_CPG_STIM_AMPLITUDE,
@@ -90,26 +95,73 @@ class PuglieseRateParams:
             raise ValueError("tau and firing-rate cap means must be positive.")
 
 
-def sample_trunc_normal(rng: np.random.Generator, mean: float, stdev: float, shape) -> np.ndarray:
-    """Truncated-normal samples, lower bound 0. Same family as the authors' JAX helper."""
-    if stdev < 1e-10:
-        return np.full(shape, max(mean, 0.0), dtype=np.float64)
+def sample_trunc_normal(rng: np.random.Generator, mean: float, stdev: float, shape, lower_bound: float = 0.0) -> np.ndarray:
+    """Truncated-normal via inverse CDF. Matches Pugliese sim_utils math, not JAX Threefry draws."""
+    shape = tuple(np.atleast_1d(shape).tolist()) if np.ndim(shape) else (int(shape),)
+    if stdev < 1e-10 or not np.isfinite(stdev) or not np.isfinite(mean):
+        return np.full(shape, max(mean, 0.0) if np.isfinite(mean) else 0.0, dtype=np.float64)
     upper = min(mean + min(100.0 * stdev, 1e6), 1e10)
-    a = (0.0 - mean) / stdev
-    b = (upper - mean) / stdev
-    return np.asarray(truncnorm.rvs(a, b, loc=mean, scale=stdev, size=shape, random_state=rng), dtype=np.float64)
+    a = np.clip((lower_bound - mean) / stdev, -10.0, 10.0)
+    b = np.clip((upper - mean) / stdev, -10.0, 10.0)
+    from scipy.stats import norm
+
+    cdf_a = float(np.clip(norm.cdf(a), 1e-10, 1.0 - 1e-10))
+    cdf_b = float(np.clip(norm.cdf(b), 1e-10, 1.0 - 1e-10))
+    cdf_b = max(cdf_b, cdf_a + 1e-10)
+    u = rng.uniform(cdf_a, cdf_b, size=shape)
+    z = norm.ppf(np.clip(u, 1e-10, 1.0 - 1e-10))
+    return np.clip(mean + stdev * z, -1e10, 1e10).astype(np.float64)
 
 
-def set_sizes(sizes, gain, threshold):
+def sample_trunc_normal_jax(key, mean: float, stdev: float, shape, lower_bound: float = 0.0):
+    """Authors' JAX inverse-CDF truncated normal. Requires jax."""
+    import jax
+    import jax.numpy as jnp
+
+    shape = tuple(shape)
+    invalid = (~jnp.isfinite(mean)) | (~jnp.isfinite(stdev)) | (~jnp.isfinite(lower_bound)) | (stdev < 0)
+
+    def handle_invalid():
+        return jnp.zeros(shape)
+
+    def handle_zero():
+        return jnp.maximum(mean, 0.0) * jnp.ones(shape)
+
+    def handle_normal():
+        upper_bound = jnp.minimum(mean + jnp.minimum(100 * stdev, 1e6), 1e10)
+        a = jnp.clip((lower_bound - mean) / stdev, -10.0, 10.0)
+        b = jnp.clip((upper_bound - mean) / stdev, -10.0, 10.0)
+        cdf_a = jnp.clip(jax.scipy.stats.norm.cdf(a), 1e-10, 1.0 - 1e-10)
+        cdf_b = jnp.clip(jax.scipy.stats.norm.cdf(b), 1e-10, 1.0 - 1e-10)
+        cdf_b = jnp.maximum(cdf_b, cdf_a + 1e-10)
+        u = jax.random.uniform(key, shape=shape, minval=cdf_a, maxval=cdf_b)
+        z = jax.scipy.stats.norm.ppf(jnp.clip(u, 1e-10, 1.0 - 1e-10))
+        return jnp.clip(mean + stdev * z, -1e10, 1e10)
+
+    return jax.lax.cond(
+        invalid,
+        handle_invalid,
+        lambda: jax.lax.cond(stdev < 1e-10, handle_zero, handle_normal),
+    )
+
+
+def set_sizes(sizes, gain, threshold, *, median_size: float | None = None):
     """Divide gain and multiply threshold by median-normalized size.
 
     Transcription of Pugliese_2026 src/utils/sim_utils.py::set_sizes.
     ``gain`` / ``threshold`` may be (n,) or (n_rep, n).
+
+    Pass ``median_size`` to normalize by the modeled-dataset median rather
+    than nanmedian of the vector in hand. Missing/zero sizes are replaced
+    with that same median, then a /= s, theta *= s.
     """
     sizes = np.asarray(sizes, dtype=np.float64).copy()
     if sizes.ndim != 1:
         raise ValueError("sizes must be a 1-D per-neuron vector")
-    norm = float(np.nanmedian(sizes))
+    if median_size is None:
+        norm = float(np.nanmedian(sizes))
+    else:
+        norm = float(median_size)
     if not np.isfinite(norm) or norm <= 0:
         raise ValueError("Median neuron size must be a positive finite number")
     sizes[np.isnan(sizes)] = norm
