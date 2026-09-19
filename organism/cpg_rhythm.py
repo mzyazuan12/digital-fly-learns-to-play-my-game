@@ -221,37 +221,54 @@ class RhythmRecording:
 
     def summary(self, dt_ms: float, stim_onset_ms: float) -> dict:
         stim = self.t_ms >= stim_onset_ms
-        dng_spikes = _window_score(self.dng100, stim, dt_ms)
         dng_v = self.dng100_v[stim] if stim.size == self.dng100_v.size and np.any(stim) else self.dng100_v
-        dng_v_exploding = bool(dng_v.size and not valid_dynamics(dng_v))
+        dng_l_v = self.dng100_l_v[stim] if stim.size == self.dng100_l_v.size and np.any(stim) else self.dng100_l_v
+        dng_r_v = self.dng100_r_v[stim] if stim.size == self.dng100_r_v.size and np.any(stim) else self.dng100_r_v
+        dng_voltage_physiological = bool(not dng_v.size or voltage_is_physiological(dng_v))
+        dng_dynamics_valid = bool(not dng_v.size or valid_dynamics(dng_v))
+        dng_voltage_finite = bool(not dng_v.size or voltages_finite(dng_v))
+        left_phys = bool(not dng_l_v.size or voltage_is_physiological(dng_l_v))
+        right_phys = bool(not dng_r_v.size or voltage_is_physiological(dng_r_v))
+        all_network_voltages_valid = bool(
+            dng_voltage_physiological and left_phys and right_phys
+        )
+        permissions = derive_rhythm_permissions(
+            dng_voltage_physiological=dng_voltage_physiological,
+            dng_dynamics_valid=dng_dynamics_valid,
+            all_network_voltages_valid=all_network_voltages_valid,
+        )
+        dng_v_exploding = bool(permissions["dng100_voltage_exploding"])
+        fft_ok = bool(permissions["fft_allowed"])
+        dng_spikes = _window_score(self.dng100, stim, dt_ms) if fft_ok else _window_census(self.dng100, stim)
         report = {
+            "model_id": SHIU_LIF_SANITY_MODEL,
             "DNg100": dng_spikes,
-            "DNg100_L": _window_score(self.dng100_l, stim, dt_ms),
-            "DNg100_R": _window_score(self.dng100_r, stim, dt_ms),
+            "DNg100_L": _window_score(self.dng100_l, stim, dt_ms) if fft_ok else _window_census(self.dng100_l, stim),
+            "DNg100_R": _window_score(self.dng100_r, stim, dt_ms) if fft_ok else _window_census(self.dng100_r, stim),
             "DNg100_v": {
                 "mean": float(dng_v.mean()) if dng_v.size else 0.0,
                 "std": float(dng_v.std()) if dng_v.size else 0.0,
                 "min": float(dng_v.min()) if dng_v.size else 0.0,
                 "max": float(dng_v.max()) if dng_v.size else 0.0,
                 "exploding": dng_v_exploding,
-                "finite": bool(dng_v.size == 0 or np.all(np.isfinite(dng_v))),
-                "physiological": bool(dng_v.size == 0 or valid_dynamics(dng_v)),
+                "finite": dng_voltage_finite,
+                "physiological": dng_voltage_physiological,
+                "valid_dynamics": dng_dynamics_valid,
             },
             "legs": {},
         }
+        report.update(permissions)
         any_osc = False
         any_tonic = False
-        any_explode = bool(report["DNg100"].get("exploding") or report["DNg100_v"]["exploding"])
+        any_explode = dng_v_exploding
         n_osc_legs = 0
         for slot in LEG_SLOTS:
             traces = self.legs.get(slot) or {}
             row = {}
             leg_osc = False
             for role, trace in traces.items():
-                scored = _window_score(trace, stim, dt_ms)
+                scored = _window_score(trace, stim, dt_ms) if fft_ok else _window_census(trace, stim)
                 row[role] = scored
-                if scored.get("exploding"):
-                    any_explode = True
                 if role in {"E1", "E2", "I1", "I2", "MN"} and scored.get("oscillatory"):
                     leg_osc = True
                 if role in {"E1", "E2", "I1"} and scored.get("tonic_plateau"):
@@ -264,13 +281,13 @@ class RhythmRecording:
         report["n_oscillatory_legs"] = n_osc_legs
         report["any_leg_oscillatory"] = any_osc
         report["any_exploding"] = any_explode
-        report["valid_dynamics"] = not any_explode
-        report["valid_for_rhythm_analysis"] = not any_explode
-        report["allow_lesions"] = not any_explode
+        report["valid_dynamics"] = bool(dng_dynamics_valid and not any_explode)
+        report["fft_executed"] = bool(fft_ok)
         report["core_tonic_plateau"] = bool(any_tonic and not any_osc and not any_explode)
         report["physiological_v_lower"] = PHYSIOLOGICAL_V_LOWER_MV
         report["physiological_v_upper"] = PHYSIOLOGICAL_V_UPPER_MV
         report["physiological_bound_is_debug_guardrail"] = True
+        report["explosion_abs_mv"] = EXPLOSION_ABS_MV
         return report
 
     def previews(self) -> dict:
@@ -286,11 +303,19 @@ class RhythmRecording:
         return out
 
 
-def _window_score(trace: np.ndarray, stim: np.ndarray, dt_ms: float) -> dict:
+def _windowed(trace: np.ndarray, stim: np.ndarray) -> np.ndarray:
     x = np.asarray(trace, dtype=np.float64)
     if stim.size == x.size and np.any(stim):
         x = x[stim]
-    return rhythmicity_score(x, dt_ms)
+    return x
+
+
+def _window_census(trace: np.ndarray, stim: np.ndarray) -> dict:
+    return _trace_stats(_windowed(trace, stim))
+
+
+def _window_score(trace: np.ndarray, stim: np.ndarray, dt_ms: float) -> dict:
+    return rhythmicity_score(_windowed(trace, stim), dt_ms)
 
 
 def allocate_traces(circuit: WalkingCircuit, n_steps: int) -> RhythmRecording:
@@ -348,11 +373,11 @@ def _role_flag(summary: dict, role: str, field: str) -> bool:
 def interpret_intact(summary: dict) -> dict:
     n_osc = int(summary.get("n_oscillatory_legs") or 0)
     tonic = bool(summary.get("core_tonic_plateau"))
-    exploding = bool(summary.get("any_exploding"))
+    exploding = bool(summary.get("any_exploding") or summary.get("dng100_voltage_exploding"))
     e1_osc = _role_flag(summary, "E1", "oscillatory")
     e2_osc = _role_flag(summary, "E2", "oscillatory")
     mn_osc = _role_flag(summary, "MN", "oscillatory")
-    valid = bool(summary.get("valid_dynamics", summary.get("valid_for_rhythm_analysis", not exploding))) and not exploding
+    valid = bool(summary.get("valid_for_rhythm_analysis", False)) and not exploding
     # MN-only oscillation is not the published E1/E2 CPG mechanism.
     reproduced = bool(valid and n_osc >= 1 and (e1_osc or e2_osc))
     if exploding or not valid:
