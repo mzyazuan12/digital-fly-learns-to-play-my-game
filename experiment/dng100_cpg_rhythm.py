@@ -296,9 +296,14 @@ def _population_metrics(summary: dict) -> dict:
         return float(np.mean(nums)) if nums else 0.0
 
     return {
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "valid_dynamics": True,
         "valid_for_rhythm_analysis": True,
-        "allow_lesions": True,
+        "allow_lesions": bool(summary.get("allow_lesions", False)),
+        "dng100_voltage_physiological": bool(summary.get("dng100_voltage_physiological", False)),
+        "dng100_dynamics_valid": bool(summary.get("dng100_dynamics_valid", False)),
+        "dng100_voltage_exploding": bool(summary.get("dng100_voltage_exploding", False)),
+        "fft_executed": bool(summary.get("fft_executed", False)),
         "dominant_frequency": mean_freq,
         "rhythmicity_score": _mean(e1_scores + e2_scores + i1_scores + mn_scores),
         "spectral_peak_power_mean": float(
@@ -349,7 +354,7 @@ def _plot_traces(recording, path: Path) -> Path | None:
         ax.set_ylabel(title, fontsize=8)
         ax.tick_params(labelsize=7)
     axes[-1].set_xlabel("time (ms)")
-    fig.suptitle("MaleCNS DNg100 stim (no FlyBody)", fontsize=11)
+    fig.suptitle(f"{SHIU_LIF_SANITY_MODEL} DNg100 stim (not {PUGLIESE_CPG_MODEL})", fontsize=11)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=120)
@@ -412,9 +417,7 @@ def run(
     }
     lesion_report = {}
     if lesions or scramble:
-        allow = bool(
-            intact["summary"].get("allow_lesions", intact["summary"].get("valid_dynamics", True))
-        ) and not intact["summary"].get("any_exploding")
+        allow = bool(intact["summary"].get("allow_lesions", False)) and not intact["summary"].get("any_exploding")
         if not allow:
             lesion_report["skipped"] = {
                 "reason": (
@@ -516,6 +519,7 @@ def run(
         "walk_api_called": False,
         "graph_modified": False,
         "dynamics_retuned": False,
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "dynamics_model": SHIU_LIF_SANITY_MODEL,
         "pugliese_cpg_model": PUGLIESE_CPG_MODEL,
         "is_pugliese_reproduction": False,
@@ -566,6 +570,12 @@ def run(
         "valid_dynamics": bool(metrics.get("valid_dynamics")),
         "valid_for_rhythm_analysis": bool(metrics.get("valid_for_rhythm_analysis")),
         "allow_lesions": bool(metrics.get("allow_lesions")),
+        "dng100_voltage_physiological": bool(
+            intact["summary"].get("dng100_voltage_physiological", False)
+        ),
+        "dng100_dynamics_valid": bool(intact["summary"].get("dng100_dynamics_valid", False)),
+        "dng100_voltage_exploding": bool(intact["summary"].get("dng100_voltage_exploding", True)),
+        "fft_executed": bool(intact["summary"].get("fft_executed", False)),
         "discarded_prior_malecns_run": {
             "scientific_status": "invalid",
             "i2_type": "IN19B007",
@@ -608,6 +618,7 @@ def run(
                     if graph.n >= 10_000
                     else "toy/miniature graph"
                 ),
+                "model_id": SHIU_LIF_SANITY_MODEL,
                 "dynamics_model": SHIU_LIF_SANITY_MODEL,
                 "equations": "MixedDynamicsNetwork current-based LIF (mV) + graded VNC premotor",
                 "not_a_pugliese_reproduction": True,
