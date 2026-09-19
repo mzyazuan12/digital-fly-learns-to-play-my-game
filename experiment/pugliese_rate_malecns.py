@@ -283,6 +283,7 @@ def simulate_graph(
     for rep in range(n_replicates):
         drawn = sample_cell_parameters(graph.n, rng, params)
         gain, threshold = set_sizes(size_info["sizes"], drawn["gain"], drawn["threshold"])
+        print(f"replicate {rep+1}/{n_replicates} integrating {graph.n} cells", flush=True)
         rates = integrate_rate(
             weighted,
             tau=drawn["tau"],
@@ -395,6 +396,7 @@ def run(
         if not experiment_a.get("rhythm_reproduced"):
             raise RuntimeError("Pugliese MANC reference has not passed; refusing MaleCNS transfer")
         graph = restricted_cpg_graph(dng100_bodies=(int(stim_body),))
+        print(f"restricted graph n={graph.n} edges={graph.n_edges} stim={stim_body}", flush=True)
         if graph.n > 5000:
             raise RuntimeError("Refusing unexpectedly large graph; full MaleCNS is locked")
         sim = simulate_graph(
