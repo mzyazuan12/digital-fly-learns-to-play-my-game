@@ -72,6 +72,9 @@ def run_hydra(
     batch_size: int = 16,
     run_id: str = "authors_dng100",
 ) -> subprocess.CompletedProcess:
+    existing = OUR_HYDRA_ROOT / "DNg100_Stim" / "default" / f"run_id={run_id}"
+    if existing.exists():
+        raise FileExistsError(f"Refusing to overwrite reference run: {existing}")
     python = _python()
     cmd = [
         str(python),

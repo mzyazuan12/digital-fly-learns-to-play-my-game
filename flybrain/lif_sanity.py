@@ -696,6 +696,11 @@ def run_lif_sanity() -> dict:
     failed = [row["name"] for row in tests if not row["ok"]]
     return {
         "ok": not failed,
+        "malecns_subgraph_allowed": not failed,
+        "valid_for_rhythm_analysis": False,
+        "allow_lesions": False,
+        "dominant_frequency": None,
+        "rhythmicity_score": None,
         "failed": failed,
         "tests": by_name,
         "model_id": SHIU_LIF_SANITY_MODEL,
@@ -775,6 +780,8 @@ def format_lif_sanity(report: dict | None = None) -> str:
             extra = f"  Pugliese stim={row['pugliese_cpg_stim']} ≠ Shiu Wsyn/current"
         lines.append(f"  {mark}  {name}{extra}")
     lines.append("")
+    lines.append(f"MALECNS_SUBGRAPH_ALLOWED = {report['ok']}")
+    lines.append("RHYTHM_ANALYSIS_ALLOWED = False")
     lines.append(report["next_if_passed"] if report["ok"] else report["next_if_failed"])
     return "\n".join(lines) + "\n"
 

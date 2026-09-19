@@ -379,6 +379,12 @@ def run(
     assert_lif_sanity()
     if connectome in {"malecns", "malecns_v1", "full"}:
         raise RuntimeError("Full MaleCNS experiment is locked pending biological tiny-circuit recruitment and Pugliese reference review. Run python -m experiment.validate_neural_milestone first; synthetic sanity cannot unlock it.")
+    out = Path(out)
+    if out == OUT:
+        from datetime import datetime, timezone
+        out = OUT.parent / ("dng100_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")) / "report.json"
+    elif out.exists() or out.with_suffix(".npz").exists():
+        raise FileExistsError(f"Refusing to overwrite experiment: {out}")
     graph = load_graph(connectome, seed)
     tiny = connectome in {"tiny_cpg", "cpg_subgraph"}
     if connectome in {"malecns", "malecns_v1", "full"}:
@@ -626,7 +632,7 @@ def run(
                 ),
                 "model_id": SHIU_LIF_SANITY_MODEL,
                 "dynamics_model": SHIU_LIF_SANITY_MODEL,
-                "equations": "MixedDynamicsNetwork current-based LIF (mV) + graded VNC premotor",
+                "equations": "current-based LIF (mV), every neuron explicitly spiking",
                 "not_a_pugliese_reproduction": True,
                 "dt_ms": float(params.dt),
                 "wsyn_mv": float(params.wsyn_mv),
