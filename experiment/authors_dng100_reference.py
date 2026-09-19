@@ -82,6 +82,7 @@ def run_hydra(
         "paths=mac",
         f"run_id={run_id}",
     ]
+    print("MODEL:", PUGLIESE_CPG_MODEL, flush=True)
     print("running:", " ".join(cmd), flush=True)
     print("python:", python, flush=True)
     subprocess.check_call([str(python), "--version"])
