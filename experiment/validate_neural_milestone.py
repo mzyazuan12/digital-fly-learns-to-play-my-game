@@ -8,13 +8,11 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 import numpy as np
-import pyarrow.dataset as ds
-import pyarrow.feather as feather
 from flybrain.loader import ANN_FILE, NT_FILE, EDGE_FILE, DEFAULT_DATA
 from flybrain.lif_sanity import assert_lif_sanity, _spiking_models, _pair_psp
 from flybrain.network import MixedDynamicsNetwork
 from flybrain.neurons import SHIU_LIF_SANITY_MODEL, nt_sign, shiu_lif_params, voltage_is_physiological, voltages_finite
-from organism.roi_innervation import (CORE_CPG_TYPES, assert_expected_annotation_counts, load_annotations,
+from organism.roi_innervation import (CORE_CPG_TYPES, load_annotations,
     scan_syn_points, rois_to_row, build_cpg_mapping, validate_cpg_mapping)
 from organism.cpg_rhythm import rhythmicity_score
 from experiment.restricted_cpg import restricted_cpg_graph
