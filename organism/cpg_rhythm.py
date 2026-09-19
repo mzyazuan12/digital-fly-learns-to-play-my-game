@@ -147,11 +147,11 @@ def rhythmicity_score(
     band_mask = (freqs >= band[0]) & (freqs <= band[1])
     total = float(spec[1:].sum()) if spec.size > 1 else 0.0
     if total > 0 and np.any(band_mask):
-        peak_i = int(np.argmax(spec[band_mask]))
-        fft_hz = float(freqs[band_mask][peak_i])
+        peak_i = 1 + int(np.argmax(spec[1:]))
+        fft_hz = float(freqs[peak_i])
         out["fft_hz"] = fft_hz
-        out["spectral_peak_power"] = float(spec[band_mask][peak_i])
-        out["band_power_frac"] = float(spec[band_mask][peak_i] / total)
+        out["spectral_peak_power"] = float(spec[peak_i])
+        out["band_power_frac"] = float(spec[peak_i] / total)
 
     ac = _autocorr(x)
     lag_min = max(2, int(round(1.0 / band[1] / dt_s)))
@@ -168,7 +168,7 @@ def rhythmicity_score(
     out["score"] = score
     out["rhythmicity_score"] = score
     out["peak_hz"] = float(peak_hz) if peak_hz is not None else None
-    out["dominant_frequency"] = float(peak_hz) if peak_hz is not None else out.get("fft_hz")
+    out["dominant_frequency"] = out.get("fft_hz")
     out["autocorrelation_peak"] = score
     out["tonic_plateau"] = bool(mean > 0.35 and out["cv"] < 0.15 and score < 0.35)
     published = PUBLISHED_WALK_HZ
@@ -218,6 +218,8 @@ class RhythmRecording:
     dng100_l_v: np.ndarray
     dng100_r_v: np.ndarray
     legs: dict[str, dict[str, np.ndarray]]
+    network_voltage_valid: np.ndarray | None = None
+    dng_voltage_valid: np.ndarray | None = None
 
     def summary(self, dt_ms: float, stim_onset_ms: float) -> dict:
         stim = self.t_ms >= stim_onset_ms
@@ -225,12 +227,15 @@ class RhythmRecording:
         dng_l_v = self.dng100_l_v[stim] if stim.size == self.dng100_l_v.size and np.any(stim) else self.dng100_l_v
         dng_r_v = self.dng100_r_v[stim] if stim.size == self.dng100_r_v.size and np.any(stim) else self.dng100_r_v
         dng_voltage_physiological = bool(not dng_v.size or voltage_is_physiological(dng_v))
-        dng_dynamics_valid = bool(not dng_v.size or valid_dynamics(dng_v))
+        dng_dynamics_valid = bool(voltages_finite(dng_v) and dng_voltage_physiological)
         dng_voltage_finite = bool(not dng_v.size or voltages_finite(dng_v))
         left_phys = bool(not dng_l_v.size or voltage_is_physiological(dng_l_v))
         right_phys = bool(not dng_r_v.size or voltage_is_physiological(dng_r_v))
         all_network_voltages_valid = bool(
-            dng_voltage_physiological and left_phys and right_phys
+            self.network_voltage_valid is not None
+            and self.network_voltage_valid.size > 0
+            and np.all(self.network_voltage_valid)
+            and dng_voltage_physiological and left_phys and right_phys
         )
         permissions = derive_rhythm_permissions(
             dng_voltage_physiological=dng_voltage_physiological,
@@ -238,7 +243,10 @@ class RhythmRecording:
             all_network_voltages_valid=all_network_voltages_valid,
         )
         dng_v_exploding = bool(permissions["dng100_voltage_exploding"])
-        fft_ok = bool(permissions["fft_allowed"])
+        recruited = {role: any(np.any(_windowed(traces.get(role, np.array([])), stim) > 0) for traces in self.legs.values()) for role in ("E1", "E2", "I1", "I2", "MN")}
+        recruited["DNg100"] = bool(np.any(_windowed(self.dng100, stim) > 0))
+        fft_ok = bool(permissions["fft_allowed"] and all(recruited.values()))
+        permissions.update(valid_for_rhythm_analysis=fft_ok, allow_lesions=fft_ok, fft_allowed=fft_ok)
         dng_spikes = _window_score(self.dng100, stim, dt_ms) if fft_ok else _window_census(self.dng100, stim)
         report = {
             "model_id": SHIU_LIF_SANITY_MODEL,
@@ -255,12 +263,20 @@ class RhythmRecording:
                 "physiological": dng_voltage_physiological,
                 "valid_dynamics": dng_dynamics_valid,
             },
+            "recruitment": recruited,
+            "dng_finite": dng_voltage_finite,
+            "dng_physiological": dng_voltage_physiological,
+            "dng_dynamics_valid": dng_dynamics_valid,
+            "network_dynamics_valid": all_network_voltages_valid,
+            "all_dynamics_valid": bool(dng_dynamics_valid and all_network_voltages_valid),
+            "dominant_frequency": None,
+            "rhythmicity_score": None,
             "legs": {},
         }
         report.update(permissions)
         any_osc = False
         any_tonic = False
-        any_explode = dng_v_exploding
+        any_explode = dng_v_exploding or not all_network_voltages_valid
         n_osc_legs = 0
         for slot in LEG_SLOTS:
             traces = self.legs.get(slot) or {}
@@ -282,7 +298,7 @@ class RhythmRecording:
         report["any_leg_oscillatory"] = any_osc
         report["any_exploding"] = any_explode
         report["valid_dynamics"] = bool(dng_dynamics_valid and not any_explode)
-        report["fft_executed"] = bool(fft_ok)
+        report["fft_executed"] = bool(dng_spikes.get("fft_executed") or any(metric.get("fft_executed", False) for row in report["legs"].values() for metric in row.values() if isinstance(metric, dict)))
         report["core_tonic_plateau"] = bool(any_tonic and not any_osc and not any_explode)
         report["physiological_v_lower"] = PHYSIOLOGICAL_V_LOWER_MV
         report["physiological_v_upper"] = PHYSIOLOGICAL_V_UPPER_MV
@@ -335,6 +351,7 @@ def allocate_traces(circuit: WalkingCircuit, n_steps: int) -> RhythmRecording:
         dng100_l_v=np.zeros(n_steps, dtype=np.float64),
         dng100_r_v=np.zeros(n_steps, dtype=np.float64),
         legs=legs,
+        network_voltage_valid=np.zeros(n_steps, dtype=bool),
     )
 
 
@@ -351,6 +368,8 @@ def _dng100_by_side(circuit: WalkingCircuit) -> dict[str, np.ndarray]:
 
 def record_tick(rec: RhythmRecording, net, circuit: WalkingCircuit, t: int, t_ms: float) -> None:
     rec.t_ms[t] = t_ms
+    if rec.network_voltage_valid is not None:
+        rec.network_voltage_valid[t] = voltage_is_physiological(net.v)
     dng_idx = circuit.indices("DNg100")
     rec.dng100[t] = population_signal(net, dng_idx)
     rec.dng100_v[t] = float(np.mean(net.v[dng_idx])) if dng_idx.size else 0.0
@@ -379,7 +398,7 @@ def interpret_intact(summary: dict) -> dict:
     mn_osc = _role_flag(summary, "MN", "oscillatory")
     valid = bool(summary.get("valid_for_rhythm_analysis", False)) and not exploding
     # MN-only oscillation is not the published E1/E2 CPG mechanism.
-    reproduced = bool(valid and n_osc >= 1 and (e1_osc or e2_osc))
+    reproduced = bool(valid and n_osc >= 1 and (e1_osc and e2_osc))
     if exploding or not valid:
         answer = "no"
         next_step = (
@@ -394,7 +413,7 @@ def interpret_intact(summary: dict) -> dict:
             "Oscillation is present under DNg100 current in E1 or E2. Compare "
             "E1/E2/I1/I2 lesions to Pugliese et al. 2025 bioRxiv, then consider MN→FlyBody."
         )
-    elif mn_osc and not (e1_osc or e2_osc):
+    elif mn_osc and not (e1_osc and e2_osc):
         answer = "no"
         next_step = (
             "Some MN traces are non-flat, but E1 and E2 rhythmicity are both "

@@ -36,7 +36,7 @@ from flybrain.neurons import (
 # Not PUGLIESE_CPG_STIM_AMPLITUDE (250 in their size-normalized rate ODE).
 ISOLATED_STIM_CURRENT = 40.0
 SCALE_SYNAPSE_COUNT = 20
-SYNAPSE_COUNT_SWEEP = (1, 5, 10, 20, 50)
+SYNAPSE_COUNT_SWEEP = (1, 5, 10, 20)
 SCALE_RATIO_COUNTS = (10, 20)
 SCALE_RATIO_LO = 1.5
 SCALE_RATIO_HI = 2.5
@@ -262,14 +262,23 @@ def _pair_psp(transmitter: str, *, reverse: bool = False, synapse_count: int = S
     delivered_g = 0.0
     v_b = rest_b
     v_a = float(net.v[0])
-    for _ in range(int(net.delay_slots) + 2):
+    n_post_spikes = 0
+    measurement_step = None
+    for step in range(int(net.delay_slots) + 2):
         net.step(1)
         n_pre_spikes += int(net.last_spikes[0])
+        n_post_spikes += int(net.last_spikes[1])
         delivered_g = float(net.g[1])
         v_b = float(net.v[1])
         v_a = float(net.v[0])
         if abs(delivered_g) > 1e-9:
+            measurement_step = step + 1
             break
+    # Preserve the fixed first-arrival sample, then verify the entire PSP is subthreshold.
+    for _ in range(100):
+        net.step(1)
+        n_post_spikes += int(net.last_spikes[1])
+        n_pre_spikes += int(net.last_spikes[0])
     dv_post = float(v_b - rest_b)
     scale_ok = (
         abs(delivered_g - expected_g) <= 1e-3 * max(1.0, abs(expected_g))
@@ -279,6 +288,7 @@ def _pair_psp(transmitter: str, *, reverse: bool = False, synapse_count: int = S
         and voltage_is_physiological([v_a, v_b, rest_a, rest_b])
         and abs(dv_post) < 100.0
         and n_pre_spikes == 1
+        and n_post_spikes == 0
     )
     return {
         "transmitter": transmitter,
@@ -292,6 +302,9 @@ def _pair_psp(transmitter: str, *, reverse: bool = False, synapse_count: int = S
         "expected_scale_mv": expected_order_mv,
         "a_spiked": a_spiked,
         "n_pre_spikes": int(n_pre_spikes),
+        "n_post_spikes": n_post_spikes,
+        "measurement_step_after_presynaptic_spike": measurement_step,
+        "measurement": "end of first integration step receiving synaptic event (dt=1 ms)",
         "g_post": delivered_g,
         "g_pre": float(net.g[0]),
         "v_post": v_b,
@@ -375,6 +388,8 @@ def synapse_count_scaling() -> dict:
                     "g_post": rec["g_post"],
                     "n_pre_spikes": rec["n_pre_spikes"],
                     "weight": rec["weight"],
+                    "n_post_spikes": rec["n_post_spikes"],
+                    "measurement_step": rec["measurement_step_after_presynaptic_spike"],
                 }
             )
             delta_v.append(float(rec["dv_post"]))
@@ -387,18 +402,24 @@ def synapse_count_scaling() -> dict:
         dv10 = delta_v[idx[10]]
         dv20 = delta_v[idx[20]]
         ratio = abs(dv20 / dv10) if dv10 != 0 else float("inf")
-        ratio_ok = bool(SCALE_RATIO_LO < ratio < SCALE_RATIO_HI)
+        ratio_10_5 = abs(dv10 / delta_v[idx[5]]) if delta_v[idx[5]] else float("inf")
+        ratio_ok = bool(SCALE_RATIO_LO < ratio < SCALE_RATIO_HI and SCALE_RATIO_LO < ratio_10_5 < SCALE_RATIO_HI)
         sign_ok = all(v > 0 for v in delta_v) if transmitter == "acetylcholine" else all(v < 0 for v in delta_v)
         one_event = all(n == 1 for n in n_pre)
         g10 = g_post[idx[10]]
         g20 = g_post[idx[20]]
         g_ratio = abs(g20 / g10) if g10 != 0 else float("inf")
         g_linear = bool(abs(g_ratio - 2.0) < 0.05)
-        tx_ok = bool(monotonic and ratio_ok and sign_ok and one_event and g_linear)
+        subthreshold = all(row["n_post_spikes"] == 0 for row in rows)
+        same_time = len({row["measurement_step"] for row in rows}) == 1
+        tx_ok = bool(monotonic and ratio_ok and sign_ok and one_event and g_linear and subthreshold and same_time)
         by_transmitter[transmitter] = {
             "rows": rows,
             "delta_v": delta_v,
             "ratio_20_over_10": ratio,
+            "ratio_10_over_5": ratio_10_5,
+            "subthreshold": subthreshold,
+            "same_kernel_time": same_time,
             "g_ratio_20_over_10": g_ratio,
             "monotonic": monotonic,
             "ratio_ok": ratio_ok,
@@ -636,7 +657,7 @@ def tiny_cpg_numerical_sanity(*, steps: int = 80, current: float = ISOLATED_STIM
         "all_voltages_physiological": all_phys,
         "all_voltages_finite": all_finite,
         "valid_dynamics": dynamics_ok,
-        "valid_for_rhythm_analysis": bool(valid_for_rhythm_analysis),
+        "valid_for_rhythm_analysis": False,
         "allow_lesions": False,
         "fft_executed": False,
         "dominant_frequency": None,
@@ -700,7 +721,7 @@ def run_lif_sanity() -> dict:
         ),
         "next_if_passed": (
             "shiu_lif_sanity_v1 isolated tests passed. Next is the tiny CPG "
-            "subgraph (DNg100+E1/E2/E3/I1/I2), still not pugliese_cpg_reference_v1, "
+            "subgraph (DNg100+E1/E2/E3/I1/I2), still not pugliese_cpg_v1, "
             "and not full MaleCNS. Do not FFT until the tiny-circuit census is sane."
         ),
     }

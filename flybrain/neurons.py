@@ -43,7 +43,7 @@ NT_SIGN = nt_sign
 # reference implementation stores volts internally and multiplies by 1e3
 # only when plotting. Never mix -52e-3 into this solver.
 SHIU_LIF_SANITY_MODEL = "shiu_lif_sanity_v1"
-PUGLIESE_CPG_MODEL = "pugliese_cpg_reference_v1"
+PUGLIESE_CPG_MODEL = "pugliese_cpg_v1"
 
 VOLTAGE_UNIT = "mV"
 V_REST_MV = -52.0
