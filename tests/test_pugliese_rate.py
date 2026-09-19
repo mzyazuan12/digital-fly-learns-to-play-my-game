@@ -61,7 +61,18 @@ def test_jsonable_keeps_python_bools():
     assert _jsonable({"ok": True, "n": 1}) == {"ok": True, "n": 1}
 
 
-def test_three_model_ids_are_distinct():
+def test_parameter_block_has_replicate_neuron_shape():
+    from flybrain.pugliese_rate import sample_cell_parameters_block
+
+    params = PuglieseRateParams()
+    drawn = sample_cell_parameters_block(5, 3, seed=1, params=params)
+    assert drawn["tau"].shape == (3, 5)
+    assert drawn["gain"].shape == (3, 5)
+    assert drawn["threshold"].shape == (3, 5)
+    assert drawn["fr_cap"].shape == (3, 5)
+    assert np.all(drawn["tau"] > 0)
+    assert np.all(drawn["fr_cap"] > 0)
+    assert "split(PRNGKey" in drawn["sampler"] or "spawn(5)" in drawn["sampler"]
     params = PuglieseRateParams()
     assert SHIU_LIF_SANITY_MODEL == "shiu_lif_sanity_v1"
     assert PUGLIESE_CPG_MODEL == "pugliese_cpg_v1"
