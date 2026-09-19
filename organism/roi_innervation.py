@@ -729,6 +729,7 @@ def _manc_correspondence(row: dict) -> dict | None:
         return None
     return {
         "source": "MaleCNS annotation fields mancBodyid / mancType",
+        "source_dataset": "MANC_T1",
         "manc_body_id": int(mid),
         "manc_type": row.get("manc_type") or None,
         "note": (
@@ -745,6 +746,7 @@ def _neuron_record(row: dict, assigned: dict) -> dict:
         "malecns_body_id": int(row["malecns_body_id"]),
         "type": row.get("type") or "",
         "side": row.get("side") or "",
+        "identity_method": f"raw annotation type == {row.get('type') or ''}",
         "roi_counts": assigned["roi_counts"],
         "assigned_segment": assigned["assigned_segment"],
         "assignment_confidence": assigned["assignment_confidence"],
@@ -776,6 +778,7 @@ def _dng100_malecns_record(row: dict, assigned: dict, nt: dict) -> dict:
         "malecns_body_id": body,
         "type": "DNg100",
         "side": side,
+        "identity_method": "raw annotation type == DNg100",
         "root_side": row.get("root_side") or "",
         "instance": row.get("instance") or "",
         "predicted_nt": nt_row.get("predicted_nt") or nt_row.get("celltype_predicted_nt") or "",
