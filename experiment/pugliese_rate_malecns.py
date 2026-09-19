@@ -102,10 +102,10 @@ def _jsonable(value):
     if isinstance(value, (np.floating, float)):
         x = float(value)
         return x if np.isfinite(x) else None
-    if isinstance(value, (np.integer, int)):
-        return int(value)
-    if isinstance(value, (np.bool_, bool)):
+    if isinstance(value, (np.bool_, bool)) or type(value) is bool:
         return bool(value)
+    if isinstance(value, (np.integer, int)) and not isinstance(value, bool):
+        return int(value)
     if value is None:
         return None
     return value
