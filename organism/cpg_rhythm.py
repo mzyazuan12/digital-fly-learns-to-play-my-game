@@ -113,14 +113,16 @@ def rhythmicity_score(
     *,
     band: tuple[float, float] = SEARCH_BAND_HZ,
 ) -> dict:
-    """Autocorr peak in `band` plus a tonic/silent classifier.
+    """Unrestricted spectral/autocorrelation peaks plus a tonic/silent classifier.
 
-    score in [0, 1] is the autocorrelation at the strongest lag in-band.
+    score in [0, 1] is the strongest positive local autocorrelation peak.
     FFT does not run on exploding or non-physiological traces.
     Rhythm/lesion permissions are not granted here.
     """
     x = np.asarray(trace, dtype=np.float64)
     dt_s = float(dt_ms) / 1000.0
+    if not np.isfinite(dt_s) or dt_s <= 0:
+        raise ValueError("dt_ms must be finite and positive")
     out = _trace_stats(x)
     if x.size < 16:
         return out
@@ -144,9 +146,8 @@ def rhythmicity_score(
     out["fft_executed"] = True
     freqs = np.fft.rfftfreq(x.size, d=dt_s)
     spec = np.abs(np.fft.rfft(x - mean)) ** 2
-    band_mask = (freqs >= band[0]) & (freqs <= band[1])
     total = float(spec[1:].sum()) if spec.size > 1 else 0.0
-    if total > 0 and np.any(band_mask):
+    if total > 0:
         peak_i = 1 + int(np.argmax(spec[1:]))
         fft_hz = float(freqs[peak_i])
         out["fft_hz"] = fft_hz
@@ -154,17 +155,15 @@ def rhythmicity_score(
         out["band_power_frac"] = float(spec[peak_i] / total)
 
     ac = _autocorr(x)
-    lag_min = max(2, int(round(1.0 / band[1] / dt_s)))
-    lag_max = min(max(lag_min + 1, x.size // 3), int(round(1.0 / band[0] / dt_s)))
-    if lag_max <= lag_min or lag_min >= x.size:
+    # Search observed autocorrelation peaks, without a published-frequency prior.
+    lag_max = x.size // 3
+    candidates = np.flatnonzero((ac[1:lag_max] > ac[:lag_max-1]) & (ac[1:lag_max] >= ac[2:lag_max+1])) + 1
+    if candidates.size == 0:
+        out["dominant_frequency"] = out.get("fft_hz")
         return out
-    segment = ac[lag_min : lag_max + 1]
-    if segment.size == 0:
-        return out
-    rel = int(np.argmax(segment))
-    score = float(max(0.0, segment[rel]))
-    lag = lag_min + rel
-    peak_hz = 1.0 / (lag * dt_s) if lag > 0 else None
+    lag = int(candidates[np.argmax(ac[candidates])])
+    score = float(max(0.0, ac[lag]))
+    peak_hz = 1.0 / (lag * dt_s)
     out["score"] = score
     out["rhythmicity_score"] = score
     out["peak_hz"] = float(peak_hz) if peak_hz is not None else None

@@ -74,6 +74,7 @@ def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
         print('Raw identity and ROI mapping PASS', flush=True)
         graph = raw_subgraph()
         params = shiu_lif_params(dt=1.0)
+        report["source_files"] = {name:{"bytes":(DEFAULT_DATA/name).stat().st_size,"mtime_ns":(DEFAULT_DATA/name).stat().st_mtime_ns} for name in (ANN_FILE,NT_FILE,EDGE_FILE,"syn-points-male-cns-v1.0-minconf-0.5.feather")}
         report.update(dataset='MaleCNS_v1.0', n_neurons=graph.n, n_edges=graph.n_edges,
                       neural_parameters=asdict(params), seed=seed, dt_ms=1.0, steps=steps, warmup_steps=warmup,
                       current_mv_drive=current, voltage_unit='mV', weight_transformation='anatomical count × presynaptic NT sign × 0.275 mV',
@@ -87,6 +88,7 @@ def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
         indices['MN'] = np.flatnonzero(np.char.find(graph.superclass.astype(str), 'motor') >= 0)
         for body in (10045,10056):
             net=MixedDynamicsNetwork(graph, params=params, seed=seed)
+            report["neuron_model_assignment"] = net.models.snapshot()
             net.intrinsic_noise_std=0.0
             net.reset()
             v=np.zeros((steps,graph.n)); activity=np.zeros_like(v); spikes=np.zeros_like(v,dtype=bool)
@@ -96,6 +98,11 @@ def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
                 v[t]=net.v; spikes[t]=net.last_spikes
                 activity[t]=np.where(net.is_graded,net.graded_output,net.last_spikes)
             dng=v[:,indices['DNg100']]
+            invalid = (~np.isfinite(v)) | (v < -100) | (v > 40)
+            violations = []
+            for idx in np.flatnonzero(np.any(invalid,axis=0)):
+                first=int(np.flatnonzero(invalid[:,idx])[0])
+                violations.append({'source_dataset':'MaleCNS_v1.0','malecns_body_id':int(graph.neuron_ids[idx]),'type':str(graph.cell_type[idx]),'first_invalid_time_ms':first+1,'min_mv':float(v[:,idx].min()),'max_mv':float(v[:,idx].max())})
             finite=voltages_finite(dng); phys=voltage_is_physiological(dng)
             network_valid=voltage_is_physiological(v)
             census={}
@@ -112,9 +119,9 @@ def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
                  'all_dynamics_valid':finite and phys and network_valid,
                  'valid_for_rhythm_analysis':allowed,'allow_lesions':allowed,'census':census,
                  'v_min_mv':float(v.min()),'v_max_mv':float(v.max()),'dominant_frequency':None,'rhythmicity_score':None,
-                 'fft_executed':False}
+                 'fft_executed':False, 'voltage_violations':violations}
             np.savez_compressed(out/f'DNg100_{body}.npz',model_id=SHIU_LIF_SANITY_MODEL,
-                                malecns_body_ids=graph.neuron_ids, source_dataset='MaleCNS_v1.0',v_mv=v, activity=activity, spikes=spikes, dt_ms=1.0)
+                                malecns_body_ids=graph.neuron_ids, neuron_kind=net.models.kind.astype(str), cell_type=graph.cell_type.astype(str), source_dataset='MaleCNS_v1.0',v_mv=v, activity=activity, spikes=spikes, dt_ms=1.0)
             if allowed:
                 row['rhythm']={role:rhythmicity_score(activity[warmup:,idx].mean(axis=1),1.0) for role,idx in indices.items() if len(idx)}
                 row['fft_executed']=any(m['fft_executed'] for m in row['rhythm'].values())
