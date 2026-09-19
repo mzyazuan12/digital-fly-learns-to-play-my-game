@@ -7,6 +7,7 @@ import inspect
 
 import numpy as np
 
+from flybrain.neurons import SHIU_LIF_SANITY_MODEL
 from organism.config import MotorMode, motor_fidelity_level
 from organism.cpg_rhythm import rhythmicity_score
 from organism.motor_map import command_for_mode
@@ -85,6 +86,7 @@ def test_rhythmicity_detects_sine_tonic_and_explosion():
     assert exploded["exploding"]
     assert exploded["oscillatory"] is False
     assert exploded["valid_for_rhythm_analysis"] is False
+    assert exploded["fft_executed"] is False
     assert exploded["dominant_frequency"] is None
 
 
@@ -107,7 +109,8 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert result["dynamics_retuned"] is False
     assert "frequency_forced" not in result
     assert "frequency_forced" not in result["metrics"]
-    assert result["dynamics_model"] == "SHIU_LIF_SANITY_MODEL"
+    assert result["dynamics_model"] == SHIU_LIF_SANITY_MODEL
+    assert result["model_id"] == SHIU_LIF_SANITY_MODEL
     assert result["is_pugliese_reproduction"] is False
     assert result["voltage_unit"] == "mV"
     assert result["motor_mode"] == "MODE_NEURAL_CPG"
