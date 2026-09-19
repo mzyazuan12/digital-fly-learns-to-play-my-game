@@ -422,7 +422,12 @@ def run(
         manc = manc_edge_families()
         male_families = malecns_edge_families(graph, sim["W"], dng100_body=int(stim_body))
         report["anatomy_comparison"] = {
-            "note": "Signed synapse-count families between MANC 10093 and MaleCNS 10056 restricted circuits. Not a dynamics result.",
+            "note": (
+                "Signed synapse-count families between MANC T1 DNg100 10093 and "
+                "MaleCNS DNg100_R 10056 restricted circuits. MANC T1 contains two "
+                "copies of each CPG type; this MaleCNS restriction includes all six "
+                "T1/T2/T3 copies. Ratios are therefore not per-copy matched. Not a dynamics result."
+            ),
             "rows": compare_edge_families(male_families, manc),
             "MANC": manc,
         }
