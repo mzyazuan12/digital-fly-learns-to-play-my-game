@@ -322,10 +322,10 @@ class MotorBridge:
         )
         self.cpg_i2 = self._resolve(
             "cpg_I2",
-            ("IN19B007",),
+            ("IN19A007",),
             None,
             maps_to="observe_only",
-            literature="Pugliese et al. 2025: I2 (IN19B007)",
+            literature="Pugliese et al. 2025: I2 (IN19A007)",
         )
         self.cpg_e3 = self._resolve(
             "cpg_E3",

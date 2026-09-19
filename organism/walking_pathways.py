@@ -21,9 +21,10 @@ Literature (not a claim that our LIF model reproduces those recordings):
 - Halt: Foxglove/CB0890 walk-OFF, Bluebell/DNg60 walk-OFF, Brake/AN19A018
   (Sapkal et al. 2024). Foxglove is a FlyWire type; MaleCNS may not label it.
 - Core CPG, one copy per leg neuropil (Pugliese et al. 2025 bioRxiv preprint):
-  E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19B007, E3=IN19B012,
+  E1=IN17A001, E2=INXXX466, I1=IN16B036, I2=IN19A007, E3=IN19B012,
   E4=IN03A006, E5=INXXX464. An older preprint passage appears to call E5
-  INXXX466 (the E2 type); canonical mapping is INXXX464. These names are
+  INXXX466 (the E2 type); canonical mapping is INXXX464. IN19B007 exists
+  in MaleCNS (two neurons) but is not I2. These names are
   observation/lesion labels, not motor commands.
 """
 
@@ -212,11 +213,11 @@ CPG_INTERNEURONS: tuple[PathwaySpec, ...] = (
     ),
     PathwaySpec(
         name="I2",
-        types=("IN19B007",),
+        types=("IN19A007",),
         aliases=("I2",),
         role="cpg_inhibitory_alt",
         maps_to="observe_only",
-        literature="Pugliese et al. 2025: I2 (IN19B007). IN19A007 is not I2.",
+        literature="Pugliese et al. 2025 (PMC13142387): I2 (IN19A007). IN19B007 is not I2.",
         family="cpg",
     ),
 )
@@ -234,19 +235,19 @@ WALKING_CIRCUIT_TYPES = {
     "E1": "IN17A001",
     "E2": "INXXX466",
     "I1": "IN16B036",
-    "I2": "IN19B007",
+    "I2": "IN19A007",
     "E3": "IN19B012",
     "E4": "IN03A006",
     "E5": "INXXX464",
 }
 
 I2_TYPE_PROVENANCE = {
-    "canonical": "IN19B007",
-    "rejected_alias": "IN19A007",
-    "source": "Pugliese et al. 2025 (core CPG identities: E1=IN17A001, E2=INXXX466, E3=IN19B012, I1=IN16B036, I2=IN19B007)",
+    "canonical": "IN19A007",
+    "rejected_alias": "IN19B007",
+    "source": "Pugliese et al. 2025 (PMC13142387): E1=IN17A001, E2=INXXX466, E3=IN19B012, I1=IN16B036, I2=IN19A007",
     "note": (
-        "IN19A007 exists in MaleCNS with six T1/T2/T3 copies and has "
-        "connectivity around this circuit, but it is not the identified I2."
+        "I2 is IN19A007: six T1/T2/T3 copies, predicted GABAergic. "
+        "IN19B007 exists in MaleCNS with two neurons and was an incorrect earlier I2 assignment."
     ),
 }
 
@@ -673,7 +674,7 @@ class WalkingCircuit:
             "notes": [
                 "Anatomy is MEASURED synapse counts. Oscillation is not implied.",
                 "Pugliese et al. 2025 bioRxiv: DNg100 → E1 is the main walking-CPG entry.",
-                "DNg100 is two neurons (one per side). The six-copy types are E1/E2/I1.",
+                "DNg100 is two neurons (one per side). The six-copy types are E1/E2/I1/I2.",
                 "Leg slots are per-bodyId LegNp PreSyn+PostSyn. Type-level ROI pages pool T1+T2+T3 and are not used. Soma-Z is not used.",
                 "Do not pool all IN17A001/INXXX466/IN16B036 into one CPG state; there are six leg copies.",
                 "DNp09 does not have to synapse on E1; it can recruit DNg100.",
