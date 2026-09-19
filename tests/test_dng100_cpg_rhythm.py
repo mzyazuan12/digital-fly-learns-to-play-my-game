@@ -28,21 +28,21 @@ def test_walking_circuit_types_use_published_e5():
     assert WALKING_CIRCUIT_TYPES["E1"] == "IN17A001"
     assert WALKING_CIRCUIT_TYPES["E2"] == "INXXX466"
     assert WALKING_CIRCUIT_TYPES["I1"] == "IN16B036"
-    assert WALKING_CIRCUIT_TYPES["I2"] == "IN19B007"
+    assert WALKING_CIRCUIT_TYPES["I2"] == "IN19A007"
     assert WALKING_CIRCUIT_TYPES["E3"] == "IN19B012"
     assert WALKING_CIRCUIT_TYPES["E4"] == "IN03A006"
     assert WALKING_CIRCUIT_TYPES["E5"] == "INXXX464"
     assert E5_TYPE_PROVENANCE["canonical"] == "INXXX464"
     assert E5_TYPE_PROVENANCE["rejected_alias"] == "INXXX466"
-    assert I2_TYPE_PROVENANCE["canonical"] == "IN19B007"
-    assert I2_TYPE_PROVENANCE["rejected_alias"] == "IN19A007"
+    assert I2_TYPE_PROVENANCE["canonical"] == "IN19A007"
+    assert I2_TYPE_PROVENANCE["rejected_alias"] == "IN19B007"
     e2 = next(p for p in CPG_INTERNEURONS if p.name == "E2")
     e5 = next(p for p in CPG_INTERNEURONS if p.name == "E5")
     i2 = next(p for p in CPG_INTERNEURONS if p.name == "I2")
     assert "E5" not in e2.aliases
     assert e2.types == ("INXXX466",)
     assert e5.types == ("INXXX464",)
-    assert i2.types == ("IN19B007",)
+    assert i2.types == ("IN19A007",)
 
 
 def test_toy_has_six_leg_slots_and_fills_front_left():
@@ -114,6 +114,7 @@ def test_dng100_rhythm_experiment_on_toy_does_not_call_walk():
     assert "E1" in intact["legs"]["FL"]
     assert "lesion_E1" in result["conditions"]
     assert "lesion_I2" in result["conditions"]
+    assert "lesion_I1_I2" in result["conditions"]
     assert "scrambled_connectome" in result["conditions"]
     assert result["answer"] in {"yes", "no"}
     if not result["oscillation_reproduced"]:
@@ -149,10 +150,10 @@ def test_cpg_mapping_json_keeps_pugliese_and_malecns_ids_apart():
     e1_ids = [malecns_body_id_of(value) for value in e1.values()]
     if any(e1_ids):
         assert len({i for i in e1_ids if i is not None}) == 6
-    assert mapping["roles"]["I2"] == "IN19B007"
-    assert mapping["IN19B007"]["role"] == "I2"
-    assert mapping["IN19B007"]["type"] == "IN19B007"
-    assert "IN19A007" not in mapping
+    assert mapping["roles"]["I2"] == "IN19A007"
+    assert mapping["IN19A007"]["role"] == "I2"
+    assert mapping["IN19A007"]["type"] == "IN19A007"
+    assert "IN19B007" not in mapping
     assert "dng100_body_id" not in mapping["DNg100"]
     left = mapping["DNg100"]["malecns"]["left"]
     right = mapping["DNg100"]["malecns"]["right"]

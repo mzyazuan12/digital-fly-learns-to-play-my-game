@@ -172,3 +172,36 @@ def test_invalid_derived_files_were_archived():
     assert INVALID_NAMESPACE_PARQUET_PATH.exists()
     assert MAPPING_PATH.exists()
     assert '"dng100_body_id"' not in MAPPING_PATH.read_text()
+    assert '"body_id"' not in MAPPING_PATH.read_text()
+
+
+def test_i2_is_in19a007_and_integer_10056_is_namespaced():
+    assert CORE_CPG_TYPES["I2"] == "IN19A007"
+    raw = load_raw_annotation_table()
+    types = raw["type"].astype(str).str.strip()
+    for cell_type, expected in EXPECTED_COUNTS.items():
+        assert int((types == cell_type).sum()) == expected
+    assert lookup_malecns(10056)["type"] == "DNg100"
+    assert lookup_malecns(10056)["source_dataset"] == "MaleCNS_v1.0"
+    assert lookup_manc(10056)["type"] == "vMS16"
+    assert lookup_manc(10056)["source_dataset"] == "MANC_T1"
+    assert lookup_manc(10093)["type"] == "DNg100"
+    mapping = load_cpg_mapping()
+    listed = set(collect_malecns_body_ids(mapping))
+    if 10093 in listed:
+        assert str(raw.loc[raw["bodyId"] == 10093, "type"].iloc[0]).strip() == "DNg100"
+    else:
+        assert str(raw.loc[raw["bodyId"] == 10093, "type"].iloc[0]).strip() != "DNg100"
+    left = mapping["DNg100"]["malecns"]["left"]
+    right = mapping["DNg100"]["malecns"]["right"]
+    assert left["source_dataset"] == "MaleCNS_v1.0"
+    assert right["source_dataset"] == "MaleCNS_v1.0"
+    assert left["malecns_body_id"] == 10045
+    assert right["malecns_body_id"] == 10056
+    assert "body_id" not in left
+    assert "body_id" not in right
+    pug = mapping["DNg100"]["pugliese_reference"]
+    assert pug["source_dataset"] == "MANC_T1"
+    assert pug["source_body_id"] == 10093
+    assert "body_id" not in pug
+    validate_cpg_mapping(mapping)
