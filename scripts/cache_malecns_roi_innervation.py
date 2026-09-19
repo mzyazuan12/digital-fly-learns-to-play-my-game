@@ -122,9 +122,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"wrote {MAPPING_PATH}")
         e1 = mapping.get("IN17A001") or {}
         print(f"E1 assigned {e1.get('n_assigned')}/{e1.get('n_expected')}")
-        i2 = mapping.get("IN19B007") or {}
+        i2 = mapping.get("IN19A007") or {}
         print(
-            f"I2 IN19B007 assigned {i2.get('n_assigned')}/{i2.get('n_expected')} "
+            f"I2 IN19A007 assigned {i2.get('n_assigned')}/{i2.get('n_expected')} "
             f"unassigned={len(i2.get('unassigned') or [])}"
         )
         malecns = (mapping.get("DNg100") or {}).get("malecns") or {}

@@ -59,7 +59,7 @@
     "frequency_cycles_per_sample": null,
     "frequency_hz": null
   },
-  "I2_note": "I2 is IN19B007. The MANC T1 DN-to-MN table has no IN19B007 rows (n=0). IN19A007 is present in that table but is not I2.",
+  "I2_note": "I2 is IN19A007 (Pugliese et al. 2025 PMC13142387). IN19B007 is not I2.",
   "mn_n": 148,
   "rhythm_reproduced": true,
   "note": "Authors report frequency as 1/lag_samples. Multiply by 1000 (1/dt) for Hz. Do not clamp onto 7\u201315 Hz. Phase-averaging 128 traces can wash out rhythm; per-replicate scores are the implementation test."
