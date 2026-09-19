@@ -32,7 +32,7 @@ ASSUMPTIONS: tuple[Assumption, ...] = (
     ),
     Assumption(
         id="lif_dynamics",
-        statement="Unlabeled cells use SHIU_LIF_SANITY_MODEL (current-based LIF in millivolts: Vrest=-52, Vthresh=-45, tau_m=20 ms, tau_syn=5 ms, delay=1.8 ms, Wsyn=0.275 mV/synapse). That is not PUGLIESE_CPG_MODEL (JAX rate ODE with gain, threshold, firing-rate cap, and cell-size normalization). Passing a Shiu isolated-neuron test is not a Pugliese CPG reproduction. PHYSIOLOGICAL_V_LOWER_MV=-100 is a debug guardrail, not a measured Drosophila bound.",
+        statement="Unlabeled cells use model_id=shiu_lif_sanity_v1 (current-based LIF in millivolts: Vrest=-52, Vthresh=-45, tau_m=20 ms, tau_syn=5 ms, delay=1.8 ms, Wsyn=0.275 mV/synapse). That is not model_id=pugliese_cpg_reference_v1 (JAX rate ODE with gain, threshold, firing-rate cap, and cell-size normalization). Passing a Shiu isolated-neuron test is not a Pugliese CPG reproduction. PHYSIOLOGICAL_V_LOWER_MV=-100 is a debug guardrail, not a measured Drosophila bound.",
         used_by="flybrain.network.MixedDynamicsNetwork",
     ),
     Assumption(

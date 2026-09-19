@@ -151,6 +151,10 @@ class MixedDynamicsNetwork:
     def plastic_factor(self) -> np.ndarray:
         return np.clip(1.0 + self.plastic_component, MIN_PLASTIC_FACTOR, MAX_PLASTIC_FACTOR)
 
+    @property
+    def model_id(self) -> str:
+        return getattr(self.params, "model_id", SHIU_LIF_SANITY_MODEL)
+
     def _rebuild_weights(self) -> None:
         if np.any(self.functional_gain < 0):
             raise RuntimeError(

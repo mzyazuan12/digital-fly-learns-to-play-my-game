@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-ROOT = Path(__file__).resolve().parents[1]
+from flybrain.neurons import PUGLIESE_CPG_MODEL
 REPO = ROOT / "third_party" / "Pugliese_2026"
 VNC_PYTHON = Path(os.environ.get("VNC_SIM_PYTHON", ROOT / ".mamba" / "envs" / "vnc-sim" / "bin" / "python"))
 REFERENCE = ROOT / "reference" / "authors_dng100"
@@ -207,7 +207,8 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
         "fraction_replicates_oscillation_ge_0.5": None,
         "fraction_replicates_E1_oscillation_ge_0.5": float(e1_osc / len(per_rep)) if per_rep else None,
         "published_walk_hz": [7.0, 15.0],
-        "dynamics_model": "PUGLIESE_CPG_MODEL",
+        "model_id": PUGLIESE_CPG_MODEL,
+        "dynamics_model": PUGLIESE_CPG_MODEL,
         "includes_cell_size_normalization": True,
         "E1_mean_trace": _pop("IN17A001", mean_rates, active_mask),
         "E1_per_replicate_mean": float(np.mean([row["E1"]["oscillation_score"] for row in per_rep if row["E1"]["oscillation_score"] is not None])) if per_rep else None,

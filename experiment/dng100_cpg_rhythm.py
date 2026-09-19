@@ -19,6 +19,7 @@ import numpy as np
 
 from flybrain.lif_sanity import (
     assert_lif_sanity,
+    DEBUG_HIERARCHY,
     format_lif_sanity,
     format_tiny_cpg,
     run_lif_sanity,
@@ -525,6 +526,7 @@ def run(
         "is_pugliese_reproduction": False,
         "voltage_unit": VOLTAGE_UNIT,
         "wsyn_mv": WSYN_MV,
+        "debug_hierarchy": list(DEBUG_HIERARCHY),
         "walking_circuit_types": dict(WALKING_CIRCUIT_TYPES),
         "identity_lock": {
             "CORE_CPG_TYPES": dict(CORE_CPG_TYPES),

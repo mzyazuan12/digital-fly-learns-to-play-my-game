@@ -13,7 +13,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from flybrain.neurons import PUGLIESE_CPG_MODEL
 THIRD_PARTY = ROOT / "third_party" / "Pugliese_2026"
 OUT = ROOT / "outputs" / "pugliese_dng100_control.json"
 REPO = "https://github.com/smpuglie/Pugliese_2026.git"
@@ -156,7 +156,8 @@ def run(*, n_replicates: int = 1, T: float = 2.0, stim_current: float = 250.0) -
     payload = {
         "ok": True,
         "source": "Pugliese et al. 2025 bioRxiv; github.com/smpuglie/Pugliese_2026",
-        "dynamics_model": "PUGLIESE_CPG_MODEL",
+        "model_id": PUGLIESE_CPG_MODEL,
+        "dynamics_model": PUGLIESE_CPG_MODEL,
         "not_shiu_lif": True,
         "includes_cell_size_normalization": True,
         "experiment": "DNg100_Stim parameters on authors' JAX rate-ODE code",
