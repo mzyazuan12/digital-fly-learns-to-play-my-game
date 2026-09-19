@@ -14,6 +14,8 @@ import sys
 from pathlib import Path
 
 from flybrain.neurons import PUGLIESE_CPG_MODEL
+
+ROOT = Path(__file__).resolve().parents[1]
 THIRD_PARTY = ROOT / "third_party" / "Pugliese_2026"
 OUT = ROOT / "outputs" / "pugliese_dng100_control.json"
 REPO = "https://github.com/smpuglie/Pugliese_2026.git"

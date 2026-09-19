@@ -16,6 +16,8 @@ from pathlib import Path
 import numpy as np
 
 from flybrain.neurons import PUGLIESE_CPG_MODEL
+
+ROOT = Path(__file__).resolve().parents[1]
 REPO = ROOT / "third_party" / "Pugliese_2026"
 VNC_PYTHON = Path(os.environ.get("VNC_SIM_PYTHON", ROOT / ".mamba" / "envs" / "vnc-sim" / "bin" / "python"))
 REFERENCE = ROOT / "reference" / "authors_dng100"
