@@ -11,7 +11,7 @@ import numpy as np
 import pyarrow.dataset as ds
 import pyarrow.feather as feather
 from flybrain.loader import ANN_FILE, NT_FILE, EDGE_FILE, DEFAULT_DATA, Connectome, _coo_to_csr
-from flybrain.lif_sanity import assert_lif_sanity
+from flybrain.lif_sanity import assert_lif_sanity, _spiking_models, _pair_psp
 from flybrain.network import MixedDynamicsNetwork
 from flybrain.neurons import SHIU_LIF_SANITY_MODEL, nt_sign, shiu_lif_params, voltage_is_physiological, voltages_finite
 from organism.roi_innervation import (CORE_CPG_TYPES, assert_expected_annotation_counts, load_annotations,
@@ -73,7 +73,21 @@ def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
         report['mapping_unassigned'] = {role:len(mapping[typ]['unassigned']) for role,typ in CORE_CPG_TYPES.items()}
         print('Raw identity and ROI mapping PASS', flush=True)
         graph = raw_subgraph()
+        # This milestone uses the LIF sanity model for every cell. Graded VNC
+        # assumptions belong to a separate model comparison, not this identifier.
         params = shiu_lif_params(dt=1.0)
+        np.savez_compressed(out/'subgraph.npz', model_id=SHIU_LIF_SANITY_MODEL,
+                            source_dataset='MaleCNS_v1.0', malecns_body_ids=graph.neuron_ids,
+                            pre_ptr=graph.pre_ptr,post=graph.post,anatomical=graph.anatomical,
+                            cell_type=graph.cell_type.astype(str),nt=graph.neurotransmitter.astype(str))
+        edge_lookup={(i,int(graph.post[e])):int(graph.anatomical[e]) for i in range(graph.n) for e in range(graph.pre_ptr[i],graph.pre_ptr[i+1])}
+        pairs=[(i,j,n) for (i,j),n in edge_lookup.items() if i != j and edge_lookup.get((j,i),0)==0 and graph.neurotransmitter[i]=='acetylcholine' and n<=20]
+        if not pairs: raise RuntimeError('No suitable asymmetric anatomical ACh edge for isolated orientation probe')
+        i,j,n=max(pairs,key=lambda item:item[2])
+        probe=_pair_psp('acetylcholine',synapse_count=n)
+        reverse=_pair_psp('acetylcholine',synapse_count=n,reverse=True)
+        report['anatomical_edge_orientation']={'source_dataset':'MaleCNS_v1.0','pre_malecns_body_id':int(graph.neuron_ids[i]),'post_malecns_body_id':int(graph.neuron_ids[j]),'forward_synapse_count':n,'reverse_synapse_count':0,'matrix_convention':'W[pre, post], outgoing CSR','isolated_forward':probe,'isolated_reverse':reverse,'ok':bool(probe['g_post']>0 and reverse['g_post']==0)}
+        if not report['anatomical_edge_orientation']['ok']: raise RuntimeError('Anatomical edge orientation failed')
         report["source_files"] = {name:{"bytes":(DEFAULT_DATA/name).stat().st_size,"mtime_ns":(DEFAULT_DATA/name).stat().st_mtime_ns} for name in (ANN_FILE,NT_FILE,EDGE_FILE,"syn-points-male-cns-v1.0-minconf-0.5.feather")}
         report.update(dataset='MaleCNS_v1.0', n_neurons=graph.n, n_edges=graph.n_edges,
                       neural_parameters=asdict(params), seed=seed, dt_ms=1.0, steps=steps, warmup_steps=warmup,
@@ -87,7 +101,7 @@ def run(out: Path, *, steps=2000, warmup=100, current=40.0, seed=1):
         indices = {role:np.flatnonzero(graph.cell_type == typ) for role,typ in roles.items()}
         indices['MN'] = np.flatnonzero(np.char.find(graph.superclass.astype(str), 'motor') >= 0)
         for body in (10045,10056):
-            net=MixedDynamicsNetwork(graph, params=params, seed=seed)
+            net=MixedDynamicsNetwork(graph, params=params, seed=seed, models=_spiking_models(graph.n))
             report["neuron_model_assignment"] = net.models.snapshot()
             net.intrinsic_noise_std=0.0
             net.reset()
