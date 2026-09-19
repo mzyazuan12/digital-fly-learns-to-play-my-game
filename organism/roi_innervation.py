@@ -60,7 +60,7 @@ SIDES = ("L", "R")
 ROI_COLUMNS = tuple(f"{seg}_{side}_{kind}" for seg in NEUROMERES for side in SIDES for kind in ("pre", "post"))
 ASSIGNMENT_METHOD = "LegNp synaptic innervation"
 DNG100_ASSIGNMENT_METHOD = "MaleCNS annotation type == DNg100"
-FORBIDDEN_KEYS = {"id", "dng100_body_id", "body_id"}
+FORBIDDEN_KEYS = {"id", "dng100_body_id"}
 PUGLIESE_MANC_STIM_BODY = 10093
 
 PAPER_SLOTS = ("LF", "RF", "LM", "RM", "LH", "RH")
@@ -477,6 +477,66 @@ def malecns_dng100_body_ids() -> dict[str, int]:
     if set(out) != {"L", "R"}:
         raise AssertionError(f"MaleCNS DNg100 sides {out} != {{L, R}}")
     return out
+
+
+def lookup_malecns(body_id: int) -> dict:
+    """One MaleCNS annotation row. bodyId is only unique inside MaleCNS_v1.0."""
+    raw = load_raw_annotation_table()
+    hit = raw.loc[raw["bodyId"] == int(body_id)]
+    if len(hit) != 1:
+        raise KeyError(f"MaleCNS bodyId {body_id} n={len(hit)}")
+    row = hit.iloc[0]
+    return {
+        "source_dataset": "MaleCNS_v1.0",
+        "malecns_body_id": int(body_id),
+        "type": str(row["type"] or "").strip(),
+        "side": _norm_side(row.get("somaSide")),
+        "instance": str(row.get("instance") or ""),
+        "manc_body_id": None if row.get("mancBodyid") is None or row.get("mancBodyid") != row.get("mancBodyid") else int(row["mancBodyid"]),
+        "manc_type": str(row.get("mancType") or "") or None,
+    }
+
+
+def lookup_manc(body_id: int) -> dict:
+    """One Pugliese MANC T1 table row. bodyId is only unique inside MANC_T1."""
+    import pandas as pd
+
+    if not PUGLIESE_MANC_T1_TABLE.exists():
+        raise FileNotFoundError(PUGLIESE_MANC_T1_TABLE)
+    table = pd.read_csv(PUGLIESE_MANC_T1_TABLE)
+    hit = table.loc[table["bodyId"] == int(body_id)]
+    if hit.empty:
+        raise KeyError(f"MANC T1 bodyId {body_id} n=0")
+    row = hit.iloc[0]
+    return {
+        "source_dataset": "MANC_T1",
+        "source_matrix_index": int(row.name),
+        "source_body_id": int(body_id),
+        "type": str(row.get("type") or "").strip(),
+        "predicted_nt": str(row.get("predictedNt") or ""),
+    }
+
+
+def assert_every_body_id_has_dataset(obj: object, *, path: str = "$") -> None:
+    """A body ID integer is meaningless without source_dataset."""
+    if isinstance(obj, dict):
+        if "body_id" in obj:
+            raise ValueError(
+                f"{path}: generic body_id is forbidden in mapping JSON; "
+                "use malecns_body_id with source_dataset=MaleCNS_v1.0 or "
+                "source_body_id with source_dataset=MANC_T1"
+            )
+        if obj.get("malecns_body_id") is not None:
+            if obj.get("source_dataset") not in MALE_CNS_DATASETS:
+                raise ValueError(f"{path}: malecns_body_id requires source_dataset MaleCNS_v1.0")
+        if obj.get("source_body_id") is not None:
+            if obj.get("source_dataset") not in MANC_DATASETS:
+                raise ValueError(f"{path}: source_body_id requires source_dataset MANC_T1")
+        for key, value in obj.items():
+            assert_every_body_id_has_dataset(value, path=f"{path}.{key}")
+    elif isinstance(obj, list):
+        for i, item in enumerate(obj):
+            assert_every_body_id_has_dataset(item, path=f"{path}[{i}]")
 
 
 def load_annotations(types: tuple[str, ...] | None = None) -> list[dict]:
