@@ -35,7 +35,7 @@ correspondence to a different specimen, not integer identity. Pugliese
 `DNg100_Stim` is MANC T1 **source_matrix_index 31 / source_body_id 10093 /
 type DNg100** and lives only under `DNg100.pugliese_reference`. In that MANC
 table, body 10056 is vMS16 — a different cell from MaleCNS DNg100_R 10056.
-MaleCNS bodyId 10093 is Am1. I2 is `IN19B007`, not `IN19A007`.
+MaleCNS bodyId 10093 is Am1. I2 is `IN19A007` (six copies), not `IN19B007`.
 
 After `python scripts/cache_malecns_roi_innervation.py --write-mapping`:
 

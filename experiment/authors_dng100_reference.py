@@ -215,10 +215,10 @@ def extract_reference(ckpt_dir: Path, config_path: Path | None = None) -> dict:
         "E1": _pop("IN17A001", mean_rates, active_mask),
         "E2": _pop("INXXX466", mean_rates, active_mask),
         "I1": _pop("IN16B036", mean_rates, active_mask),
-        "I2": _pop("IN19B007", mean_rates, active_mask),
+        "I2": _pop("IN19A007", mean_rates, active_mask),
         "I2_note": (
-            "I2 is IN19B007. The MANC T1 DN-to-MN table has no IN19B007 rows "
-            "(n=0). IN19A007 is present in that table but is not I2."
+            "I2 is IN19A007 (Pugliese et al. 2025 PMC13142387). "
+            "IN19B007 is not I2."
         ),
         "mn_n": int(mn_mask.sum()),
         "rhythm_reproduced": bool(

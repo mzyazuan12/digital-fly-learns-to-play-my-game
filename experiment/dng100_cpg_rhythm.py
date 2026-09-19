@@ -343,13 +343,20 @@ def run(
     lesion_report = {}
     if lesions:
         expected = {
-            "E1": "rhythm should collapse strongly (preprint full-network necessity)",
-            "E2": "rhythm should collapse strongly (preprint full-network necessity)",
-            "I1": "effect may be weaker; other inhibitory cells can compensate",
-            "I2": "whole-CNS minimal circuits used I1 or I2 with E1+E2",
+            "E1": "rhythm should collapse strongly (Pugliese: E1 necessary)",
+            "E2": "rhythm should collapse strongly (Pugliese: E2 necessary)",
+            "I1": "rhythm may persist (Pugliese: I1 and I2 appear partly redundant)",
+            "I2": "rhythm may persist (Pugliese: I1 and I2 appear partly redundant)",
+            "I1_I2": "especially interesting; both inhibitory cells silenced",
         }
-        for name, key in (("E1", "E1"), ("E2", "E2"), ("I1", "I1"), ("I2", "I2")):
-            idx = circuit.indices(key)
+        i1_idx = circuit.indices("I1")
+        i2_idx = circuit.indices("I2")
+        both_inh = (
+            np.unique(np.concatenate([i1_idx, i2_idx]))
+            if i1_idx.size or i2_idx.size
+            else np.zeros(0, dtype=np.int32)
+        )
+        for name, idx in (("E1", circuit.indices("E1")), ("E2", circuit.indices("E2")), ("I1", i1_idx), ("I2", i2_idx), ("I1_I2", both_inh)):
             result = run_condition(
                 net,
                 circuit,
