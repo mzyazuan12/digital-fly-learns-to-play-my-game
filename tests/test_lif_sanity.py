@@ -113,6 +113,9 @@ def test_rhythm_permissions_are_derived_and_default_false():
     )
     assert interpreted["valid_for_rhythm_analysis"] is False
     assert interpreted["allow_lesions"] is False
+
+
+def test_solver_rejects_volt_scale_rest():
     with pytest.raises(ValueError, match="millivolts"):
         LIFParams(v_rest=-52e-3, v_threshold=-45e-3)
 
@@ -189,7 +192,28 @@ def test_cholinergic_synapse_depolarizes_postsynaptic_cell():
     assert rec["scale_ok"]
 
 
-def test_gaba_synapse_hyperpolarizes_postsynaptic_cell():
+def test_synapse_count_scaling_is_monotonic_and_ratio_near_two():
+    rec = synapse_count_scaling()
+    assert rec["ok"], rec
+    assert rec["model_id"] == SHIU_LIF_SANITY_MODEL
+    assert rec["counts"] == list(SYNAPSE_COUNT_SWEEP)
+    ach = rec["by_transmitter"]["acetylcholine"]
+    gab = rec["by_transmitter"]["gaba"]
+    assert all(v > 0 for v in ach["delta_v"])
+    assert all(v < 0 for v in gab["delta_v"])
+    assert SCALE_RATIO_LO < ach["ratio_20_over_10"] < SCALE_RATIO_HI
+    assert SCALE_RATIO_LO < gab["ratio_20_over_10"] < SCALE_RATIO_HI
+    one = run_single_synaptic_event(synapse_count=1, transmitter="acetylcholine")
+    five = run_single_synaptic_event(synapse_count=5, transmitter="acetylcholine")
+    ten = run_single_synaptic_event(synapse_count=10, transmitter="acetylcholine")
+    twenty = run_single_synaptic_event(synapse_count=20, transmitter="acetylcholine")
+    assert one["n_pre_spikes"] == 1
+    assert one["measured"] < five["measured"] < ten["measured"] < twenty["measured"]
+    ratio = abs(twenty["measured"] / ten["measured"])
+    assert SCALE_RATIO_LO < ratio < SCALE_RATIO_HI
+    gaba20 = run_single_synaptic_event(synapse_count=20, transmitter="gaba")
+    assert gaba20["measured"] < 0
+    assert gaba20["n_pre_spikes"] == 1
     rec = gaba_hyperpolarizes()
     assert rec["ok"], rec
     assert rec["dv_post"] < 0
