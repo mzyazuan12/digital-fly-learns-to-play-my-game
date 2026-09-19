@@ -140,6 +140,8 @@ def directed_pair_graph(
             "reverse": reverse,
             "synapse_count": int(synapse_count),
             "wsyn_mv": WSYN_MV,
+            "synaptic_step_mv": SYNAPTIC_STEP_MV,
+            "model_id": SHIU_LIF_SANITY_MODEL,
             "dynamics_model": SHIU_LIF_SANITY_MODEL,
         },
     )
@@ -186,6 +188,7 @@ def isolated_rest(steps: int = 80) -> dict:
     return {
         "ok": bool(ok),
         "name": "isolated_rest",
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "dynamics_model": SHIU_LIF_SANITY_MODEL,
         "voltage_unit": VOLTAGE_UNIT,
         "v_start": float(v[0]),
@@ -254,11 +257,13 @@ def _pair_psp(transmitter: str, *, reverse: bool = False, synapse_count: int = S
     net.v[0] = np.float32(float(net.v_th) + 1.0)
     net.step(1)
     a_spiked = bool(net.last_spikes[0])
+    n_pre_spikes = int(a_spiked)
     delivered_g = 0.0
     v_b = rest_b
     v_a = float(net.v[0])
     for _ in range(int(net.delay_slots) + 2):
         net.step(1)
+        n_pre_spikes += int(net.last_spikes[0])
         delivered_g = float(net.g[1])
         v_b = float(net.v[1])
         v_a = float(net.v[0])
@@ -268,8 +273,11 @@ def _pair_psp(transmitter: str, *, reverse: bool = False, synapse_count: int = S
     scale_ok = (
         abs(delivered_g - expected_g) <= 1e-3 * max(1.0, abs(expected_g))
         and SCALE_DV_MIN_MV <= abs(dv_post) <= SCALE_DV_MAX_MV
+        and voltages_finite([v_a, v_b, rest_a, rest_b])
         and valid_dynamics([v_a, v_b, rest_a, rest_b])
+        and voltage_is_physiological([v_a, v_b, rest_a, rest_b])
         and abs(dv_post) < 100.0
+        and n_pre_spikes == 1
     )
     return {
         "transmitter": transmitter,
@@ -277,14 +285,18 @@ def _pair_psp(transmitter: str, *, reverse: bool = False, synapse_count: int = S
         "reverse_edge": bool(reverse),
         "synapse_count": int(synapse_count),
         "wsyn_mv": float(net.params.wsyn_mv),
+        "synaptic_step_mv": SYNAPTIC_STEP_MV,
         "expected_g": expected_g,
         "expected_order_mv": expected_order_mv,
+        "expected_scale_mv": expected_order_mv,
         "a_spiked": a_spiked,
+        "n_pre_spikes": int(n_pre_spikes),
         "g_post": delivered_g,
         "g_pre": float(net.g[0]),
         "v_post": v_b,
         "v_pre": v_a,
         "dv_post": dv_post,
+        "measured": dv_post,
         "dv_pre": float(v_a - rest_a),
         "weight": float(net.weight[0]) if net.weight.size else 0.0,
         "scale_ok": bool(scale_ok),
@@ -292,6 +304,7 @@ def _pair_psp(transmitter: str, *, reverse: bool = False, synapse_count: int = S
         "tau_m_ms": TAU_M_MS,
         "tau_syn_ms": TAU_SYN_MS,
         "voltage_unit": VOLTAGE_UNIT,
+        "model_id": SHIU_LIF_SANITY_MODEL,
         "dynamics_model": SHIU_LIF_SANITY_MODEL,
     }
 
