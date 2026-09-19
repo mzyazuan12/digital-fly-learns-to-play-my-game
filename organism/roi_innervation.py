@@ -821,13 +821,13 @@ def build_cpg_mapping(rows: list[dict] | None = None) -> dict:
     mapping: dict = {
         "dataset": "MaleCNS v1.0",
         "roles": {
-            "E1": "IN17A001",
-            "E2": "INXXX466",
-            "E3": "IN19B012",
-            "I1": "IN16B036",
-            "I2": "IN19B007",
-            "E4": "IN03A006",
-            "E5": "INXXX464",
+            "E1": CORE_CPG_TYPES["E1"],
+            "E2": CORE_CPG_TYPES["E2"],
+            "E3": CORE_CPG_TYPES["E3"],
+            "I1": CORE_CPG_TYPES["I1"],
+            "I2": CORE_CPG_TYPES["I2"],
+            "E4": EXTENDED_CPG_TYPES["E4"],
+            "E5": EXTENDED_CPG_TYPES["E5"],
             "DNg100": "DNg100",
         },
         "source": (
@@ -967,10 +967,11 @@ def validate_cpg_mapping(mapping: dict, *, manc_body_ids: set[int] | None = None
     import pandas as pd
 
     _assert_forbidden_keys(mapping)
-    if CORE_CPG_TYPES["I2"] != "IN19B007":
-        raise AssertionError("I2 must be IN19B007")
-    if "IN19A007" in CORE_CPG_TYPES.values():
-        raise AssertionError("IN19A007 is not I2")
+    assert_every_body_id_has_dataset(mapping)
+    if CORE_CPG_TYPES["I2"] != "IN19A007":
+        raise AssertionError("I2 must be IN19A007")
+    if "IN19B007" in CORE_CPG_TYPES.values():
+        raise AssertionError("IN19B007 is not I2")
 
     raw = load_raw_annotation_table()
     if "bodyId" not in raw.columns:
@@ -995,6 +996,8 @@ def validate_cpg_mapping(mapping: dict, *, manc_body_ids: set[int] | None = None
             raise ValueError("MaleCNS DNg100 source_dataset must be MaleCNS_v1.0")
         if rec.get("assignment_method") != DNG100_ASSIGNMENT_METHOD:
             raise ValueError(f"DNg100 assignment_method={rec.get('assignment_method')!r}")
+        if rec.get("identity_method") != "raw annotation type == DNg100":
+            raise ValueError(f"DNg100 identity_method={rec.get('identity_method')!r}")
         body = int(rec["malecns_body_id"])
         source = raw.loc[raw["bodyId"] == body]
         if len(source) != 1:
@@ -1036,13 +1039,13 @@ def validate_cpg_mapping(mapping: dict, *, manc_body_ids: set[int] | None = None
         if rec.get("assignment_status") == "AMBIGUOUS" and rec.get("assigned_slot"):
             raise ValueError(f"CPG cell {rec.get('malecns_body_id')} is AMBIGUOUS but slotted")
 
-    i2 = mapping.get("IN19B007") or {}
-    if i2.get("role") != "I2" or i2.get("type") != "IN19B007":
-        raise ValueError("I2 must be IN19B007")
-    if mapping.get("IN19A007"):
-        raise ValueError("IN19A007 must not appear as a mapping type key")
-    if (mapping.get("roles") or {}).get("I2") != "IN19B007":
-        raise ValueError("roles.I2 must be IN19B007")
+    i2 = mapping.get("IN19A007") or {}
+    if i2.get("role") != "I2" or i2.get("type") != "IN19A007":
+        raise ValueError("I2 must be IN19A007")
+    if mapping.get("IN19B007"):
+        raise ValueError("IN19B007 must not appear as a mapping type key")
+    if (mapping.get("roles") or {}).get("I2") != "IN19A007":
+        raise ValueError("roles.I2 must be IN19A007")
 
     listed = {int(v) for v in collect_malecns_body_ids(mapping)}
     if PUGLIESE_MANC_STIM_BODY in listed and PUGLIESE_MANC_STIM_BODY not in raw_dng_ids:
