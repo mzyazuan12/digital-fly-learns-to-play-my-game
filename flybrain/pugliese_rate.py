@@ -228,14 +228,7 @@ def rates_are_valid(rates: np.ndarray) -> bool:
 
 
 def swc_frustum_volume(path: Path) -> float:
-    """Volume of truncated cones along an official MaleCNS SWC skeleton.
-
-    The released annotation feather has no neuPrint ``size`` / volume column.
-    Pugliese normalize MANC and mCNS by neuron volume. These coarse NeuTu
-    skeletons are the official centerlines in this checkout; the absolute
-    unit is not the MANC voxel-count property, but median-normalized ratios
-    inside one simulated population are what set_sizes uses.
-    """
+    """SWC frustum volume. Not used for Pugliese size normalization."""
     xyz = []
     radius = []
     parent = []
@@ -314,6 +307,51 @@ def sample_cell_parameters(n: int, rng: np.random.Generator, params: PuglieseRat
     threshold = sample_trunc_normal(rng, params.threshold_mean, params.threshold_std, n)
     fr_cap = sample_trunc_normal(rng, params.frcap_mean, params.frcap_std, n)
     return {"tau": tau, "gain": gain, "threshold": threshold, "fr_cap": fr_cap}
+
+
+def sample_cell_parameters_block(n: int, n_replicates: int, seed: int, params: PuglieseRateParams) -> dict:
+    """Sample (n_reps, n) like vnc_sim.prepare_neuron_params: split(PRNGKey(seed), 5).
+
+    Falls back to numpy Generator.spawn(5) when jax is not importable. That
+    fallback is the same truncated-normal family, not JAX Threefry draws.
+    """
+    shape = (int(n_replicates), int(n))
+    try:
+        import jax
+
+        keys = jax.random.split(jax.random.PRNGKey(int(seed)), 5)
+        tau = np.asarray(sample_trunc_normal_jax(keys[0], params.tau_mean, params.tau_std, shape))
+        gain = np.asarray(sample_trunc_normal_jax(keys[1], params.gain_mean, params.gain_std, shape))
+        threshold = np.asarray(
+            sample_trunc_normal_jax(keys[2], params.threshold_mean, params.threshold_std, shape)
+        )
+        fr_cap = np.asarray(sample_trunc_normal_jax(keys[3], params.frcap_mean, params.frcap_std, shape))
+        sampler = "jax.random.split(PRNGKey(seed), 5)"
+    except ImportError:
+        rng = np.random.default_rng(int(seed))
+        streams = rng.spawn(5)
+        tau = sample_trunc_normal(streams[0], params.tau_mean, params.tau_std, shape)
+        gain = sample_trunc_normal(streams[1], params.gain_mean, params.gain_std, shape)
+        threshold = sample_trunc_normal(streams[2], params.threshold_mean, params.threshold_std, shape)
+        fr_cap = sample_trunc_normal(streams[3], params.frcap_mean, params.frcap_std, shape)
+        sampler = "numpy.Generator.spawn(5) inverse-CDF truncated normal (not JAX Threefry)"
+    return {
+        "tau": np.asarray(tau, dtype=np.float64),
+        "gain": np.asarray(gain, dtype=np.float64),
+        "threshold": np.asarray(threshold, dtype=np.float64),
+        "fr_cap": np.asarray(fr_cap, dtype=np.float64),
+        "sampler": sampler,
+        "seed": int(seed),
+    }
+
+
+def neuron_sizes_from_neuprint_cache(body_ids) -> dict:
+    """Restricted-circuit volumes with the cached full-dataset median."""
+    info = sizes_for_body_ids(body_ids)
+    assert_volume_size_source(info["source"])
+    if info["source"] != VOLUME_SOURCE:
+        raise ValueError(f"Unexpected volume source {info['source']!r}")
+    return info
 
 
 def integrate_rate(
