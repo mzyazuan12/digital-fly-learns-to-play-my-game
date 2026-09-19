@@ -214,6 +214,9 @@ def test_synapse_count_scaling_is_monotonic_and_ratio_near_two():
     gaba20 = run_single_synaptic_event(synapse_count=20, transmitter="gaba")
     assert gaba20["measured"] < 0
     assert gaba20["n_pre_spikes"] == 1
+
+
+def test_gaba_synapse_hyperpolarizes_postsynaptic_cell():
     rec = gaba_hyperpolarizes()
     assert rec["ok"], rec
     assert rec["dv_post"] < 0
@@ -264,9 +267,11 @@ def test_zeroing_all_weights_disconnects_dng100_on_toy_graph():
 def test_all_lif_sanity_checks_pass():
     report = run_lif_sanity()
     assert report["ok"], report["failed"]
+    assert report["model_id"] == SHIU_LIF_SANITY_MODEL
     assert report["dynamics_model"] == SHIU_LIF_SANITY_MODEL
     assert report["not_a_pugliese_reproduction"] is True
     assert report["physiological_bound_is_debug_guardrail"] is True
+    assert "synapse_count_scaling" in report["tests"]
     assert_lif_sanity()
     assert report["v_rest"] == -52.0
     assert report["v_threshold"] == -45.0
@@ -276,13 +281,21 @@ def test_all_lif_sanity_checks_pass():
 def test_tiny_cpg_is_numerically_sane_and_not_a_pugliese_reproduction():
     rec = tiny_cpg_numerical_sanity()
     assert rec["ok"], rec
+    assert rec["model_id"] == SHIU_LIF_SANITY_MODEL
     assert rec["dynamics_model"] == SHIU_LIF_SANITY_MODEL
     assert rec["not_a_pugliese_reproduction"] is True
     assert rec["valid_dynamics"] is True
+    assert rec["dng100_voltage_physiological"] is True
+    assert rec["dng100_dynamics_valid"] is True
+    assert rec["dng100_voltage_exploding"] is False
+    assert rec["all_voltages_physiological"] is True
     assert rec["allow_lesions"] is False
+    assert rec["fft_executed"] is False
     assert rec["dominant_frequency"] is None
     assert rec["rhythmicity_score"] is None
     assert rec["dng100_spikes"] > 0
+    assert rec["census"]["DNg100"]["spikes"] > 0
+    assert rec["census"]["E1"]["active"] is True
     assert rec["e1_g_max"] > 0
     assert rec["v_min"] >= -100.0
     assert rec["v_max"] <= 40.0
@@ -294,8 +307,10 @@ def test_exploding_voltage_nulls_dominant_frequency_and_scores():
     scored = rhythmicity_score(boom, 1.0)
     assert scored["exploding"]
     assert scored["valid_dynamics"] is False
+    assert scored["voltage_physiological"] is False
     assert scored["valid_for_rhythm_analysis"] is False
     assert scored["allow_lesions"] is False
+    assert scored["fft_executed"] is False
     assert scored["dominant_frequency"] is None
     assert scored["score"] is None
     assert scored["rhythmicity_score"] is None
@@ -320,6 +335,7 @@ def test_exploding_voltage_nulls_dominant_frequency_and_scores():
     metrics = _population_metrics(summary)
     assert metrics["valid_dynamics"] is False
     assert metrics["allow_lesions"] is False
+    assert metrics["fft_executed"] is False
     assert metrics["dominant_frequency"] is None
     assert metrics["rhythmicity_score"] is None
     assert metrics["rhythmicity_score_E1"] is None
