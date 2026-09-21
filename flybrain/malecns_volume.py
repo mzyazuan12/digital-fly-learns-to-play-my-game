@@ -155,7 +155,7 @@ def query_full_dataset_size_stats() -> dict:
             "This median is the full neuPrint male-cns:v1.0 Neuron.size median. "
             "It is SIZE_NORM_FULL_MALECNS, a control. Pugliese set_sizes uses "
             "nanmedian of the simulation W_table. Their mCNS W_table is the "
-            "4,310-cell front-leg subnetwork, which is not this denominator."
+            "4,310-cell export wTable_20260210_vncRoisOnly.csv, which is not this denominator."
         ),
         "size_normalization_mode": SIZE_NORM_FULL_MALECNS,
     }

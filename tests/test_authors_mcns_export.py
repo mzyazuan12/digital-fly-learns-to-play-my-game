@@ -40,7 +40,7 @@ def test_shipped_table_median_is_not_body_20129_size():
     assert counts["<blank>"] == 1
     assert counts["histamine"] == 4
     assert counts["serotonin"] == 2
-    assert "acetylcholine" not in summary["membership_rule"] or "not a" in summary["membership_rule"]
+    assert "not a" in summary["membership_rule"] and "membership filter" in summary["membership_rule"]
     right = summary["dng100"]["10056"]
     left = summary["dng100"]["10045"]
     assert right["instance"] == "DNg100_R"
