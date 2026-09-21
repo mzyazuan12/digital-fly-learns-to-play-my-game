@@ -49,6 +49,14 @@ After `python scripts/cache_malecns_roi_innervation.py --write-mapping`:
 Those files assign each neuron from its own synapses. Type-level ROI
 pages pool T1+T2+T3 and must not be used. Soma-Z is not used.
 
+Authors' mCNS simulation export (already in `third_party/Pugliese_2026`, commit `10e7661`):
+
+- `data/imac t1 connectome data/wTable_20260210_vncRoisOnly.csv` — 4,310 neurons, the `set_sizes()` population
+- `data/imac t1 connectome data/W_20260210_vncRoisOnly.csv` — matching signed weights
+- `authors_mcns_export_status.json` — measured n, `nanmedian` size, transmitter counts
+- `reconstructed_from_male-cns_v1.0.json` — methods audit, not the reproduction source
+- `mcns_body_id_diff.json` — body IDs in the export but not the audit, and the reverse
+
 Pugliese rate-model size cache (`python scripts/cache_pugliese_rate_sizes.py`):
 
 - `pugliese_rate_sizes.parquet` — neuPrint `Neuron.size` for the 408-cell
