@@ -1,0 +1,97 @@
+{
+  "population": "authors_export_population",
+  "not_population": "reconstructed_from_male-cns:v1.0",
+  "authors_commit": "10e7661bf414ba7b4c2edf795cd36d0f878c17c0",
+  "wtable": "/Users/mac/fly-learns-shiri/third_party/Pugliese_2026/data/imac t1 connectome data/wTable_20260210_vncRoisOnly.csv",
+  "W": "/Users/mac/fly-learns-shiri/third_party/Pugliese_2026/data/imac t1 connectome data/W_20260210_vncRoisOnly.csv",
+  "wtable_sha256": "593a75c53f1c69600cac747364b8b623655699b1b83e16b41eeef6fe93dd5b2d",
+  "W_sha256": "255236baca7a24ead7360636a4ee98fd54d5423026c6ec864bbd717b8d58d3b4",
+  "n": 4310,
+  "size": {
+    "rows": 4310,
+    "positive_nonmissing": 4310,
+    "missing_or_nonfinite": 0,
+    "zero": 0,
+    "nanmedian": 998603428.5,
+    "method": "numpy.nanmedian of the shipped size column, matching set_sizes()",
+    "quoted_value_that_is_not_the_median": 1010837052,
+    "quoted_value_bodyId": 20129,
+    "note": "Every shipped row has a positive size, so set_sizes() does not substitute the median for a missing cell in this export. 1,010,837,052 is bodyId 20129's size, not the table median."
+  },
+  "consensusNt_counts": {
+    "acetylcholine": 2493,
+    "gaba": 1011,
+    "glutamate": 606,
+    "unclear": 193,
+    "histamine": 4,
+    "serotonin": 2,
+    "<blank>": 1
+  },
+  "membership_rule": "Every wTable row is in the simulation. consensusNt is not a membership filter. The shipped W is already signed.",
+  "outgoing_by_consensusNt": {
+    "<blank>": {
+      "n": 1,
+      "outgoing_positive": 0,
+      "outgoing_negative": 0
+    },
+    "acetylcholine": {
+      "n": 2493,
+      "outgoing_positive": 66544,
+      "outgoing_negative": 0
+    },
+    "gaba": {
+      "n": 1011,
+      "outgoing_positive": 0,
+      "outgoing_negative": 33356
+    },
+    "glutamate": {
+      "n": 606,
+      "outgoing_positive": 0,
+      "outgoing_negative": 19020
+    },
+    "histamine": {
+      "n": 4,
+      "outgoing_positive": 0,
+      "outgoing_negative": 0
+    },
+    "serotonin": {
+      "n": 2,
+      "outgoing_positive": 0,
+      "outgoing_negative": 0
+    },
+    "unclear": {
+      "n": 193,
+      "outgoing_positive": 0,
+      "outgoing_negative": 0
+    }
+  },
+  "W_nnz": 118920,
+  "W_n_negative": 52376,
+  "W_n_positive": 66544,
+  "dng100": {
+    "10056": {
+      "bodyId": 10056,
+      "matrix_index": 9,
+      "type": "DNg100",
+      "instance": "DNg100_R",
+      "somaSide": "R",
+      "consensusNt": "acetylcholine",
+      "size": 16542412146.0,
+      "normalized_size": 16.56554711698549,
+      "mean_threshold_after_set_sizes": 124.24160337739116
+    },
+    "10045": {
+      "bodyId": 10045,
+      "matrix_index": 6,
+      "type": "DNg100",
+      "instance": "DNg100_L",
+      "somaSide": "L",
+      "consensusNt": "acetylcholine",
+      "size": 16688976137.0,
+      "normalized_size": 16.712316081338187,
+      "mean_threshold_after_set_sizes": 125.3423706100364
+    }
+  },
+  "stimulated_bodyId": 10056,
+  "stimulated_instance": "DNg100_R"
+}
