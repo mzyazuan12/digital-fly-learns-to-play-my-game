@@ -31,6 +31,7 @@
     },
     "dropped_with_total_weight_ge_5_but_vnc_post_lt_5": 21,
     "gap_vs_authors": 9,
+    "gap_note": "Count difference only. The body-id diff is 15 export-only and 6 audit-only, intersection 4295.",
     "not_used_as_denominator": true
   },
   "note": "Methods-reconstruction audit on male-cns:v1.0. The reproduction population is the authors' shipped 4,310-row wTable. This set is not that table and its median is not the set_sizes denominator.",
