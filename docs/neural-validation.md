@@ -25,7 +25,7 @@ AUTHOR mCNS 4,310 POPULATION            authors export, commit 10e7661
 AUTHOR mCNS SIZE MEDIAN                 998,603,428.5
 AUTHOR mCNS W MATRIX                    shipped, already signed, aligned
 AUTHOR mCNS STIMULUS AMPLITUDE          unresolved
-mCNS PORT @ I=250 CONTROL               MANC amplitude control, not authors_mcns
+mCNS PORT @ I=250 CONTROL               10056 reaches 7.5 Hz; no E1/E2 rhythm; MANC amplitude control
 EXACT mCNS PUBLISHED REPRODUCTION       locked until mCNS stimI is recovered
 RESTRICTED-408 TRANSFER                 locked
 CONNECTIVITY DIFFERENCE DISSECTION      locked
