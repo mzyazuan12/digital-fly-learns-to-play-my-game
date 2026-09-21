@@ -1,15 +1,19 @@
 {
+  "population": "reconstructed_from_male-cns:v1.0",
+  "reproduction_source": "authors_export_population",
   "size_normalization_mode": "pugliese_simulation_population_median",
   "authors_reported_n": 4310,
   "confirmed_population": false,
   "median_volume": null,
+  "used_as_set_sizes_denominator": false,
+  "dataset_version": "male-cns:v1.0",
   "selection": {
     "front_leg_motor": "superclass=vnc_motor, subclass=fl, status=Traced",
     "premotor": "ConnectsTo those motor neurons with roiInfo containing VNC",
     "descending": "superclass=descending_neuron, VNC ConnectsTo the premotor/motor set, not already included",
     "proofread_and_nt": "status=Traced and consensusNt IS NOT NULL",
     "synapse_floor": "keep a neuron only if it retains a VNC connection of >=5 synapses inside the set",
-    "not_yet_authors_matrix": true
+    "membership_note": "This audit required a non-null consensusNt. The authors' shipped wTable does not. Do not use that filter on the export."
   },
   "counts": {
     "front_leg_motor_traced": 135,
@@ -17,7 +21,6 @@
     "candidates_before_floor": 4385,
     "kept_after_vnc_floor_5": 4301
   },
-  "note": "Candidate front-leg population is 4,385 traced neurons with consensusNt. After requiring a VNC connection of at least 5 synapses inside that set, 4,301 remain. The paper reports 4,310. The 9-neuron gap is unresolved, so this set is not their W_table and its median is not computed.",
   "floor_diagnostic": {
     "dropped_by_vnc_post_floor": 84,
     "max_vnc_post_histogram_among_dropped": {
@@ -29,5 +32,37 @@
     "dropped_with_total_weight_ge_5_but_vnc_post_lt_5": 21,
     "gap_vs_authors": 9,
     "not_used_as_denominator": true
+  },
+  "note": "Methods-reconstruction audit on male-cns:v1.0. The reproduction population is the authors' shipped 4,310-row wTable. This set is not that table and its median is not the set_sizes denominator.",
+  "body_id_diff": {
+    "path": "/Users/mac/fly-learns-shiri/data/malecns_v1/mcns_body_id_diff.json",
+    "intersection": 4295,
+    "authors_only_n": 15,
+    "ours_only_n": 6,
+    "authors_only": [
+      16703,
+      16935,
+      24752,
+      26743,
+      32680,
+      32961,
+      34031,
+      37163,
+      37212,
+      37683,
+      38416,
+      40934,
+      41346,
+      825433,
+      1050340850
+    ],
+    "ours_only": [
+      817144,
+      852122,
+      952879,
+      954981,
+      954991,
+      955155
+    ]
   }
 }

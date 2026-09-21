@@ -1,0 +1,269 @@
+{
+  "authors_population": "authors_export_population",
+  "reconstruction_population": "reconstructed_from_male-cns:v1.0",
+  "authors_n": 4310,
+  "reconstruction_n": 4301,
+  "intersection": 4295,
+  "authors_only": [
+    16703,
+    16935,
+    24752,
+    26743,
+    32680,
+    32961,
+    34031,
+    37163,
+    37212,
+    37683,
+    38416,
+    40934,
+    41346,
+    825433,
+    1050340850
+  ],
+  "ours_only": [
+    817144,
+    852122,
+    952879,
+    954981,
+    954991,
+    955155
+  ],
+  "authors_only_rows": [
+    {
+      "bodyId": 16703,
+      "in_authors_wtable": true,
+      "type": "DNpe033",
+      "instance": "DNpe033(SMP289)_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "gaba",
+      "size": 1081959025.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 16935,
+      "in_authors_wtable": true,
+      "type": "DNge097",
+      "instance": "DNge097_R",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "glutamate",
+      "size": 1304729570.0,
+      "somaSide": "R"
+    },
+    {
+      "bodyId": 24752,
+      "in_authors_wtable": true,
+      "type": "DNp72",
+      "instance": "DNp72_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 1018285452.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 26743,
+      "in_authors_wtable": true,
+      "type": "DNge094",
+      "instance": "DNge094_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 563232823.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 32680,
+      "in_authors_wtable": true,
+      "type": "DNg36_b",
+      "instance": "DNg36_b_R",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 521856184.0,
+      "somaSide": "R"
+    },
+    {
+      "bodyId": 32961,
+      "in_authors_wtable": true,
+      "type": "DNpe008",
+      "instance": "DNpe008(PS225)_R",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 494142563.0,
+      "somaSide": "R"
+    },
+    {
+      "bodyId": 34031,
+      "in_authors_wtable": true,
+      "type": "DNge114",
+      "instance": "DNge114_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 538333176.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 37163,
+      "in_authors_wtable": true,
+      "type": "DNpe008",
+      "instance": "DNpe008(PS225)_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 475781010.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 37212,
+      "in_authors_wtable": true,
+      "type": "DNpe008",
+      "instance": "DNpe008(PS225)_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 482858863.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 37683,
+      "in_authors_wtable": true,
+      "type": "DNge109",
+      "instance": "DNge109_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 550791369.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 38416,
+      "in_authors_wtable": true,
+      "type": "DNpe008",
+      "instance": "DNpe008(PS225)_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 473443306.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 40934,
+      "in_authors_wtable": true,
+      "type": "DNpe008",
+      "instance": "DNpe008(PS225)_L",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 443698949.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 41346,
+      "in_authors_wtable": true,
+      "type": "DNge094",
+      "instance": "DNge094_R",
+      "superclass": "descending_neuron",
+      "class": "descending neuron",
+      "consensusNt": "acetylcholine",
+      "size": 596456778.0,
+      "somaSide": "R"
+    },
+    {
+      "bodyId": 825433,
+      "in_authors_wtable": true,
+      "type": null,
+      "instance": null,
+      "superclass": "vnc_sensory",
+      "class": "sensory neuron",
+      "consensusNt": "unclear",
+      "size": 71400052.0,
+      "somaSide": null
+    },
+    {
+      "bodyId": 1050340850,
+      "in_authors_wtable": true,
+      "type": null,
+      "instance": null,
+      "superclass": "vnc_motor",
+      "class": "motor neuron",
+      "consensusNt": null,
+      "size": 614520967.0,
+      "somaSide": "R"
+    }
+  ],
+  "ours_only_neuprint_v1": [
+    {
+      "bodyId": 817144,
+      "in_male-cns:v1.0": true,
+      "type": "IN09A046",
+      "instance": "IN09A046_L",
+      "superclass": "vnc_intrinsic",
+      "status": "Traced",
+      "consensusNt": "gaba",
+      "size": 422524981.0,
+      "somaSide": "L"
+    },
+    {
+      "bodyId": 852122,
+      "in_male-cns:v1.0": true,
+      "type": null,
+      "instance": null,
+      "superclass": "vnc_intrinsic",
+      "status": "Traced",
+      "consensusNt": "acetylcholine",
+      "size": 2988905895.0,
+      "somaSide": null
+    },
+    {
+      "bodyId": 952879,
+      "in_male-cns:v1.0": true,
+      "type": null,
+      "instance": null,
+      "superclass": "vnc_intrinsic",
+      "status": "Traced",
+      "consensusNt": "glutamate",
+      "size": 250949755.0,
+      "somaSide": null
+    },
+    {
+      "bodyId": 954981,
+      "in_male-cns:v1.0": true,
+      "type": null,
+      "instance": null,
+      "superclass": "vnc_sensory",
+      "status": "Traced",
+      "consensusNt": "acetylcholine",
+      "size": 96436990.0,
+      "somaSide": null
+    },
+    {
+      "bodyId": 954991,
+      "in_male-cns:v1.0": true,
+      "type": null,
+      "instance": null,
+      "superclass": "vnc_intrinsic",
+      "status": "Traced",
+      "consensusNt": "acetylcholine",
+      "size": 291580020.0,
+      "somaSide": null
+    },
+    {
+      "bodyId": 955155,
+      "in_male-cns:v1.0": true,
+      "type": null,
+      "instance": null,
+      "superclass": "vnc_intrinsic",
+      "status": "Traced",
+      "consensusNt": "acetylcholine",
+      "size": 399151542.0,
+      "somaSide": null
+    }
+  ],
+  "reproduction_source": "authors_export_population",
+  "reconstruction_is_denominator": false
+}
