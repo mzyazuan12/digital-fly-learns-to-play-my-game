@@ -1,16 +1,15 @@
-"""Transfer Pugliese rate dynamics onto the restricted MaleCNS CPG graph.
+"""Restricted MaleCNS rate runs. Not the authors' 4,310-cell mCNS reproduction.
 
-Experiment matrix (this runner implements B and D; A and C are cited, not re-run):
+The full-MaleCNS-median run is a labeled control
+(pugliese_rate_malecns_full_dataset_size_normalization_control).
+Pugliese set_sizes() uses the median of the simulation W_table. Their mCNS
+table is the 4,310-cell front-leg subnetwork. Until that population is
+reconstructed and its DNg100 rhythm is reproduced, this 408-cell runner
+must not be called a Pugliese MaleCNS transfer and must not open a
+connectivity dissection.
 
-    A  MANC T1 + original Pugliese Hydra     existing pugliese_cpg_v1 reference
-    B  MaleCNS restricted + Pugliese rate    this file, primary, DNg100_R 10056
-    C  MaleCNS restricted + Shiu LIF         existing shiu_lif_sanity_v1 milestone
-    D  MaleCNS restricted, shuffled + rate   topology null of B
-
-Primary stimulated cell is MaleCNS 10056, the curated homolog of MANC body
-10093 (Pugliese matrix index 31). Do not pool with DNg100_L 10045.
-
-This never loads the full MaleCNS graph and never retunes Shiu LIF.
+Stimulated cell remains MaleCNS 10056: somaSide R, LegNp innervation L,
+curated mancBodyid 10093. 10045 is in the graph and is not driven.
 """
 
 from __future__ import annotations
@@ -31,7 +30,15 @@ from flybrain.neurons import (
     PUGLIESE_RATE_MALECNS_V1,
     SHIU_LIF_SANITY_MODEL,
 )
-from flybrain.malecns_volume import assert_volume_size_source
+from flybrain.malecns_volume import (
+    FULL_DATASET_MEDIAN_CONTROL,
+    SIZE_NORM_FULL_MALECNS,
+    SIZE_NORM_MODES,
+    SIZE_NORM_PUGLIESE_SUBNETWORK,
+    SIZE_NORM_RESTRICTED_408,
+    assert_frozen_reference_median,
+    assert_volume_size_source,
+)
 from flybrain.pugliese_rate import (
     OSCILLATION_THRESHOLD,
     PuglieseRateParams,
@@ -266,15 +273,29 @@ def simulate_graph(
     n_replicates: int,
     shuffle: bool,
     params: PuglieseRateParams,
+    size_norm: str,
+    reference_median: float | None = None,
 ) -> dict:
     W = signed_weight_matrix(graph)
     print("loading neuPrint Neuron.size cache", flush=True)
     size_info = neuron_sizes_from_neuprint_cache(graph.neuron_ids)
     assert_volume_size_source(size_info["source"])
-    median = float(size_info["median_volume_reference"])
+    circuit_median = float(np.nanmedian(size_info["sizes"]))
+    full_median = float(size_info["median_volume_reference"])
+    if size_norm == SIZE_NORM_FULL_MALECNS:
+        median = full_median
+    elif size_norm == SIZE_NORM_RESTRICTED_408:
+        median = circuit_median
+    elif size_norm == SIZE_NORM_PUGLIESE_SUBNETWORK:
+        if reference_median is None:
+            raise RuntimeError("Pugliese simulation-population median is not available")
+        assert_frozen_reference_median(float(reference_median), float(reference_median))
+        median = float(reference_median)
+    else:
+        raise ValueError(f"Unknown size normalization mode {size_norm}")
     print(
-        f"sizes missing={size_info['n_missing']} full_dataset_median={median} "
-        f"circuit_nanmedian={np.nanmedian(size_info['sizes'])}",
+        f"size_norm={size_norm} missing={size_info['n_missing']} "
+        f"denominator={median} full_median={full_median} circuit_median={circuit_median}",
         flush=True,
     )
     rng = np.random.default_rng(seed)
@@ -326,6 +347,10 @@ def simulate_graph(
         "W": W,
         "W_sim": W_sim,
         "size_info": size_info,
+        "size_norm": size_norm,
+        "median_used": median,
+        "circuit_median": circuit_median,
+        "full_dataset_median": full_median,
         "parameter_sampler": drawn["sampler"],
         "replicates": replicates,
         "stim_index": int(stim_idx),
@@ -343,15 +368,29 @@ def run(
     reference_metrics: Path = DEFAULT_REFERENCE,
     lif_report: Path = DEFAULT_LIF,
     manc_portcheck: Path | None = None,
+    size_norm: str = SIZE_NORM_FULL_MALECNS,
+    reference_median: float | None = None,
 ) -> dict:
     out = Path(out)
     if out.exists():
         raise FileExistsError(f"Refusing to overwrite experiment: {out}")
     if stim_body != MALECNS_DNG100_R:
         raise ValueError(
-            f"Primary transfer test stimulates MaleCNS {MALECNS_DNG100_R} "
-            f"(MANC homolog {PUGLIESE_MANC_STIM_BODY}). Got {stim_body}."
+            f"Primary comparison stimulates MaleCNS {MALECNS_DNG100_R} "
+            f"(mancBodyid {PUGLIESE_MANC_STIM_BODY}, left LegNp). Got {stim_body}."
         )
+    if size_norm not in SIZE_NORM_MODES:
+        raise ValueError(f"Unknown size normalization mode {size_norm}")
+    if size_norm == SIZE_NORM_PUGLIESE_SUBNETWORK:
+        raise RuntimeError(
+            "Restricted-408 rate test is locked. Pugliese's denominator is the "
+            "4,310-cell mCNS simulation population, and that reproduction has not "
+            "passed. Do not substitute the 408-cell median or the full-MaleCNS median."
+        )
+    if size_norm == SIZE_NORM_FULL_MALECNS:
+        experiment_label = FULL_DATASET_MEDIAN_CONTROL
+    else:
+        experiment_label = "pugliese_rate_malecns_restricted_408_median_control"
     params = PuglieseRateParams()
     if params.stim_amplitude == 40.0 or params.model_id == SHIU_LIF_SANITY_MODEL:
         raise RuntimeError("Rate transfer must not use Shiu LIF stimulus or model id")
@@ -366,6 +405,9 @@ def run(
         "source_dataset": "MaleCNS_v1.0",
         "stimulated_malecns_body_ids": [int(stim_body)],
         "pugliese_homolog": dict(PUGLIESE_DNG100_STIM),
+        "experiment_label": experiment_label,
+        "size_normalization_mode": size_norm,
+        "is_authors_mcns_reproduction": False,
         "is_pugliese_reproduction": False,
         "full_malecns_allowed": False,
         "allow_lesions": False,
@@ -390,9 +432,10 @@ def run(
         "weight_transformation": "anatomical count × NT sign, then W_rate = signed_W.T × 0.03/0.03",
         "rhythm_criterion": "authors compute_oscillation_score >= 0.5 for both E1 and E2; published 7-15 Hz is an annotation",
         "note": (
-            "Restricted MaleCNS topology with published rate dynamics. "
-            "Not a Shiu-LIF retune. Not the intact CNS. Not an exact mCNS "
-            "stimulus reproduction. Graph keeps both DNg100 cells; only 10056 is driven."
+            f"{experiment_label}. Restricted 408-cell MaleCNS graph with the "
+            "ported half-tanh ODE. This is not the authors' 4,310-cell mCNS "
+            "simulation and not a connectivity discrepancy. Not a Shiu-LIF retune. "
+            "Graph keeps both DNg100 cells; only 10056 is driven."
         ),
     }
 
@@ -454,6 +497,8 @@ def run(
             n_replicates=n_replicates,
             shuffle=shuffle,
             params=params,
+            size_norm=size_norm,
+            reference_median=reference_median,
         )
         report["n_neurons"] = graph.n
         report["n_edges"] = graph.n_edges
@@ -465,9 +510,16 @@ def run(
             "n_missing": sim["size_info"]["n_missing"],
             "missing_malecns_body_ids": sim["size_info"]["missing_malecns_body_ids"],
             "not_neuprint_volume_property": False,
-            "median_volume_reference": float(sim["size_info"]["median_volume_reference"]),
-            "median_of_restricted_circuit": float(np.nanmedian(sim["size_info"]["sizes"])),
-            "denominator": "full neuPrint male-cns:v1.0 Neuron.size median, not the 408-cell circuit",
+            "median_volume_reference": float(sim["median_used"]),
+            "full_dataset_median": float(sim["full_dataset_median"]),
+            "median_of_restricted_circuit": float(sim["circuit_median"]),
+            "size_normalization_mode": size_norm,
+            "denominator": (
+                "full neuPrint male-cns:v1.0 Neuron.size median. Control, not the "
+                "authors' 4,310-cell W_table median."
+                if size_norm == SIZE_NORM_FULL_MALECNS
+                else "median of this 408-cell circuit. Control, not the authors' W_table."
+            ),
             "parameter_sampler": sim["parameter_sampler"],
         }
         report["graph_dng100_body_ids"] = dng
@@ -505,26 +557,40 @@ def run(
         report["fraction_replicates_E1_E2_rhythm"] = float(n_ok / len(replicate_rows)) if replicate_rows else 0.0
         report["valid_for_rhythm_analysis"] = bool(all(row["rates_valid"] for row in replicate_rows))
         report["rhythm_reproduced"] = bool(n_ok / len(replicate_rows) >= 0.5) if replicate_rows else False
-        report["status"] = "rate_transfer_rhythm" if report["rhythm_reproduced"] else "rate_transfer_no_pugliese_rhythm"
-        report["next_step"] = (
-            "Restricted MaleCNS + Pugliese rate produced E1 and E2 rhythm. "
-            "Review this transfer before intact MaleCNS, full-network lesions, or body control."
-            if report["rhythm_reproduced"]
-            else (
-                "Restricted MaleCNS + published rate dynamics did not reproduce the "
-                "Pugliese E1/E2 rhythm after a passing MANC port check. Compare "
-                "edge families (DNg100→E1/E2, E1↔E2, E1/E2→I1/I2, I1/I2→E1/E2, "
-                "E3, CPG→MN), not parameters. Do not retune Shiu LIF. Full MaleCNS remains locked."
+        report["is_authors_mcns_reproduction"] = False
+        if size_norm == SIZE_NORM_FULL_MALECNS:
+            report["status"] = (
+                "full_malecns_median_control_rhythm"
+                if report["rhythm_reproduced"]
+                else "full_malecns_median_control_silent"
             )
-        )
+            report["next_step"] = (
+                "Full-MaleCNS-median control. Not a Pugliese mCNS reproduction and "
+                "not a connectivity discrepancy. Next: reconstruct the authors' "
+                "4,310-cell mCNS population, take its Neuron.size median, and "
+                "reproduce their mCNS DNg100 rhythm before any restricted-408 "
+                "rate test. Do not retune Shiu LIF."
+            )
+        else:
+            report["status"] = (
+                "restricted_408_median_control_rhythm"
+                if report["rhythm_reproduced"]
+                else "restricted_408_median_control_silent"
+            )
+            report["next_step"] = (
+                "408-cell median control. Not the authors' denominator. Do not "
+                "promote it because it changes DNg100 excitability. The reference "
+                "median has to come from the 4,310-cell mCNS population and stay "
+                "frozen for every restricted or lesioned run."
+            )
         np.savez_compressed(
             out / "weights.npz",
             model_id=PUGLIESE_RATE_MALECNS_V1,
             malecns_body_ids=graph.neuron_ids,
             W_signed=sim["W"],
             sizes=sim["size_info"]["sizes"],
-            median_volume_reference=np.float64(sim["size_info"]["median_volume_reference"]),
-            normalized_size=sim["size_info"]["normalized_size"],
+            median_volume_reference=np.float64(sim["median_used"]),
+            normalized_size=sim["size_info"]["sizes"] / sim["median_used"],
         )
         _write_preview_figure(out, sim, params.dt, stim_body)
         save()
@@ -586,6 +652,12 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="Directory or report.json from experiment.pugliese_rate_manc_portcheck (step 6)",
     )
+    parser.add_argument(
+        "--size-norm",
+        choices=list(SIZE_NORM_MODES),
+        default=SIZE_NORM_FULL_MALECNS,
+        help="Denominator for set_sizes. Default is the full-MaleCNS median control.",
+    )
     args = parser.parse_args(argv)
     result = run(
         args.out,
@@ -596,6 +668,7 @@ def main(argv: list[str] | None = None) -> int:
         reference_metrics=args.reference,
         lif_report=args.lif_report,
         manc_portcheck=args.manc_portcheck,
+        size_norm=args.size_norm,
     )
     print(args.out.resolve())
     print("status", result["status"], "rhythm_reproduced", result["rhythm_reproduced"])

@@ -51,8 +51,9 @@ pages pool T1+T2+T3 and must not be used. Soma-Z is not used.
 
 Pugliese rate-model size cache (`python scripts/cache_pugliese_rate_sizes.py`):
 
-- `pugliese_rate_sizes.parquet` — neuPrint `Neuron.size` (voxel volume) for the
-  408-cell restricted CPG graph, with `median_volume_reference` equal to the
-  median of all male-cns:v1.0 neurons that have a positive size. Do not use SWC
-  skeletons, synapse counts, cable length, soma size, or partner count as size.
+- `pugliese_rate_sizes.parquet` — neuPrint `Neuron.size` for the 408-cell
+  restricted graph. `median_volume_reference` in this file is the median of
+  all male-cns:v1.0 neurons with a positive size. That is the
+  full-MaleCNS-median control, not Pugliese's simulation-population median.
+  Do not use SWC, synapse counts, cable length, soma size, or partner count.
 - `pugliese_rate_sizes.meta.json` — query provenance for that parquet

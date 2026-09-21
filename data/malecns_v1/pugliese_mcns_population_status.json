@@ -1,0 +1,33 @@
+{
+  "size_normalization_mode": "pugliese_simulation_population_median",
+  "authors_reported_n": 4310,
+  "confirmed_population": false,
+  "median_volume": null,
+  "selection": {
+    "front_leg_motor": "superclass=vnc_motor, subclass=fl, status=Traced",
+    "premotor": "ConnectsTo those motor neurons with roiInfo containing VNC",
+    "descending": "superclass=descending_neuron, VNC ConnectsTo the premotor/motor set, not already included",
+    "proofread_and_nt": "status=Traced and consensusNt IS NOT NULL",
+    "synapse_floor": "keep a neuron only if it retains a VNC connection of >=5 synapses inside the set",
+    "not_yet_authors_matrix": true
+  },
+  "counts": {
+    "front_leg_motor_traced": 135,
+    "front_leg_motor_with_consensusNt": 134,
+    "candidates_before_floor": 4385,
+    "kept_after_vnc_floor_5": 4301
+  },
+  "note": "Candidate front-leg population is 4,385 traced neurons with consensusNt. After requiring a VNC connection of at least 5 synapses inside that set, 4,301 remain. The paper reports 4,310. The 9-neuron gap is unresolved, so this set is not their W_table and its median is not computed.",
+  "floor_diagnostic": {
+    "dropped_by_vnc_post_floor": 84,
+    "max_vnc_post_histogram_among_dropped": {
+      "1": 9,
+      "2": 16,
+      "3": 33,
+      "4": 26
+    },
+    "dropped_with_total_weight_ge_5_but_vnc_post_lt_5": 21,
+    "gap_vs_authors": 9,
+    "not_used_as_denominator": true
+  }
+}

@@ -12,16 +12,29 @@ Run from the repository root using its Python environment:
 
 The biological validator creates a new timestamped directory, scans raw synaptic ROI data in batches, saves the mapping, builds a restricted biological graph, and runs each DNg100 side separately. Exit status 2 means a scientific gate failed; inspect its report and preserved traces. No full connectome simulation is launched.
 
-The next scientific gate transfers published Pugliese rate dynamics onto that restricted MaleCNS graph. It does not retune Shiu LIF. Step 6 must pass on the authors' MANC matrix before any MaleCNS run:
+The MANC port of the half-tanh ODE has passed. The silent 408-cell MaleCNS run used the median of all male-cns neurons with a positive size. That is a control, not Pugliese's mCNS convention. Their `set_sizes()` uses the median of the simulation table, and the paper's mCNS table has 4,310 neurons.
+
+```text
+MANC PORT CHECK                         passed
+PUGLIESE ODE IMPLEMENTATION             passed
+MALECNS VOLUME PROPERTY                 passed
+FULL-MALECNS-MEDIAN CONTROL             silent; valid control, not replication
+AUTHORS' 4,310 mCNS POPULATION          next
+AUTHORS' mCNS MEDIAN                    next
+AUTHORS' mCNS DNg100 REPRODUCTION       locked
+RESTRICTED-408 RATE TEST                locked
+CONNECTIVITY DIFFERENCE DISSECTION      locked
+FULL MALECNS                            locked
+BODY                                    locked
+```
 
 ```sh
 .venv/bin/python scripts/cache_pugliese_rate_sizes.py
 .venv/bin/python -m experiment.pugliese_rate_manc_portcheck
-.venv/bin/python -m experiment.pugliese_rate_malecns --manc-portcheck outputs/pugliese_rate_manc_portcheck_TIMESTAMP
-.venv/bin/python -m experiment.pugliese_rate_malecns --shuffle --manc-portcheck outputs/pugliese_rate_manc_portcheck_TIMESTAMP
+.venv/bin/python scripts/reconstruct_pugliese_mcns_population.py
 ```
 
-MaleCNS volume is neuPrint `Neuron.size`, normalized by the full male-cns:v1.0 median, not SWC or the 408-cell median. The restricted graph keeps both DNg100 cells; only `10056` is stimulated. Stimulus 250 is a transfer assumption unless an mCNS stimI is recovered. Existing output directories are refused. A passing transfer still does not unlock full MaleCNS.
+The restricted-408 runner stays on the full-median control unless `--size-norm` says otherwise. `pugliese_simulation_population_median` is refused until the 4,310-cell reproduction exists. `restricted_408_median_control` is not a reference. MaleCNS 10056 is the stimulated cell because its curated `mancBodyid` is 10093 and its LegNp innervation is left, despite somaSide R. Stimulus 250 remains a transfer assumption. Existing output directories are refused. A passing control does not unlock full MaleCNS.
 
 For the original-code reference, choose a new run ID:
 

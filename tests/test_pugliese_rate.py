@@ -75,6 +75,50 @@ def test_parameter_block_has_replicate_neuron_shape():
     assert "split(PRNGKey" in drawn["sampler"] or "spawn(5)" in drawn["sampler"]
 
 
+def test_size_norm_modes_and_frozen_median():
+    from flybrain.malecns_volume import (
+        FULL_DATASET_MEDIAN_CONTROL,
+        SIZE_NORM_FULL_MALECNS,
+        SIZE_NORM_PUGLIESE_SUBNETWORK,
+        SIZE_NORM_RESTRICTED_408,
+        assert_frozen_reference_median,
+    )
+
+    assert SIZE_NORM_PUGLIESE_SUBNETWORK == "pugliese_simulation_population_median"
+    assert SIZE_NORM_FULL_MALECNS == "full_malecns_median_control"
+    assert SIZE_NORM_RESTRICTED_408 == "restricted_408_median_control"
+    assert FULL_DATASET_MEDIAN_CONTROL == "pugliese_rate_malecns_full_dataset_size_normalization_control"
+    assert_frozen_reference_median(10.0, 10.0)
+    with pytest.raises(AssertionError, match="reference_network_median"):
+        assert_frozen_reference_median(9.0, 10.0)
+
+
+def test_full_median_control_is_not_an_mcns_reproduction(tmp_path):
+    from flybrain.malecns_volume import SIZE_NORM_PUGLIESE_SUBNETWORK
+    from experiment.pugliese_rate_malecns import run
+
+    with pytest.raises(RuntimeError, match="4,310"):
+        run(tmp_path / "locked", stim_body=10056, size_norm=SIZE_NORM_PUGLIESE_SUBNETWORK)
+
+
+def test_10056_matches_manc_10093_and_left_leg_neuropil():
+    import json
+    from pathlib import Path
+
+    path = Path("data/malecns_v1/cpg_mapping.json")
+    if not path.exists():
+        pytest.skip("cpg_mapping.json is not in this checkout")
+    right = json.loads(path.read_text())["DNg100"]["malecns"]["right"]
+    left = json.loads(path.read_text())["DNg100"]["malecns"]["left"]
+    assert right["malecns_body_id"] == 10056
+    assert right["side"] == "R"
+    assert right["innervation_side"] == "L"
+    assert right["manc_correspondence"]["manc_body_id"] == 10093
+    assert left["malecns_body_id"] == 10045
+    assert left["innervation_side"] == "R"
+    assert left["manc_correspondence"]["manc_body_id"] == 10339
+
+
 def test_three_model_ids_are_distinct():
     params = PuglieseRateParams()
     assert SHIU_LIF_SANITY_MODEL == "shiu_lif_sanity_v1"

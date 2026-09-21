@@ -23,6 +23,20 @@ SIZE_CACHE = DEFAULT_DATA / "pugliese_rate_sizes.parquet"
 SIZE_CACHE_META = DEFAULT_DATA / "pugliese_rate_sizes.meta.json"
 VOLUME_PROPERTY = "size"
 VOLUME_SOURCE = "neuprint male-cns:v1.0 Neuron.size (voxel volume)"
+# Pugliese set_sizes() divides by nanmedian(W_table["size"]). That median is
+# the simulation population, not every neuron in the connectome release.
+SIZE_NORM_PUGLIESE_SUBNETWORK = "pugliese_simulation_population_median"
+SIZE_NORM_FULL_MALECNS = "full_malecns_median_control"
+SIZE_NORM_RESTRICTED_408 = "restricted_408_median_control"
+SIZE_NORM_MODES = (
+    SIZE_NORM_PUGLIESE_SUBNETWORK,
+    SIZE_NORM_FULL_MALECNS,
+    SIZE_NORM_RESTRICTED_408,
+)
+# Only the simulation-population median is a Pugliese mCNS reproduction.
+# The full-release median run is a labeled control.
+FULL_DATASET_MEDIAN_CONTROL = "pugliese_rate_malecns_full_dataset_size_normalization_control"
+AUTHORS_MCNS_N = 4310
 FORBIDDEN_SIZE_TOKENS = (
     "swc",
     "synapse count",
@@ -40,6 +54,22 @@ PARQUET_COLUMNS = (
     "source",
     "dataset_version",
 )
+
+
+def assert_frozen_reference_median(used_median: float, reference_median: float) -> None:
+    """Lesion and restricted runs keep the reference population's median.
+
+    Recomputing the median after deleting neurons changes gain and threshold
+    of every remaining cell, so the lesion is no longer only a connectivity cut.
+    """
+    used = float(used_median)
+    reference = float(reference_median)
+    if not np.isfinite(used) or not np.isfinite(reference) or reference <= 0:
+        raise AssertionError("size normalization medians must be positive and finite")
+    if used != reference:
+        raise AssertionError(
+            f"size_normalization_median {used} != reference_network_median {reference}"
+        )
 
 
 def assert_volume_size_source(source: str) -> None:
@@ -122,12 +152,12 @@ def query_full_dataset_size_stats() -> dict:
         "vnc_median_volume": None if vnc_median is None else float(vnc_median),
         "median_used_for_normalization": "full_MaleCNS_Neuron_size",
         "note": (
-            "Pugliese normalize by the median of the modeled dataset, not the "
-            "tiny selected circuit. This cache uses the median of all neuPrint "
-            "male-cns:v1.0 Neuron.size values. Their published mCNS model was a "
-            "4,310-cell VNC-ROI population whose exact membership is not in this "
-            "checkout; the VNC-synapse median is recorded only as a diagnostic."
+            "This median is the full neuPrint male-cns:v1.0 Neuron.size median. "
+            "It is SIZE_NORM_FULL_MALECNS, a control. Pugliese set_sizes uses "
+            "nanmedian of the simulation W_table. Their mCNS W_table is the "
+            "4,310-cell front-leg subnetwork, which is not this denominator."
         ),
+        "size_normalization_mode": SIZE_NORM_FULL_MALECNS,
     }
 
 
