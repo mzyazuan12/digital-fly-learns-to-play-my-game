@@ -566,10 +566,9 @@ def run(
             )
             report["next_step"] = (
                 "Full-MaleCNS-median control. Not a Pugliese mCNS reproduction and "
-                "not a connectivity discrepancy. Next: reconstruct the authors' "
-                "4,310-cell mCNS population, take its Neuron.size median, and "
-                "reproduce their mCNS DNg100 rhythm before any restricted-408 "
-                "rate test. Do not retune Shiu LIF."
+                "not a connectivity discrepancy. The authors' 4,310-cell export is "
+                "the reproduction network. Restricted-408 stays locked until the "
+                "mCNS stimI is recovered. Do not retune Shiu LIF."
             )
         else:
             report["status"] = (
