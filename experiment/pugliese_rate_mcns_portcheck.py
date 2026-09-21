@@ -187,9 +187,8 @@ def run(
     save()
     try:
         table = load_authors_wtable()
-        matrix, _, _ = load_authors_W()
         sizes = table["size"].to_numpy(dtype=np.float64)
-        drawn = sample_cell_parameters_block(matrix.shape[0], int(n_replicates), int(seed), params)
+        drawn = sample_cell_parameters_block(sizes.shape[0], int(n_replicates), int(seed), params)
         gain, threshold = set_sizes(sizes, drawn["gain"], drawn["threshold"])
         stim_index = int(header["stimulated_matrix_index"])
         stim_threshold = threshold[:, stim_index]
@@ -211,6 +210,7 @@ def run(
             report["next_step"] = "Integration was not requested."
             save()
             return report
+        matrix, _, _ = load_authors_W()
         weighted = reweight_connectivity(matrix, params.exc_multiplier, params.inh_multiplier)
         inputs = make_input(matrix.shape[0], [stim_index], float(stim_amplitude))
         if int(np.count_nonzero(inputs)) != 1 or float(inputs[stim_index]) != float(stim_amplitude):

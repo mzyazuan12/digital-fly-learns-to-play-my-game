@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""Reconstruct the authors' mCNS front-leg simulation population.
+"""Audit a MaleCNS v1.0 reconstruction against the authors' shipped export.
 
-Methods (Pugliese et al.): start from front-leg motor neurons, add every
-neuron with a synaptic output onto those motor neurons, then add descending
-neurons with a synaptic output onto that premotor set. Keep proofread
-neurons with a neurotransmitter assignment. In mCNS, count only synapses
-inside VNC ROIs and use consensusNt. Then drop edges below 5 synapses, and
-drop neurons left with only those weak connections. Their mCNS table has
-4,310 neurons. set_sizes() uses the median volume of that table.
-
-This script does not call a count of 4,310 a match unless the kept set has
-that size. A near miss is recorded and is not a normalization denominator.
+The reproduction population is authors_export_population: the 4,310-row
+wTable shipped in Pugliese_2026. This script rebuilds the earlier
+methods candidate (front-leg motor neurons, their VNC presynaptic partners,
+extra VNC descending neurons, non-null consensusNt, then a VNC synapse
+floor of 5) and diffs body IDs. That candidate is
+reconstructed_from_male-cns:v1.0. It is not the set_sizes() denominator,
+even if a future query happens to return 4,310 IDs.
 """
 
 from __future__ import annotations
@@ -24,7 +21,16 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from flybrain.malecns_volume import AUTHORS_MCNS_N, NEUPRINT_DATASET, SIZE_NORM_PUGLIESE_SUBNETWORK
+from flybrain.authors_mcns import (
+    AUTHORS_MCNS_N,
+    DIFF_PATH,
+    POPULATION_AUTHORS,
+    POPULATION_RECONSTRUCTION,
+    RECONSTRUCTION_IDS_PATH,
+    annotate_authors_rows,
+    load_authors_wtable,
+)
+from flybrain.malecns_volume import NEUPRINT_DATASET, SIZE_NORM_PUGLIESE_SUBNETWORK
 
 STATUS_PATH = ROOT / "data" / "malecns_v1" / "pugliese_mcns_population_status.json"
 NEUPRINT_URL = "https://neuprint.janelia.org/api/custom/custom"
