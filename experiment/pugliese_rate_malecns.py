@@ -383,9 +383,10 @@ def run(
         raise ValueError(f"Unknown size normalization mode {size_norm}")
     if size_norm == SIZE_NORM_PUGLIESE_SUBNETWORK:
         raise RuntimeError(
-            "Restricted-408 rate test is locked. Pugliese's denominator is the "
-            "4,310-cell mCNS simulation population, and that reproduction has not "
-            "passed. Do not substitute the 408-cell median or the full-MaleCNS median."
+            "Restricted-408 rate test is locked. The authors' 4,310-cell mCNS "
+            "export is the reproduction network, but this 408-cell run must not "
+            "use that median until the published mCNS stimulus amplitude is "
+            "recovered. Do not substitute the 408-cell median or the full-MaleCNS median."
         )
     if size_norm == SIZE_NORM_FULL_MALECNS:
         experiment_label = FULL_DATASET_MEDIAN_CONTROL

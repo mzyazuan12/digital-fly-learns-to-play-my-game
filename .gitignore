@@ -31,6 +31,9 @@ data/malecns_v1/*
 !data/malecns_v1/pugliese_rate_sizes.parquet
 !data/malecns_v1/pugliese_rate_sizes.meta.json
 !data/malecns_v1/pugliese_mcns_population_status.json
+!data/malecns_v1/authors_mcns_export_status.json
+!data/malecns_v1/mcns_body_id_diff.json
+!data/malecns_v1/reconstructed_from_male-cns_v1.0.json
 syn-points-male-cns-*.feather
 syn-partners-male-cns-*.feather
 connectome-weights-*.feather
