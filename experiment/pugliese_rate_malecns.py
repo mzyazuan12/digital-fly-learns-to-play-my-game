@@ -2,9 +2,8 @@
 
 The full-MaleCNS-median run is a labeled control
 (pugliese_rate_malecns_full_dataset_size_normalization_control).
-Pugliese set_sizes() uses the median of the simulation W_table. Their mCNS
-table is the 4,310-cell front-leg subnetwork. Until that population is
-reconstructed and its DNg100 rhythm is reproduced, this 408-cell runner
+Pugliese set_sizes() uses the median of the simulation W_table. That table
+is the shipped 4,310-cell export, not this 408-cell graph. This runner
 must not be called a Pugliese MaleCNS transfer and must not open a
 connectivity dissection.
 
