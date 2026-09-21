@@ -14,9 +14,10 @@ W_weighted is the transpose of signed synapse counts, with excitatory and
 inhibitory multipliers applied separately (default 0.03 / 0.03).
 
 Gain a is divided by median-normalized neuron size; threshold is multiplied
-by the same factor (src/utils/sim_utils.py::set_sizes). For MaleCNS the
-denominator is the full neuPrint Neuron.size median, not the 408-cell
-circuit median. Amplitude 250 is a rate-ODE unit, not millivolts.
+by the same factor (src/utils/sim_utils.py::set_sizes). The mCNS denominator
+is nanmedian of the authors' shipped 4,310-row wTable. Dividing by the median
+of every male-cns neuron is the full-dataset control, not that reproduction.
+Amplitude 250 is a rate-ODE unit, not millivolts.
 """
 
 from __future__ import annotations

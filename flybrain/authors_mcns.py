@@ -59,7 +59,7 @@ def load_authors_wtable(path: Path = WTABLE_PATH) -> pd.DataFrame:
     return table
 
 
-def load_authors_W(path: Path = W_PATH) -> np.ndarray:
+def load_authors_W(path: Path = W_PATH) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Signed W[pre, post] as load_W reads it. Do not re-sign from consensusNt."""
     path = Path(path)
     if not path.exists():
