@@ -65,4 +65,12 @@ A result is reported as positive only if it passes in closed loop and fails in e
 
 ## Amendments
 
-None yet.
+**A1 (12 November 2026), before any closed-loop run.** Adopted from the stage 2B design, §10 ([paper2_stage2B_design.md](paper2_stage2B_design.md)). The owner chose bilateral drive.
+
+1. **2B drive:** both DNg100 (MaleCNS 10045 + 10056, I = 400 each, Paper 1 §5.7 arm). The primary within-leg read-out is T1L. Bridge construction and validation use DNg100_R alone.
+2. **2B body:** FlyGym 2.1 FlyBody, tethered, legs in air. Both front legs are under the bridge; the other four legs are held by position servos at the neutral pose.
+3. **2B mismatched control:** the left and right front-leg feedback signals are swapped.
+4. **Deafferented equals open loop in 2B,** because there is no other body-to-network path. Both are run, and their bit-identity is a pipeline test.
+5. **Hair-plate tuning direction:** taken from a verified published source if one is found before the gains are frozen. Otherwise all four direction combinations are run and reported, with none designated primary.
+6. **Frozen bridge:** the runner refuses to start unless the SHA-256 of `data/paper2/stage2B_bridge_frozen.json` matches the hash quoted in a later amendment, committed before any coordination read-out.
+7. **Accepted in advance:** afferent synapses keep the network-wide 0.03 weight per synapse (rule 1). A positive result may therefore be reflex-dominated (strong hair-plate input to the coxa-stance motor neurons). If the design's F-checks show that, it will be reported as reflex-driven alternation, not as re-phasing of the CPG.
