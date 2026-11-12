@@ -1,4 +1,4 @@
-"""Stage 2B bridge calibration and freeze (design §5; amendments A1, A3, A4, A5; plan step 7).
+"""Stage 2B bridge calibration and freeze (design §5; amendments A1, A3-A6; plan step 7).
 
 Criteria are independent of coordination. Nothing in this module computes a
 phase, lag, coherence or cross-correlation (enforced by an AST test).
@@ -22,7 +22,8 @@ actuation (the primary). Test replicates 0-127 are refused.
    co-simulation's deafferented run, because nothing flows back. Measure each
    replicate's joint-angle mean and 5-95% range (t >= 250 ms, 1 ms samples) and
    take the median over replicates. For driven DOFs, correct mu additively and
-   Delta multiplicatively toward the targets, at most 3 times.
+   Delta multiplicatively toward the targets, at most 8 times (amendment A6;
+   the limit was 3 before).
 5. Acceptance (design §5.1). Coxa pitch and trochanter-femur pitch of each front
    leg: median mean within +-0.1 rad of the target, and median 5-95% range
    within +-20% of the target. Each criterion is written as pass or fail; a
@@ -64,7 +65,7 @@ T_S = 2.0
 TRANSIENT_TICKS = 2500  # 250 ms
 RECORD_EVERY = 10  # body statistics on the 1 ms grid
 DRIVEN_MIN_S_HZ = 0.5
-MAX_CORRECTIONS = 3
+MAX_CORRECTIONS = 8  # amendment A6 (was 3)
 ACCEPT_MEAN_RAD = 0.1
 ACCEPT_RANGE_REL = 0.2
 ACCEPT_DOFS = {"coxa_pitch": 2, "trfe_pitch": 4}
@@ -268,7 +269,7 @@ def acceptance(measured: dict, targets: dict, driven: np.ndarray) -> dict:
 
 # ----------------------------------------------------------------------------- calibration
 def calibrate(replicates=CALIBRATION_REPLICATES, *, T: float = T_S, workers: int = 9, verify=VERIFY_REPLICATES,
-              log=print) -> dict:
+              log=print, max_corrections: int = MAX_CORRECTIONS) -> dict:
     from organism.flybody_tethered import TetheredFlyBody, load_walking_clip_front_legs
 
     reps = check_replicates(replicates)
@@ -296,7 +297,7 @@ def calibrate(replicates=CALIBRATION_REPLICATES, *, T: float = T_S, workers: int
     mu = np.tile(targets["mean"], (2, 1))
     Delta = np.tile(targets["range"] / 2, (2, 1))
     iterations = []
-    for it in range(MAX_CORRECTIONS + 1):
+    for it in range(max_corrections + 1):
         params = make_params(mu, Delta, ds["c"], ds["s"], lower, upper, ds["driven"])
         pd = params.to_dict()
         per_rep = {}
@@ -314,7 +315,7 @@ def calibrate(replicates=CALIBRATION_REPLICATES, *, T: float = T_S, workers: int
         })
         log(f"body pass {it}: accepted={acc['accepted']} "
             + " ".join(f"{k}: mean {v['mean_error_rad']:+.3f} range x{v['range_ratio']:.2f}" for k, v in acc["criteria"].items()))
-        if acc["accepted"] or it == MAX_CORRECTIONS:
+        if acc["accepted"] or it == max_corrections:
             break
         # Correct driven DOFs only: mu additively, Delta multiplicatively.
         drv = ds["driven"]
@@ -342,6 +343,8 @@ def calibrate(replicates=CALIBRATION_REPLICATES, *, T: float = T_S, workers: int
     return {
         "replicates": list(reps),
         "T_s": T,
+        "max_corrections": int(max_corrections),
+        "corrections_used": len(iterations) - 1,
         "targets": {k: np.asarray(v).tolist() for k, v in targets.items()},
         "drive_stats": {
             "centring": "median drive of every channel (amendment A5)",
@@ -379,7 +382,7 @@ def frozen_document(cal: dict) -> dict:
     clip = Path(__import__("flygym_demo").__file__).resolve().parent / "ball_flybody_data" / "assets" / "ball_flybody_clip.npz"
     status = "accepted" if (cal["acceptance"]["accepted"] and cal["equivalence_with_cosim"]["pass"] is not False) else "failed"
     doc = {
-        "what": "Stage 2B frozen bridge (design §5.3; amendments A1-A5; plan step 7)",
+        "what": "Stage 2B frozen bridge (design §5.3; amendments A1-A6; plan step 7)",
         "status": status,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "drive": {"bodyIds": [10045, 10056], "amplitude": 400.0, "pulse_s": [0.02, 1.999]},

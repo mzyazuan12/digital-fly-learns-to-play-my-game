@@ -95,3 +95,16 @@ The failed frozen file is kept at `data/paper2/failed/stage2B_bridge_frozen.FAIL
 
 **A6 (12 November 2026), step-7 correction limit. No coordination read-out had been computed.** The A5 calibration passed 7 of 8 criteria. Right trochanter–femur pitch failed on range only: 0.793 against the 0.80 floor. Its range ratio was still rising across corrections (0.28, 0.53, 0.70, 0.79) when the 3-correction limit stopped it, so the procedure had not converged. The limit is raised to 8 correction rounds, and the criteria are unchanged. If the rerun still fails, the bridge is frozen with status "failed" and the failure is reported as a limitation. There is no further change to the calibration. The A5 failed file is kept at `data/paper2/failed/stage2B_bridge_frozen.FAILED_median_3rounds.json` (SHA-256 7d123d04…a7fec5).
 
+**A7 (12 November 2026), bridge frozen. No coordination read-out has been computed.** The A6 calibration ran 8 correction rounds (replicates 960–1023, 5 min 11 s). It passed 7 of 8 criteria:
+
+| Joint | Mean error | Range ratio | Result |
+|---|---|---|---|
+| Left coxa pitch | +0.000 | 1.000 | pass |
+| Left trochanter–femur pitch | +0.015 | 0.977 | pass |
+| Right coxa pitch | +0.031 | 0.960 | pass |
+| Right trochanter–femur pitch | **+0.132** | 0.894 | **fail (mean)** |
+
+On the sparsely driven right femur, extra rounds traded range error for mean error. As A6 requires, the bridge is frozen with status "failed" and nothing further is changed. The failure is a stated limitation: the right femur rests ~0.13 rad more extended than the clip's mean. This affects the right leg and, through the L/R swap, the mismatched control. All four left-leg (primary read-out) criteria pass.
+
+**Frozen bridge:** `data/paper2/stage2B_bridge_frozen.json`, SHA-256 `91bc54c33dd1c1e60199ece5f6a0c17f947393dc9022963e4d221b6d456fac25`. Step-9 runs must refuse any other hash.
+

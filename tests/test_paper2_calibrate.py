@@ -5,6 +5,7 @@
 - The output is never overwritten.
 - Acceptance logic: +-0.1 rad mean, +-20% range, undriven DOF = fail.
 - Every channel centred on its median drive; R2 r* = 50 / 150 Hz (amendment A5).
+- At most 8 correction rounds (amendment A6).
 - Drive statistics, pooled targets (A4), and the replay path, which runs the
   bridge's own command arithmetic on recorded drive.
 - A one-replicate end-to-end run reproduces the co-simulation's deafferented
@@ -108,6 +109,13 @@ def test_drive_stats_centre_every_channel_on_the_median():
     assert ds["s"][1, 3] == ds["s_fallback_hz"]
 
 
+def test_correction_limit_follows_a6():
+    assert cal.MAX_CORRECTIONS == 8
+    import inspect
+
+    assert inspect.signature(cal.calibrate).parameters["max_corrections"].default == 8
+
+
 def test_r2_rates_follow_a5():
     from organism.proprio_transduction import gain_for_rate
 
@@ -152,10 +160,11 @@ def test_one_replicate_end_to_end_matches_cosim():
     """Network pass + body passes + equivalence check on replicate 960, 0.3 s.
     The real co-simulation's deafferented run must reproduce the body-pass angles exactly."""
     pytest.importorskip("flygym")
-    res = cal.calibrate([960], T=0.3, workers=1, verify=(960,), log=lambda *a: None)
+    res = cal.calibrate([960], T=0.3, workers=1, verify=(960,), log=lambda *a: None, max_corrections=1)
     assert res["equivalence_with_cosim"]["pass"] is True
     assert res["replicates"] == [960]
-    assert 1 <= len(res["iterations"]) <= cal.MAX_CORRECTIONS + 1
+    assert 1 <= len(res["iterations"]) <= 2 and res["max_corrections"] == 1
+    assert res["corrections_used"] == len(res["iterations"]) - 1
     assert set(res["acceptance"]["criteria"]) == {"T1L:coxa_pitch", "T1L:trfe_pitch", "T1R:coxa_pitch", "T1R:trfe_pitch"}
     from organism.mn_joint_bridge import BridgeParams
 
@@ -178,6 +187,7 @@ def test_frozen_file_is_consistent():
     assert doc["sensory"]["R2_r_star_hz"]["upper"] == 150.0 and doc["sensory"]["R2_r_star_hz"]["lower"] == 50.0
     ds = c["drive_stats"]
     assert ds["centring"].startswith("median")
+    assert c["max_corrections"] == 8 and c["corrections_used"] == len(c["iterations"]) - 1 <= 8
     assert [doc["bridge_params"]["c"][leg] for leg in ("T1L", "T1R")] == ds["c_median_hz"]
     from organism.mn_joint_bridge import BridgeParams
 
