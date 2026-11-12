@@ -86,3 +86,10 @@ A result is reported as positive only if it passes in closed loop and fails in e
    - In FlyMimic, the sternal adductor (one neuron per leg, labelled coxa swing) retracts, and the trochanter extensor's net torque flexes. Both keep their wTable labels in the primary table, and the disagreement is reported.
    - Two mappings are guesses: tarsus depressor → tibia–tarsus flexion, and femur reductor → backward femur roll. The second receives 108 hair-plate synapses and is a named sensitivity point.
 
+**A5 (12 November 2026), step-7 calibration rule. No coordination read-out had been computed.** The first full calibration (replicates 960–1023, deafferented) passed 7 of 8 criteria. It failed right trochanter–femur pitch: mean error +0.233 rad against ±0.1. Under DNg100_L, that leg's femur-flex drive is sparse (mean 0.31 Hz). Centring on the mean drive parks the joint at its range limit whenever the drive is near zero. Changes:
+1. Every joint channel is centred on the **median** drive instead of the mean. The rule is applied to all channels, not only the failing one. Acceptance criteria are unchanged.
+2. The upper sensory target rate for robustness arm R2 is **150 Hz**. The design's 200 Hz equals the nominal firing-rate cap, where the transduction gain diverges.
+3. The scrambled-timing surrogate phase-randomises the body-state channels before transduction, as design §6.2 specifies.
+
+The failed frozen file is kept at `data/paper2/failed/stage2B_bridge_frozen.FAILED_mean_centring.json`.
+

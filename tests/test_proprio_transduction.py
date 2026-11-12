@@ -3,7 +3,8 @@
 From the design's step-5 row: u = 0 gives I = 0; the response is
 size-invariant; u = 1 gives a median rate of 100 +- 10 Hz over one replicate's
 parameter draws; the stored normalisation is reproduced from the clip (and,
-for the campaniform proxy only, from a replay). Plus: the hair-plate direction
+for the campaniform proxy only, from a replay), with left and right frames
+pooled (amendment A4). Plus: the hair-plate direction
 is a required parameter covering the 2 x 2 factorial; afferent rows, legs and
 channels follow data/paper2/stage2B_sensory_table.json.
 """
@@ -45,7 +46,7 @@ def _rest_state(norm):
     tibia at its median with zero velocity, zero force."""
     state = {}
     for leg, bl in (("T1L", "lf"), ("T1R", "rf")):
-        st = norm["stats"][leg]
+        st = norm["stats"]  # pooled over both legs (A4)
         ang = np.zeros(7)
         ang[DOF_INDEX["coxa_pitch"]] = st["coxa_pitch_angle"]["p50"]
         ang[DOF_INDEX["trfe_pitch"]] = st["trfe_pitch_angle"]["p50"]
@@ -58,7 +59,7 @@ def _unit_state(norm, tr):
     """Every stimulus exactly 1 for transducer ``tr``."""
     state = _rest_state(norm)
     for leg, bl in (("T1L", "lf"), ("T1R", "rf")):
-        st = norm["stats"][leg]
+        st = norm["stats"]  # pooled over both legs (A4)
         for ch, dof, key in (("hair_plate_coxa", "coxa_pitch", "coxa_pitch_angle"),
                              ("hair_plate_trochanter", "trfe_pitch", "trfe_pitch_angle")):
             d = tr.angle_direction[ch][leg]
@@ -98,7 +99,7 @@ def test_direction_selects_the_limit(norm):
     pro = ProprioTransducer({"hair_plate_coxa": "protraction", "hair_plate_trochanter": "flexion"})
     ret = ProprioTransducer({"hair_plate_coxa": "retraction", "hair_plate_trochanter": "extension"})
     for leg, bl in (("T1L", "lf"), ("T1R", "rf")):
-        pct = norm["stats"][leg]["coxa_pitch_angle"]
+        pct = norm["stats"]["coxa_pitch_angle"]
         d = pro.angle_direction["hair_plate_coxa"][leg]
         assert ret.angle_direction["hair_plate_coxa"][leg] == -d
         pro_end = pct["p95"] if d > 0 else pct["p5"]
@@ -196,15 +197,30 @@ def test_unit_stimulus_gives_100_hz_median_over_a_replicates_draws(norm):
 
 
 # --------------------------------------------------------------------------- normalisation
-def test_clip_percentiles_are_reproduced(norm):
+def test_clip_percentiles_are_reproduced_from_pooled_frames(norm):
+    """Thresholds come from LF and RF clip frames pooled (amendment A4), so both legs share them."""
     pytest.importorskip("flygym")
     from organism.flybody_tethered import load_walking_clip_front_legs
 
     clip = load_walking_clip_front_legs()
     fresh = clip_feature_stats(clip, float(clip["timestep"]))
-    for leg in ("T1L", "T1R"):
-        for k, v in fresh[leg].items():
-            assert norm["stats"][leg][k] == v, (leg, k)
+    for k, v in fresh.items():
+        assert norm["stats"][k] == v, k
+    pooled = np.concatenate([clip["lf"][:, DOF_INDEX["coxa_pitch"]], clip["rf"][:, DOF_INDEX["coxa_pitch"]]])
+    assert norm["stats"]["coxa_pitch_angle"]["p50"] == float(np.percentile(pooled, 50))
+    # The per-leg values are kept for reference only and do differ (the reason for A4).
+    ref = norm["per_leg_reference_only"]
+    assert abs(ref["T1L"]["coxa_pitch_angle"]["p50"] - ref["T1R"]["coxa_pitch_angle"]["p50"]) > 0.2
+
+
+def test_both_legs_use_the_same_thresholds(norm):
+    tr = ProprioTransducer(FACTORIAL[0])
+    s = _rest_state(norm)
+    theta = norm["stats"]["coxa_pitch_angle"]["p95"] if tr.angle_direction["hair_plate_coxa"]["T1L"] > 0 else norm["stats"]["coxa_pitch_angle"]["p5"]
+    for bl in ("lf", "rf"):
+        s[bl]["angle"][DOF_INDEX["coxa_pitch"]] = theta
+    u = tr.stimuli(s)
+    assert u[("T1L", "hair_plate_coxa")] == u[("T1R", "hair_plate_coxa")] == pytest.approx(1.0)
 
 
 def test_campaniform_replay_percentile_is_reproduced(norm):
@@ -213,16 +229,14 @@ def test_campaniform_replay_percentile_is_reproduced(norm):
     from organism.proprio_transduction import replay_force_stats
 
     fresh = replay_force_stats(TetheredFlyBody("position"), load_walking_clip_front_legs())
-    for leg in ("T1L", "T1R"):
-        assert norm["stats"][leg]["trfe_pitch_abs_force_p95"] == fresh[leg]["trfe_pitch_abs_force_p95"]
+    assert norm["stats"]["trfe_pitch_abs_force_p95"] == fresh["trfe_pitch_abs_force_p95"]
 
 
 def test_every_channel_has_a_positive_normaliser(norm):
-    for leg in ("T1L", "T1R"):
-        st = norm["stats"][leg]
-        for key in ("coxa_pitch_angle", "trfe_pitch_angle"):
-            p = st[key]
-            assert p["p5"] < p["p20"] < p["p50"] < p["p80"] < p["p95"]
-        for key in ("tibia_pitch_abs_dev_p95", "tibia_pitch_abs_vel_p95", "trfe_pitch_abs_force_p95"):
-            assert st[key] > 0
+    st = norm["stats"]
+    for key in ("coxa_pitch_angle", "trfe_pitch_angle"):
+        p = st[key]
+        assert p["p5"] < p["p20"] < p["p50"] < p["p80"] < p["p95"]
+    for key in ("tibia_pitch_abs_dev_p95", "tibia_pitch_abs_vel_p95", "trfe_pitch_abs_force_p95"):
+        assert st[key] > 0
     assert set(CHANNELS) == {"hair_plate_coxa", "hair_plate_trochanter", "chordotonal_femur_tibia", "campaniform_trochanter"}

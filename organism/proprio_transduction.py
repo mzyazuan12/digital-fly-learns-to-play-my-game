@@ -36,9 +36,10 @@ measured from FlyBody geometry in ``stage2B_mn_joint_table.json``. Coxa swing is
 protraction and femur/tr flex is coxa-trochanter flexion.
 
 Normalisation (``stage2B_sensory_norm.json``) uses the walking clip's own angles
-and velocities (amendment A3), each leg from its own clip leg. The one
-exception is the campaniform force proxy, which needs a replay of the clip on
-the tethered FlyBody (position servos).
+and velocities (amendment A3), with left and right clip frames pooled into one
+set of thresholds for both legs (amendment A4). The one exception is the
+campaniform force proxy, which needs a replay of the clip on the tethered
+FlyBody (position servos); it too pools both legs.
 
 Build the normalisation file (needs FlyGym; a few seconds):
   .venv/bin/python -m organism.proprio_transduction
@@ -93,26 +94,37 @@ def _pcts(x: np.ndarray) -> dict[str, float]:
     return {f"p{p:g}": float(np.percentile(x, p)) for p in (5, 20, 50, 80, 95)}
 
 
+def _feature_stats(angles: np.ndarray, velocities: np.ndarray) -> dict:
+    ti = angles[:, DOF_INDEX["tibia_pitch"]]
+    ti50 = float(np.percentile(ti, 50))
+    return {
+        "coxa_pitch_angle": _pcts(angles[:, DOF_INDEX["coxa_pitch"]]),
+        "trfe_pitch_angle": _pcts(angles[:, DOF_INDEX["trfe_pitch"]]),
+        "tibia_pitch_angle_p50": ti50,
+        "tibia_pitch_abs_dev_p95": float(np.percentile(np.abs(ti - ti50), 95)),
+        "tibia_pitch_abs_vel_p95": float(np.percentile(np.abs(velocities[:, DOF_INDEX["tibia_pitch"]]), 95)),
+    }
+
+
 def clip_feature_stats(clip: Mapping[str, np.ndarray], timestep: float) -> dict:
-    """Percentiles from the clip's own angles and velocities, per leg."""
+    """Percentiles from the clip's own angles and velocities, LF and RF frames pooled
+    (amendment A4). Velocities are differentiated per leg before pooling."""
+    angles = [np.asarray(clip[BODY_LEG[leg]]) for leg in LEGS]
+    vels = [np.gradient(a, timestep, axis=0) for a in angles]
+    return _feature_stats(np.concatenate(angles), np.concatenate(vels))
+
+
+def clip_feature_stats_per_leg(clip: Mapping[str, np.ndarray], timestep: float) -> dict:
+    """Unpooled per-leg percentiles. Reference only (they show the clip's L/R asymmetry); not used."""
     out = {}
     for leg in LEGS:
         a = np.asarray(clip[BODY_LEG[leg]])
-        vel = np.gradient(a, timestep, axis=0)
-        ti = a[:, DOF_INDEX["tibia_pitch"]]
-        ti50 = float(np.percentile(ti, 50))
-        out[leg] = {
-            "coxa_pitch_angle": _pcts(a[:, DOF_INDEX["coxa_pitch"]]),
-            "trfe_pitch_angle": _pcts(a[:, DOF_INDEX["trfe_pitch"]]),
-            "tibia_pitch_angle_p50": ti50,
-            "tibia_pitch_abs_dev_p95": float(np.percentile(np.abs(ti - ti50), 95)),
-            "tibia_pitch_abs_vel_p95": float(np.percentile(np.abs(vel[:, DOF_INDEX["tibia_pitch"]]), 95)),
-        }
+        out[leg] = _feature_stats(a, np.gradient(a, timestep, axis=0))
     return out
 
 
-def replay_force_stats(body, clip: Mapping[str, np.ndarray]) -> dict:
-    """p95 of |trochanter-femur pitch actuator force| while the position servos replay the clip."""
+def replay_forces(body, clip: Mapping[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """Trochanter-femur pitch actuator force per front leg while the position servos replay the clip."""
     if body.front_actuation != "position":
         raise ValueError("the campaniform normalisation replays the clip with position servos")
     n = clip["lf"].shape[0]
@@ -129,7 +141,16 @@ def replay_force_stats(body, clip: Mapping[str, np.ndarray]) -> dict:
         s = body.front_leg_arrays()
         for leg in LEGS:
             f[leg][k] = s[BODY_LEG[leg]]["actuator_force"][DOF_INDEX["trfe_pitch"]]
-    return {leg: {"trfe_pitch_abs_force_p95": float(np.percentile(np.abs(f[leg]), 95))} for leg in LEGS}
+    return f
+
+
+def replay_force_stats(body, clip: Mapping[str, np.ndarray]) -> dict:
+    """p95 of |trochanter-femur pitch actuator force| over both legs' replay samples pooled (A4)."""
+    f = replay_forces(body, clip)
+    return {
+        "trfe_pitch_abs_force_p95": float(np.percentile(np.abs(np.concatenate([f[leg] for leg in LEGS])), 95)),
+        "per_leg_reference_only": {leg: float(np.percentile(np.abs(f[leg]), 95)) for leg in LEGS},
+    }
 
 
 def build_norm(body=None, clip=None) -> dict:
@@ -137,19 +158,24 @@ def build_norm(body=None, clip=None) -> dict:
 
     clip = clip if clip is not None else load_walking_clip_front_legs()
     body = body if body is not None else TetheredFlyBody("position")
-    stats = clip_feature_stats(clip, float(clip["timestep"]))
+    h = float(clip["timestep"])
+    stats = clip_feature_stats(clip, h)
     force = replay_force_stats(body, clip)
+    stats["trfe_pitch_abs_force_p95"] = force["trfe_pitch_abs_force_p95"]
+    per_leg = clip_feature_stats_per_leg(clip, h)
     for leg in LEGS:
-        stats[leg].update(force[leg])
+        per_leg[leg]["trfe_pitch_abs_force_p95"] = force["per_leg_reference_only"][leg]
     return {
-        "what": "Stage 2B afferent stimulus normalisation (design §4.3, §5.2; amendment A3; plan step 5)",
+        "what": "Stage 2B afferent stimulus normalisation (design §4.3, §5.2; amendments A3, A4; plan step 5)",
         "source_clip": "flygym_demo/ball_flybody_data/assets/ball_flybody_clip.npz (NeuroMechFly v1 tethered ball walking; FlyGym FlyBody conversion)",
-        "clip_timestep_s": float(clip["timestep"]),
-        "angles_and_velocities": "the clip's own angles (0.1 ms cubic interpolant of the Savitzky-Golay-filtered 100 fps data) and their numerical derivative; T1L from the LF trace, T1R from the RF trace",
-        "campaniform_force": "replay of the clip on the tethered FlyBody with position servos (organism.flybody_tethered), trochanter-femur pitch actuator force",
+        "clip_timestep_s": h,
+        "pooling": "LF and RF clip frames pooled; one set of thresholds for both legs (amendment A4)",
+        "angles_and_velocities": "the clip's own angles (0.1 ms cubic interpolant of the Savitzky-Golay-filtered 100 fps data) and their numerical derivative (per leg, then pooled)",
+        "campaniform_force": "replay of the clip on the tethered FlyBody with position servos (organism.flybody_tethered), trochanter-femur pitch actuator force, both legs pooled",
         "hair_plate_onset_and_saturation_percentiles": [HP_ONSET_PCT, HP_SAT_PCT],
         "units": {"angle": "rad", "velocity": "rad/s", "force": "model torque units"},
         "stats": stats,
+        "per_leg_reference_only": per_leg,
     }
 
 
@@ -176,7 +202,7 @@ class ProprioTransducer:
         st = sensory_table if sensory_table is not None else json.loads(SENSORY_TABLE_PATH.read_text())
         nm = norm if norm is not None else json.loads(NORM_PATH.read_text())
         mj = mn_joint_table if mn_joint_table is not None else json.loads(MN_JOINT_TABLE_PATH.read_text())
-        self.stats = nm["stats"]
+        self.stats = nm["stats"]  # pooled over both legs (amendment A4)
         self.n_neurons = int(n_neurons)
         if isinstance(r_star_hz, Mapping):
             self.r_star = {ch: float(r_star_hz[ch]) for ch in CHANNELS}
@@ -220,7 +246,7 @@ class ProprioTransducer:
         for leg in LEGS:
             s = state[BODY_LEG[leg]]
             ang, vel, frc = s["angle"], s["velocity"], s["actuator_force"]
-            st = self.stats[leg]
+            st = self.stats
             out[(leg, "hair_plate_coxa")] = self._limit(
                 float(ang[DOF_INDEX["coxa_pitch"]]), st["coxa_pitch_angle"], self.angle_direction["hair_plate_coxa"][leg]
             )
