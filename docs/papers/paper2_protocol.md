@@ -93,3 +93,5 @@ A result is reported as positive only if it passes in closed loop and fails in e
 
 The failed frozen file is kept at `data/paper2/failed/stage2B_bridge_frozen.FAILED_mean_centring.json`.
 
+**A6 (12 November 2026), step-7 correction limit. No coordination read-out had been computed.** The A5 calibration passed 7 of 8 criteria. Right trochanter–femur pitch failed on range only: 0.793 against the 0.80 floor. Its range ratio was still rising across corrections (0.28, 0.53, 0.70, 0.79) when the 3-correction limit stopped it, so the procedure had not converged. The limit is raised to 8 correction rounds, and the criteria are unchanged. If the rerun still fails, the bridge is frozen with status "failed" and the failure is reported as a limitation. There is no further change to the calibration. The A5 failed file is kept at `data/paper2/failed/stage2B_bridge_frozen.FAILED_median_3rounds.json` (SHA-256 7d123d04…a7fec5).
+

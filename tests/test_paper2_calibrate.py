@@ -4,6 +4,7 @@
 - Only replicates 960-1023 are accepted; the test set 0-127 is refused.
 - The output is never overwritten.
 - Acceptance logic: +-0.1 rad mean, +-20% range, undriven DOF = fail.
+- Every channel centred on its median drive; R2 r* = 50 / 150 Hz (amendment A5).
 - Drive statistics, pooled targets (A4), and the replay path, which runs the
   bridge's own command arithmetic on recorded drive.
 - A one-replicate end-to-end run reproduces the co-simulation's deafferented
@@ -84,18 +85,35 @@ def test_acceptance_logic():
     assert set(a["criteria"]) == {"T1L:coxa_pitch", "T1L:trfe_pitch", "T1R:coxa_pitch", "T1R:trfe_pitch"}
 
 
-def test_drive_stats():
+def test_drive_stats_centre_every_channel_on_the_median():
+    """Amendment A5: c is the median drive of every channel (driven or not); s is the
+    5-95% half-range, with the driven-DOF median s as fallback for undriven DOFs."""
     rng = np.random.default_rng(0)
     n = 5000
     u = np.zeros((n, 2, 7))
     u[:, 0, 2] = 8 + 10 * np.sin(np.arange(n) * 0.01)  # driven
-    u[:, 1, 4] = 0.2 * rng.standard_normal(n)  # below 0.5 Hz half-range -> undriven
+    sparse = np.zeros(n)
+    sparse[::7] = 20.0  # sparse bursts: mean 2.9 Hz, median 0
+    u[:, 1, 4] = sparse
+    u[:, 1, 3] = 0.2 * rng.standard_normal(n) + 0.05  # below 0.5 Hz half-range -> undriven
     u[:, 0, 0] = 50 * rng.standard_normal(n)  # held DOF: never driven
     ds = cal.drive_stats({960: u, 961: u})
     post = u[cal.TRANSIENT_TICKS:]
-    assert ds["c_raw"][0, 2] == pytest.approx(post[:, 0, 2].mean())
-    assert ds["driven"][0, 2] and not ds["driven"][1, 4] and not ds["driven"][0, 0]
-    assert ds["c"][1, 4] == 0.0 and ds["s"][1, 4] == ds["s_fallback_hz"] == pytest.approx(ds["s_raw"][0, 2])
+    assert ds["c"][0, 2] == pytest.approx(np.median(post[:, 0, 2]))
+    assert ds["c_mean"][0, 2] == pytest.approx(post[:, 0, 2].mean())
+    assert ds["c"][1, 4] == 0.0 and ds["c_mean"][1, 4] > 2.0  # median, not mean, for sparse drive
+    assert ds["c"][1, 3] == pytest.approx(np.median(post[:, 1, 3]))  # undriven channels too
+    assert np.array_equal(ds["c"], ds["c_median"])
+    assert ds["driven"][0, 2] and not ds["driven"][1, 3] and not ds["driven"][0, 0]
+    assert ds["s"][1, 3] == ds["s_fallback_hz"]
+
+
+def test_r2_rates_follow_a5():
+    from organism.proprio_transduction import gain_for_rate
+
+    assert cal.R_STAR_HZ == 100.0
+    assert cal.R_STAR_R2_HZ == (50.0, 150.0)
+    assert all(np.isfinite(gain_for_rate(r)) for r in cal.R_STAR_R2_HZ)
 
 
 def test_pooled_targets_follow_a4():
@@ -157,6 +175,10 @@ def test_frozen_file_is_consistent():
     assert doc["status"] == ("accepted" if all(v["pass"] for v in crit.values()) else "failed")
     assert doc["sensory"]["hair_plate_primary"] is None and len(doc["sensory"]["hair_plate_factorial"]) == 4
     assert doc["drive"]["bodyIds"] == [10045, 10056]
+    assert doc["sensory"]["R2_r_star_hz"]["upper"] == 150.0 and doc["sensory"]["R2_r_star_hz"]["lower"] == 50.0
+    ds = c["drive_stats"]
+    assert ds["centring"].startswith("median")
+    assert [doc["bridge_params"]["c"][leg] for leg in ("T1L", "T1R")] == ds["c_median_hz"]
     from organism.mn_joint_bridge import BridgeParams
 
     BridgeParams.from_dict(doc["bridge_params"]).validate()

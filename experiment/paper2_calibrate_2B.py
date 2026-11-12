@@ -1,4 +1,4 @@
-"""Stage 2B bridge calibration and freeze (design §5; amendments A1, A3, A4; plan step 7).
+"""Stage 2B bridge calibration and freeze (design §5; amendments A1, A3, A4, A5; plan step 7).
 
 Criteria are independent of coordination. Nothing in this module computes a
 phase, lag, coherence or cross-correlation (enforced by an AST test).
@@ -10,9 +10,11 @@ actuation (the primary). Test replicates 0-127 are refused.
 1. Network pass. Run each calibration replicate's network with no afferent
    input (deafferented = open loop, A1.4). Record the bridge drive u (agonist
    minus antagonist sum, Hz) of all 14 front-leg DOFs at every 0.1 ms tick.
-2. c_j, s_j: mean and 5-95% half-range of u_j, per leg, pooled over replicates
-   and t >= 250 ms. A DOF is "driven" if s_j >= 0.5 Hz. For undriven DOFs,
-   c = 0 and s = the median s of the driven DOFs (design §3.4).
+2. c_j, s_j: median (amendment A5; the first attempt used the mean) and 5-95%
+   half-range of u_j, per leg, pooled over replicates and t >= 250 ms. Every
+   channel, driven or not, is centred on its median drive. A DOF is "driven" if
+   s_j >= 0.5 Hz; for undriven DOFs, s = the median s of the driven DOFs
+   (design §3.4).
 3. Targets: pooled left+right walking-clip mean and 5-95% range per DOF (A4).
    mu_j and Delta_j start at the target mean and half-range.
 4. Body passes. Drive the deafferented tethered FlyBody with each replicate's
@@ -71,7 +73,7 @@ BODY_LEG = {"T1L": "lf", "T1R": "rf"}
 HELD = (0, 1)
 VERIFY_REPLICATES = (960, 961)
 R_STAR_HZ = 100.0
-R_STAR_R2_HZ = (50.0, None)  # upper R2 value pending (see "sensory" notes)
+R_STAR_R2_HZ = (50.0, 150.0)  # robustness arm R2; upper value set by amendment A5 (200 Hz equals the rate cap)
 
 _W: dict = {}
 
@@ -131,17 +133,22 @@ def _network_job(args):
 
 
 def drive_stats(us: dict[int, np.ndarray]) -> dict:
-    """c, s per leg and DOF, pooled over replicates and t >= 250 ms."""
+    """c, s per leg and DOF, pooled over replicates and t >= 250 ms.
+
+    c is the median drive of every channel (amendment A5). The mean is kept as
+    ``c_mean`` for reference only.
+    """
     stack = np.concatenate([u[TRANSIENT_TICKS:] for u in us.values()])  # (N, 2, 7)
-    c = stack.mean(axis=0)
+    c_mean = stack.mean(axis=0)
+    c_median = np.median(stack, axis=0)
     s = (np.percentile(stack, 95, axis=0) - np.percentile(stack, 5, axis=0)) / 2
     driven = s >= DRIVEN_MIN_S_HZ
     for li in range(2):
         driven[li, list(HELD)] = False
     fallback = float(np.median(s[driven])) if driven.any() else 1.0
-    c_used = np.where(driven, c, 0.0)
     s_used = np.where(driven, s, fallback)
-    return {"c_raw": c, "s_raw": s, "driven": driven, "c": c_used, "s": s_used, "s_fallback_hz": fallback}
+    return {"c_mean": c_mean, "c_median": c_median, "s_raw": s, "driven": driven, "c": c_median.copy(),
+            "s": s_used, "s_fallback_hz": fallback}
 
 
 # ----------------------------------------------------------------------------- body pass
@@ -337,7 +344,9 @@ def calibrate(replicates=CALIBRATION_REPLICATES, *, T: float = T_S, workers: int
         "T_s": T,
         "targets": {k: np.asarray(v).tolist() for k, v in targets.items()},
         "drive_stats": {
-            "c_raw_hz": ds["c_raw"].tolist(),
+            "centring": "median drive of every channel (amendment A5)",
+            "c_median_hz": ds["c_median"].tolist(),
+            "c_mean_hz_reference_only": ds["c_mean"].tolist(),
             "s_raw_hz": ds["s_raw"].tolist(),
             "driven": ds["driven"].tolist(),
             "c_hz": ds["c"].tolist(),
@@ -370,7 +379,7 @@ def frozen_document(cal: dict) -> dict:
     clip = Path(__import__("flygym_demo").__file__).resolve().parent / "ball_flybody_data" / "assets" / "ball_flybody_clip.npz"
     status = "accepted" if (cal["acceptance"]["accepted"] and cal["equivalence_with_cosim"]["pass"] is not False) else "failed"
     doc = {
-        "what": "Stage 2B frozen bridge (design §5.3; amendments A1-A4; plan step 7)",
+        "what": "Stage 2B frozen bridge (design §5.3; amendments A1-A5; plan step 7)",
         "status": status,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "drive": {"bodyIds": [10045, 10056], "amplitude": 400.0, "pulse_s": [0.02, 1.999]},
@@ -393,7 +402,8 @@ def frozen_document(cal: dict) -> dict:
             "hair_plate_primary": None,
             "hair_plate_note": "no verified source at freeze: all four combinations are run and reported, none primary (A1.5)",
             "R2_r_star_hz": {"lower": R_STAR_R2_HZ[0], "upper": R_STAR_R2_HZ[1],
-                             "note": "design's 200 Hz equals the nominal rate cap, where g_c is infinite; the upper R2 value needs an owner decision"},
+                             "g_c": {"lower": gain_for_rate(R_STAR_R2_HZ[0]), "upper": gain_for_rate(R_STAR_R2_HZ[1])},
+                             "note": "amendment A5: upper value 150 Hz; the design's 200 Hz equals the nominal rate cap, where g_c diverges"},
         },
         "conditions": {
             "open_loop": "no body, no afferent input",
