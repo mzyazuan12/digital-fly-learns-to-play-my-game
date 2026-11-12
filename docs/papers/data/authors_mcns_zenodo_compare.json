@@ -1,0 +1,451 @@
+{
+  "source": "Zenodo 22260924 DNg100_Stim_IMAC_vncOnly.zip run_id=33241780",
+  "zip_md5_expected": "75779631356162efa7e701847dbbb9a0",
+  "started_utc": "2026-11-12T03:10:43.604522+00:00",
+  "config": {
+    "stimNeurons": [
+      [
+        9
+      ]
+    ],
+    "stimI": [
+      [
+        400
+      ]
+    ],
+    "seed": 626,
+    "n_replicates": 1024,
+    "sim": {
+      "T": 2.0,
+      "dt": 0.001,
+      "pulseStart": 0.02,
+      "pulseEnd": 1.999,
+      "rtol": 2e-06,
+      "atol": 5e-09
+    },
+    "neuron_params": {
+      "name": "TestingNeuronParams",
+      "tauMean": 0.02,
+      "tauStdv": 0.002,
+      "aMean": 1,
+      "aStdv": 0.1,
+      "thresholdMean": 7.5,
+      "thresholdStdv": 0.6,
+      "frcapMean": 200,
+      "frcapStdv": 10,
+      "excitatoryMultiplier": 0.03,
+      "inhibitoryMultiplier": 0.03
+    },
+    "wPath_tail": "W_20260210_vncRoisOnly.csv",
+    "stimulated_bodyId": 10056
+  },
+  "input_currents": {
+    "nonzero_indices": [
+      9
+    ],
+    "values": [
+      400.0
+    ]
+  },
+  "W": {
+    "weighted_post_pre": 833.66,
+    "weighted_pre_post": 808.01,
+    "raw_pre_post": 0.0,
+    "raw_post_pre": 855.0,
+    "best_match": "raw_pre_post"
+  },
+  "parameters": {
+    "tau": {
+      "max_rel_diff_vs_ours_after_set_sizes": 2.2632313028426789e-07
+    },
+    "a": {
+      "max_rel_diff_vs_ours_after_set_sizes": 2.865321632079806e-07,
+      "max_rel_diff_vs_ours_raw": 106.14890805132492
+    },
+    "threshold": {
+      "max_rel_diff_vs_ours_after_set_sizes": 2.3242384134229175e-07,
+      "max_rel_diff_vs_ours_raw": 50.15795572848446
+    },
+    "fr_cap": {
+      "max_rel_diff_vs_ours_after_set_sizes": 9.97199465022431e-08
+    }
+  },
+  "mn_idxs_h5_n": 130,
+  "mn_readout": {
+    "notebook_rule": "wTable['motor module'].notna()",
+    "n": 129,
+    "h5_mn_idxs_n": 130,
+    "h5_only_bodyIds": [
+      1050340850
+    ]
+  },
+  "authors_population": {
+    "n_replicates": 1024,
+    "fraction_replicates_any_mn_active": 1.0,
+    "fraction_replicates_rhythmic": 1.0,
+    "fraction_rhythmic_among_mn_active": 1.0,
+    "mn_score_all": {
+      "median": 0.9938758015632629,
+      "q25": 0.9771051108837128,
+      "q75": 0.9991074949502945,
+      "min": 0.8239017128944397,
+      "max": 1.0,
+      "mean": 0.9853208086569794
+    },
+    "mn_score_mn_active": {
+      "median": 0.9938758015632629,
+      "q25": 0.9771051108837128,
+      "q75": 0.9991074949502945,
+      "min": 0.8239017128944397,
+      "max": 1.0,
+      "mean": 0.9853208086569794
+    },
+    "n_mn_active_past_transient": {
+      "median": 8.0,
+      "q25": 7.0,
+      "q75": 8.0,
+      "min": 6.0,
+      "max": 15.0,
+      "mean": 7.9990234375
+    },
+    "mn_frequency_hz_all": {
+      "median": 11.494251899421215,
+      "q25": 10.989011265337467,
+      "q75": 12.048192322254181,
+      "min": 8.130080997943878,
+      "max": 14.492752030491829,
+      "mean": 11.493563581097987
+    },
+    "mn_frequency_hz_rhythmic": {
+      "median": 11.494251899421215,
+      "q25": 10.989011265337467,
+      "q75": 12.048192322254181,
+      "min": 8.130080997943878,
+      "max": 14.492752030491829,
+      "mean": 11.493563581097987
+    },
+    "dng100_driven_recruited_all": true,
+    "rates_valid_all": true,
+    "seconds_per_replicate_median": 0.0,
+    "roles": {
+      "E1": {
+        "fraction_replicates_active": 1.0,
+        "score": {
+          "median": 0.9995710253715515,
+          "q25": 0.9992697685956955,
+          "q75": 0.999840259552002,
+          "min": 0.9981399774551392,
+          "max": 1.0,
+          "mean": 0.9995237494586036
+        },
+        "fraction_score_ge_0.5": 1.0
+      },
+      "E2": {
+        "fraction_replicates_active": 1.0,
+        "score": {
+          "median": 0.9994634985923767,
+          "q25": 0.9991807341575623,
+          "q75": 0.9997142553329468,
+          "min": 0.9980719685554504,
+          "max": 1.0,
+          "mean": 0.9994199963402934
+        },
+        "fraction_score_ge_0.5": 1.0
+      },
+      "E3": {
+        "fraction_replicates_active": 1.0,
+        "score": {
+          "median": 0.9994014799594879,
+          "q25": 0.9990935027599335,
+          "q75": 0.9996740221977234,
+          "min": 0.9064570069313049,
+          "max": 1.0,
+          "mean": 0.9990596066927537
+        },
+        "fraction_score_ge_0.5": 1.0
+      },
+      "I1": {
+        "fraction_replicates_active": 1.0,
+        "score": {
+          "median": 0.9994540214538574,
+          "q25": 0.9991494864225388,
+          "q75": 0.9997230172157288,
+          "min": 0.8623579740524292,
+          "max": 1.0,
+          "mean": 0.9991228100261651
+        },
+        "fraction_score_ge_0.5": 1.0
+      },
+      "I2": {
+        "fraction_replicates_active": 1.0,
+        "score": {
+          "median": 0.9995349943637848,
+          "q25": 0.9992597550153732,
+          "q75": 0.9997749924659729,
+          "min": 0.9982870221138,
+          "max": 1.0,
+          "mean": 0.9994858496938832
+        },
+        "fraction_score_ge_0.5": 1.0
+      }
+    },
+    "n_replicates_streamed": 1024
+  },
+  "traces": [
+    {
+      "replicate": 0,
+      "n_active_union": 123,
+      "same_active_set": true,
+      "corrcoef_active": 0.999992601013207,
+      "max_abs_diff_hz": 0.17829561233520508,
+      "ours": {
+        "n_active_total": 123,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 7,
+        "mn_rhythmicity_score": 0.9989885687828064,
+        "mn_frequency_hz": 11.475592851638794,
+        "rhythmic": true,
+        "max_rate_hz": 21.182161331176758,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 123,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 7,
+        "mn_rhythmicity_score": 0.9989557266235352,
+        "mn_frequency_hz": 11.475592851638794,
+        "rhythmic": true,
+        "max_rate_hz": 21.183170318603516,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 1,
+      "n_active_union": 100,
+      "same_active_set": true,
+      "corrcoef_active": 0.9998849844124243,
+      "max_abs_diff_hz": 0.3379087448120117,
+      "ours": {
+        "n_active_total": 100,
+        "n_mn_active": 7,
+        "n_mn_active_past_transient": 7,
+        "mn_rhythmicity_score": 0.985079288482666,
+        "mn_frequency_hz": 10.526315309107304,
+        "rhythmic": true,
+        "max_rate_hz": 15.120259284973145,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 100,
+        "n_mn_active": 7,
+        "n_mn_active_past_transient": 7,
+        "mn_rhythmicity_score": 0.9850688576698303,
+        "mn_frequency_hz": 10.526315309107304,
+        "rhythmic": true,
+        "max_rate_hz": 15.11937427520752,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 2,
+      "n_active_union": 114,
+      "same_active_set": true,
+      "corrcoef_active": 0.9999996654413444,
+      "max_abs_diff_hz": 0.03580427169799805,
+      "ours": {
+        "n_active_total": 114,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.975517213344574,
+        "mn_frequency_hz": 12.048192322254181,
+        "rhythmic": true,
+        "max_rate_hz": 16.002473831176758,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 114,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.975100040435791,
+        "mn_frequency_hz": 12.048192322254181,
+        "rhythmic": true,
+        "max_rate_hz": 16.002517700195312,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 3,
+      "n_active_union": 113,
+      "same_active_set": true,
+      "corrcoef_active": 0.9999849679143762,
+      "max_abs_diff_hz": 0.17954212427139282,
+      "ours": {
+        "n_active_total": 113,
+        "n_mn_active": 10,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9589850306510925,
+        "mn_frequency_hz": 10.217230767011642,
+        "rhythmic": true,
+        "max_rate_hz": 18.7078800201416,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 113,
+        "n_mn_active": 10,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9589914083480835,
+        "mn_frequency_hz": 10.217230767011642,
+        "rhythmic": true,
+        "max_rate_hz": 18.707027435302734,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 4,
+      "n_active_union": 113,
+      "same_active_set": true,
+      "corrcoef_active": 0.9999951721217755,
+      "max_abs_diff_hz": 0.22146528959274292,
+      "ours": {
+        "n_active_total": 113,
+        "n_mn_active": 7,
+        "n_mn_active_past_transient": 7,
+        "mn_rhythmicity_score": 0.9894259572029114,
+        "mn_frequency_hz": 11.666991747915745,
+        "rhythmic": true,
+        "max_rate_hz": 22.155982971191406,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 113,
+        "n_mn_active": 7,
+        "n_mn_active_past_transient": 7,
+        "mn_rhythmicity_score": 0.9891759753227234,
+        "mn_frequency_hz": 11.686534620821476,
+        "rhythmic": true,
+        "max_rate_hz": 22.158992767333984,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 5,
+      "n_active_union": 107,
+      "same_active_set": true,
+      "corrcoef_active": 0.9999853798213371,
+      "max_abs_diff_hz": 0.20492827892303467,
+      "ours": {
+        "n_active_total": 107,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9995822906494141,
+        "mn_frequency_hz": 13.157895766198635,
+        "rhythmic": true,
+        "max_rate_hz": 15.8900146484375,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 107,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9995863437652588,
+        "mn_frequency_hz": 13.157895766198635,
+        "rhythmic": true,
+        "max_rate_hz": 15.89002513885498,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 6,
+      "n_active_union": 113,
+      "same_active_set": true,
+      "corrcoef_active": 0.9999999010298448,
+      "max_abs_diff_hz": 0.037220001220703125,
+      "ours": {
+        "n_active_total": 113,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9956926107406616,
+        "mn_frequency_hz": 11.904762126505375,
+        "rhythmic": true,
+        "max_rate_hz": 17.648740768432617,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 113,
+        "n_mn_active": 9,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9959527254104614,
+        "mn_frequency_hz": 11.904762126505375,
+        "rhythmic": true,
+        "max_rate_hz": 17.656530380249023,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 7,
+      "n_active_union": 121,
+      "same_active_set": true,
+      "corrcoef_active": 0.9999994686397333,
+      "max_abs_diff_hz": 0.05547904968261719,
+      "ours": {
+        "n_active_total": 121,
+        "n_mn_active": 8,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9990206956863403,
+        "mn_frequency_hz": 11.627906002104282,
+        "rhythmic": true,
+        "max_rate_hz": 21.756053924560547,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 121,
+        "n_mn_active": 8,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9990056157112122,
+        "mn_frequency_hz": 11.627906002104282,
+        "rhythmic": true,
+        "max_rate_hz": 21.75579071044922,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    },
+    {
+      "replicate": 954,
+      "n_active_union": 112,
+      "same_active_set": true,
+      "corrcoef_active": 0.9999663103812537,
+      "max_abs_diff_hz": 0.2679448127746582,
+      "ours": {
+        "n_active_total": 112,
+        "n_mn_active": 8,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9993137121200562,
+        "mn_frequency_hz": 12.50000111758709,
+        "rhythmic": true,
+        "max_rate_hz": 23.033998489379883,
+        "min_rate_hz": 0.0
+      },
+      "authors": {
+        "n_active_total": 112,
+        "n_mn_active": 8,
+        "n_mn_active_past_transient": 8,
+        "mn_rhythmicity_score": 0.9993389844894409,
+        "mn_frequency_hz": 12.50000111758709,
+        "rhythmic": true,
+        "max_rate_hz": 23.037012100219727,
+        "min_rate_hz": 0.0
+      },
+      "ours_rates_valid": true
+    }
+  ],
+  "mean_trace_corrcoef": 0.9999787167528107,
+  "min_trace_corrcoef": 0.9998849844124243,
+  "finished_utc": "2026-11-12T03:14:19.409822+00:00"
+}

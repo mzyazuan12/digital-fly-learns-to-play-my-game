@@ -107,9 +107,16 @@ def paper_metrics(rates: np.ndarray, mn_idx: np.ndarray, dt_s: float, score_fn) 
     past = rates[:, TRANSIENT_SAMPLES:]
     active_mn_past = is_mn & (past.max(axis=1) > ACTIVE_RATE)
     active_mn_any = is_mn & (rates.max(axis=1) > ACTIVE_RATE)
-    score, freq = score_fn(jnp.asarray(past), jnp.asarray(active_mn_past))
-    score = float(score)
-    freq = float(freq)
+    # compute_oscillation_score masks inactive rows to 0 / NaN and averages
+    # over active rows only, so scoring just the active rows is identical
+    # and avoids vmapping over all 4,310 neurons.
+    if active_mn_past.any():
+        sub = past[active_mn_past]
+        score, freq = score_fn(jnp.asarray(sub), jnp.ones(sub.shape[0], dtype=bool))
+        score = float(score)
+        freq = float(freq)
+    else:
+        score, freq = 0.0, float("nan")
     return {
         "n_active_total": int((rates.max(axis=1) > ACTIVE_RATE).sum()),
         "n_mn_active": int(active_mn_any.sum()),
