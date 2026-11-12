@@ -134,7 +134,7 @@ def replicate_readouts(R: np.ndarray, sets: dict, score_fn=None, dt: float = 0.0
                 out["pairs"][f"{a}-{b}"] = {
                     "lag_cycles": lag_cycles(e1[a], e1[b], p),
                     "plv": plv(e1[a], e1[b], f, dt),
-                    "freq_a_hz": f,
+                    "freq_a_hz": f if np.isfinite(f) else None,
                 }
     out["_e1"] = e1  # dropped before JSON
     return out
