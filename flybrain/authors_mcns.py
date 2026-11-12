@@ -31,6 +31,18 @@ POPULATION_AUTHORS = "authors_export_population"
 POPULATION_RECONSTRUCTION = "reconstructed_from_male-cns:v1.0"
 STIMULUS_MANC_AMPLITUDE_CONTROL = "MANC amplitude control"
 STIMULUS_AUTHORS_MCNS = "authors_mcns"
+STIMULUS_AMPLITUDE_SWEEP = "amplitude sweep"
+# Published CNS-dataset DNg100 drive. Source: Pugliese et al., bioRxiv
+# 10.1101/2025.09.12.675944v2, Methods, "Computational sufficiency screen":
+# "For DNg100 activation, I_stim = 250 in MANC, 150 in FANC, and 400 in the
+# two CNS datasets". 250 matches the shipped MANC DNg100_Stim.yaml, which is
+# the cross-check that this sentence and the configs agree.
+AUTHORS_MCNS_DNG100_STIM_I = 400.0
+AUTHORS_MCNS_STIM_CITATION = (
+    "Pugliese et al. 2025/2026, bioRxiv 10.1101/2025.09.12.675944v2, Methods "
+    "(Computational sufficiency screen): 'For DNg100 activation, I_stim = 250 "
+    "in MANC, 150 in FANC, and 400 in the two CNS datasets'. Retrieved 2026-11-11."
+)
 # Body 20129's own size. It is a row in the table, not nanmedian(size).
 NOT_THE_TABLE_MEDIAN = 1_010_837_052
 EXPORT_STATUS_PATH = ROOT / "data" / "malecns_v1" / "authors_mcns_export_status.json"

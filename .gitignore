@@ -39,3 +39,6 @@ syn-partners-male-cns-*.feather
 connectome-weights-*.feather
 body-annotations-*.feather
 body-neurotransmitters-*.feather
+
+# Authors Zenodo archives (record 22260924) — large, re-downloadable
+data/zenodo_pugliese_22260924/
