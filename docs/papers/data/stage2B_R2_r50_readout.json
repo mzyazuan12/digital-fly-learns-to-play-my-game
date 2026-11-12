@@ -1,0 +1,577 @@
+{
+ "run_dir": "outputs/paper2_stage2B_R2_r50_20261112",
+ "arm": "R2_r50",
+ "frozen_sha256": "91bc54c33dd1c1e60199ece5f6a0c17f947393dc9022963e4d221b6d456fac25",
+ "conditions": {
+  "closed_loop:protraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 33,
+    "mean_cycles": 0.14538716429873128,
+    "R": 0.9488578542166966,
+    "n_total": 64,
+    "n_measurable": 33,
+    "R_all": 0.4892548310804841,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 21,
+     "module frequencies differ > 1 Hz": 10
+    }
+   },
+   "within_T1R": {
+    "n": 29,
+    "mean_cycles": 0.7793340889950321,
+    "R": 0.9576986937442497,
+    "n_total": 64,
+    "n_measurable": 29,
+    "R_all": 0.4339572206028631,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 30,
+     "module frequencies differ > 1 Hz": 5
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "median_plv": null,
+    "null_R_p99": null,
+    "pass": false
+   }
+  },
+  "closed_loop:protraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 24,
+    "mean_cycles": 0.7369781149628198,
+    "R": 0.4580253229893777,
+    "n_total": 64,
+    "n_measurable": 24,
+    "R_all": 0.17175949612101665,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 35,
+     "module frequencies differ > 1 Hz": 5
+    }
+   },
+   "within_T1R": {
+    "n": 18,
+    "mean_cycles": 0.5792125320739019,
+    "R": 0.30242128075713304,
+    "n_total": 64,
+    "n_measurable": 18,
+    "R_all": 0.08505598521294368,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 34,
+     "module frequencies differ > 1 Hz": 12
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5508667120950298,
+    "R": 0.2425953390064282,
+    "median_plv": 0.15812821207333663,
+    "null_R_p99": 0.2716224425718898,
+    "pass": false
+   }
+  },
+  "closed_loop:retraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 3,
+    "mean_cycles": 0.5327761828800304,
+    "R": 0.9149431870979574,
+    "n_total": 64,
+    "n_measurable": 3,
+    "R_all": 0.04288796189521676,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 61
+    }
+   },
+   "within_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 64
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "median_plv": null,
+    "null_R_p99": null,
+    "pass": false
+   }
+  },
+  "closed_loop:retraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 29,
+     "module score < 0.5": 35
+    }
+   },
+   "within_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 40,
+     "coxa swing inactive": 24
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 18,
+    "mean_cycles": 0.8910355311332596,
+    "R": 0.43295289994180086,
+    "median_plv": 0.08319278670368854,
+    "null_R_p99": 0.6178041633193485,
+    "pass": false
+   }
+  },
+  "mismatched:protraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 63,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "within_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 64
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "median_plv": null,
+    "null_R_p99": null,
+    "pass": false
+   }
+  },
+  "mismatched:protraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 28,
+    "mean_cycles": 0.8068914275784392,
+    "R": 0.9950773449917477,
+    "n_total": 64,
+    "n_measurable": 28,
+    "R_all": 0.43534633843388965,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 3,
+     "module score < 0.5": 33
+    }
+   },
+   "within_T1R": {
+    "n": 25,
+    "mean_cycles": 0.8039686995801667,
+    "R": 0.0959537500286597,
+    "n_total": 64,
+    "n_measurable": 25,
+    "R_all": 0.0374819336049452,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 7,
+     "module score < 0.5": 28,
+     "module frequencies differ > 1 Hz": 3,
+     "coxa stance inactive": 1
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 57,
+    "mean_cycles": 0.2632782456945471,
+    "R": 0.10973012570033128,
+    "median_plv": 0.9389158559964212,
+    "null_R_p99": 0.3158519354871368,
+    "pass": false
+   }
+  },
+  "mismatched:retraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 64
+    }
+   },
+   "within_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 64
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "median_plv": null,
+    "null_R_p99": null,
+    "pass": false
+   }
+  },
+  "mismatched:retraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 24,
+     "module score < 0.5": 40
+    }
+   },
+   "within_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 24,
+     "module score < 0.5": 40
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 41,
+    "mean_cycles": 0.9780586670935715,
+    "R": 0.7937132153243721,
+    "median_plv": 0.996807198676319,
+    "null_R_p99": 0.3509371094274907,
+    "pass": false
+   }
+  },
+  "scrambled:protraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 3,
+    "mean_cycles": 0.13818331261524752,
+    "R": 0.9732465929708402,
+    "n_total": 64,
+    "n_measurable": 3,
+    "R_all": 0.045620934045508134,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 29,
+     "module frequencies differ > 1 Hz": 32
+    }
+   },
+   "within_T1R": {
+    "n": 11,
+    "mean_cycles": 0.8312226985388245,
+    "R": 0.8099982745501605,
+    "n_total": 64,
+    "n_measurable": 11,
+    "R_all": 0.13921845343830883,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 41,
+     "module frequencies differ > 1 Hz": 12
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "median_plv": null,
+    "null_R_p99": null,
+    "pass": false
+   }
+  },
+  "scrambled:protraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 1,
+    "mean_cycles": 0.7749999999999999,
+    "R": 1.0,
+    "n_total": 64,
+    "n_measurable": 1,
+    "R_all": 0.015625,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 63
+    }
+   },
+   "within_T1R": {
+    "n": 7,
+    "mean_cycles": 0.7164023966635543,
+    "R": 0.9922977141062809,
+    "n_total": 64,
+    "n_measurable": 7,
+    "R_all": 0.10853256248037448,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 56,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 62,
+    "mean_cycles": 0.7124443759600801,
+    "R": 0.1647779349691178,
+    "median_plv": 0.158412997703475,
+    "null_R_p99": 0.2753725947170745,
+    "pass": false
+   }
+  },
+  "scrambled:retraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 61,
+     "no period": 3
+    }
+   },
+   "within_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 64
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "median_plv": null,
+    "null_R_p99": null,
+    "pass": false
+   }
+  },
+  "scrambled:retraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 22,
+     "module score < 0.5": 42
+    }
+   },
+   "within_T1R": {
+    "n": 0,
+    "mean_cycles": null,
+    "R": null,
+    "n_total": 64,
+    "n_measurable": 0,
+    "R_all": 0.0,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 22,
+     "module score < 0.5": 42
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 15,
+    "mean_cycles": 0.7860346941108018,
+    "R": 0.4729534179835377,
+    "median_plv": 0.33573532213661045,
+    "null_R_p99": 0.4735577923465305,
+    "pass": false
+   }
+  }
+ },
+ "verdict": {
+  "protraction-extension": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  },
+  "protraction-flexion": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  },
+  "retraction-extension": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  },
+  "retraction-flexion": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": null,
+     "deafferented": null,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  }
+ },
+ "finished_utc": "2026-11-12T09:07:40.306636+00:00"
+}
