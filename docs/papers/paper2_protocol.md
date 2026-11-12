@@ -108,3 +108,20 @@ On the sparsely driven right femur, extra rounds traded range error for mean err
 
 **Frozen bridge:** `data/paper2/stage2B_bridge_frozen.json`, SHA-256 `91bc54c33dd1c1e60199ece5f6a0c17f947393dc9022963e4d221b6d456fac25`. Step-9 runs must refuse any other hash.
 
+**A8 (12 November 2026), stage 2B-κ: sensory synaptic efficacy. Pre-registered after the stage 2B negative result and before any κ run.**
+
+*Why.* Stage 2B found that afferent synapses at the central scale (0.03 per synapse) latch or disrupt the CPG ([paper2_stage2B.md](paper2_stage2B.md)). The connectome gives sensory synapse counts but not their efficacy. The literature check ([paper2_sensory_efficacy_literature.md](paper2_sensory_efficacy_literature.md)) found one usable Drosophila constraint: leg feedback evokes PSPs in leg motor neurons that "typically failed to elicit spikes", fast motor neurons never fired from feedback, and PSPs were largest in slow motor neurons (Azevedo et al. 2020, eLife 9:e56754). No Drosophila proprioceptor spike rates are published, so r\* = 100 Hz remains an assumption.
+
+*New parameter (ENGINEERED).* One multiplier κ on the outgoing synapses of the 31 included afferents (columns of the post × pre matrix). Central synapses, the frozen motor bridge (A7) and the transduction are unchanged.
+
+*κ is fixed by an independent criterion, before any coordination read-out.* Set-up: calibration replicates 960–1023; DN drive off; body not simulated. Afferents are driven by the transduction of the recorded walking clip's own joint angles and velocities, looped for 2 s on both front legs, at r\* = 100 Hz, in each of the 4 hair-plate cells. A motor neuron is *active* if its rate exceeds 1 Hz after 250 ms. Motor-neuron size terciles (wTable `size`, per leg) stand in for slow, intermediate and fast (size principle).
+
+- C1: no motor neuron in the largest-size tercile is active.
+- C2: at most one third of each leg's motor neurons are active.
+
+Both must hold in ≥ 95% of calibration replicates, in all 4 cells. κ\* is the largest κ on the grid {1, 0.5, 0.3, 0.2, 0.1, 0.05, 0.03, 0.02, 0.01, 0.005, 0.003, 0.001} meeting C1 and C2. Also recorded: whether at κ\* at least one smallest-tercile motor neuron is active in ≥ 50% of replicates (feedback is effective). If none is, the test still runs and κ\* is labelled "feedback ineffective". κ\* and the full calibration table are written to `data/paper2/stage2Bk_kappa_frozen.json`, and its SHA-256 is committed in an amendment before any test run.
+
+*Test (confirmatory).* As stage 2B primary (A1–A7: bilateral DNg100, position actuation, r\* = 100 Hz, 4 hair-plate cells, replicates 0–63, five conditions), with κ = κ\*. Same read-outs, pass rules and positive-verdict rule (`experiment/paper2_stage2B_readout.py`, unchanged).
+
+*Scan (descriptive only).* Closed loop and its controls at every grid κ, on replicates 0–15, reported in full as curves. No positive claim may rest on a κ other than κ\*.
+
