@@ -1,0 +1,60 @@
+{
+ "what": "Stage 2B afferent stimulus normalisation (design \u00a74.3, \u00a75.2; amendment A3; plan step 5)",
+ "source_clip": "flygym_demo/ball_flybody_data/assets/ball_flybody_clip.npz (NeuroMechFly v1 tethered ball walking; FlyGym FlyBody conversion)",
+ "clip_timestep_s": 0.0001,
+ "angles_and_velocities": "the clip's own angles (0.1 ms cubic interpolant of the Savitzky-Golay-filtered 100 fps data) and their numerical derivative; T1L from the LF trace, T1R from the RF trace",
+ "campaniform_force": "replay of the clip on the tethered FlyBody with position servos (organism.flybody_tethered), trochanter-femur pitch actuator force",
+ "hair_plate_onset_and_saturation_percentiles": [
+  80.0,
+  95.0
+ ],
+ "units": {
+  "angle": "rad",
+  "velocity": "rad/s",
+  "force": "model torque units"
+ },
+ "stats": {
+  "T1L": {
+   "coxa_pitch_angle": {
+    "p5": 0.14413222200341444,
+    "p20": 0.20957216599506553,
+    "p50": 0.4748108305215528,
+    "p80": 0.8017529242797737,
+    "p95": 0.9261817871473761
+   },
+   "trfe_pitch_angle": {
+    "p5": -0.07268300016135136,
+    "p20": 0.15314476492529247,
+    "p50": 0.49191231502331045,
+    "p80": 0.9003543636396367,
+    "p95": 1.1753805217747189
+   },
+   "tibia_pitch_angle_p50": 0.17431004713321005,
+   "tibia_pitch_abs_dev_p95": 0.7526921556225156,
+   "tibia_pitch_abs_vel_p95": 57.54213435590401,
+   "trfe_pitch_abs_force_p95": 37.795937251515845
+  },
+  "T1R": {
+   "coxa_pitch_angle": {
+    "p5": -0.0028218408588997364,
+    "p20": 0.04535046147731794,
+    "p50": 0.1948920126165954,
+    "p80": 0.3705890645964703,
+    "p95": 0.5298122204097117
+   },
+   "trfe_pitch_angle": {
+    "p5": -0.14251569265162758,
+    "p20": 0.04371691440385463,
+    "p50": 0.28543591546120173,
+    "p80": 0.7504144168681715,
+    "p95": 1.0756802818630262
+   },
+   "tibia_pitch_angle_p50": -0.011911465850653197,
+   "tibia_pitch_abs_dev_p95": 1.0258243663591313,
+   "tibia_pitch_abs_vel_p95": 71.26345623137105,
+   "trfe_pitch_abs_force_p95": 38.241589465253014
+  }
+ },
+ "generated_utc": "2026-11-12T07:00:54.810557+00:00",
+ "git_commit": "432211e340bb2203038239308fd405e197e96f6d"
+}

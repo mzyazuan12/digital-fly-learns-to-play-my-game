@@ -1,0 +1,2286 @@
+{
+ "what": "Stage 2B motor neuron -> FlyBody joint table (design \u00a73.3-3.4, plan step 4)",
+ "status": "ENGINEERED; offset/scale/c/s are fitted in plan step 7, not here",
+ "scheme": "u_j = sum R(agonists) - sum R(antagonists) [Hz]; command_j = offset_j + agonist_angle_sign_j * scale_j * (u_j - c_j) / s_j; position mode clips to the joint range",
+ "wtable": "third_party/Pugliese_2026/data/imac t1 connectome data/wTable_20260210_vncRoisOnly.csv",
+ "wtable_sha256": "593a75c53f1c69600cac747364b8b623655699b1b83e16b41eeef6fe93dd5b2d",
+ "legs": {
+  "T1L": {
+   "somaSide": "L",
+   "body_leg": "lf"
+  },
+  "T1R": {
+   "somaSide": "R",
+   "body_leg": "rf"
+  }
+ },
+ "dof_order": [
+  "c_thorax-{leg}_coxa-yaw",
+  "c_thorax-{leg}_coxa-roll",
+  "c_thorax-{leg}_coxa-pitch",
+  "{leg}_coxa-{leg}_trochanterfemur-roll",
+  "{leg}_coxa-{leg}_trochanterfemur-pitch",
+  "{leg}_trochanterfemur-{leg}_tibia-pitch",
+  "{leg}_tibia-{leg}_tarsus1-pitch"
+ ],
+ "held_dofs": [
+  "c_thorax-{leg}_coxa-yaw",
+  "c_thorax-{leg}_coxa-roll"
+ ],
+ "held_note": "coxa yaw and roll get no neural drive (design \u00a73.3); command = offset",
+ "channels": {
+  "coxa_pitch": {
+   "dof_template": "c_thorax-{leg}_coxa-pitch",
+   "dof_index": 2,
+   "agonist": [
+    [
+     "coxa swing",
+     "all"
+    ]
+   ],
+   "antagonist": [
+    [
+     "coxa stance",
+     "all"
+    ]
+   ],
+   "agonist_action": "protraction",
+   "criterion": "claw_anterior",
+   "agonist_angle_sign": {
+    "T1L": 1,
+    "T1R": 1
+   },
+   "sign_holds_fraction_of_clip_frames": {
+    "T1L": 0.87,
+    "T1R": 0.84
+   }
+  },
+  "trfe_roll": {
+   "dof_template": "{leg}_coxa-{leg}_trochanterfemur-roll",
+   "dof_index": 3,
+   "agonist": [
+    [
+     "femur reductor",
+     "all"
+    ]
+   ],
+   "antagonist": [],
+   "agonist_action": "femur reduction (posterior rotation); NEEDS SOURCE; DOF assignment GUESS",
+   "criterion": "claw_posterior",
+   "agonist_angle_sign": {
+    "T1L": 1,
+    "T1R": 1
+   },
+   "sign_holds_fraction_of_clip_frames": {
+    "T1L": 1.0,
+    "T1R": 0.99
+   }
+  },
+  "trfe_pitch": {
+   "dof_template": "{leg}_coxa-{leg}_trochanterfemur-pitch",
+   "dof_index": 4,
+   "agonist": [
+    [
+     "femur/tr flex",
+     "all"
+    ]
+   ],
+   "antagonist": [
+    [
+     "femur/tr extend",
+     "all"
+    ]
+   ],
+   "agonist_action": "coxa-trochanter flexion",
+   "criterion": "thc_to_fti_shorter",
+   "agonist_angle_sign": {
+    "T1L": -1,
+    "T1R": -1
+   },
+   "sign_holds_fraction_of_clip_frames": {
+    "T1L": 1.0,
+    "T1R": 1.0
+   }
+  },
+  "tibia_pitch": {
+   "dof_template": "{leg}_trochanterfemur-{leg}_tibia-pitch",
+   "dof_index": 5,
+   "agonist": [
+    [
+     "tibia flex",
+     "all"
+    ]
+   ],
+   "antagonist": [
+    [
+     "tibia extend",
+     "all"
+    ]
+   ],
+   "agonist_action": "femur-tibia flexion",
+   "criterion": "ctr_to_tita_shorter",
+   "agonist_angle_sign": {
+    "T1L": -1,
+    "T1R": -1
+   },
+   "sign_holds_fraction_of_clip_frames": {
+    "T1L": 1.0,
+    "T1R": 1.0
+   }
+  },
+  "tarsus1_pitch": {
+   "dof_template": "{leg}_tibia-{leg}_tarsus1-pitch",
+   "dof_index": 6,
+   "agonist": [
+    [
+     "tarsus control",
+     [
+      "Ta depressor MN"
+     ]
+    ]
+   ],
+   "antagonist": [
+    [
+     "tarsus control",
+     [
+      "Ta levator MN"
+     ]
+    ]
+   ],
+   "agonist_action": "tarsus depression = tibia-tarsus flexion (GUESS)",
+   "criterion": "fti_to_claw_shorter",
+   "agonist_angle_sign": {
+    "T1L": 1,
+    "T1R": 1
+   },
+   "sign_holds_fraction_of_clip_frames": {
+    "T1L": 0.98,
+    "T1R": 1.0
+   }
+  }
+ },
+ "sign_posture": "recorded walking mean per DOF (bundled NeuroMechFly v1 clip, own leg); kinematic probe of +0.02 rad",
+ "logged_not_actuated": {
+  "substrate grip": "long tendon muscle (claw); FlyBody claws are not actuated"
+ },
+ "counts": {
+  "T1L:coxa_pitch:agonist": 7,
+  "T1L:coxa_pitch:antagonist": 6,
+  "T1L:logged_not_actuated:logged_not_actuated": 8,
+  "T1L:tarsus1_pitch:agonist": 5,
+  "T1L:tarsus1_pitch:antagonist": 2,
+  "T1L:tibia_pitch:agonist": 15,
+  "T1L:tibia_pitch:antagonist": 2,
+  "T1L:trfe_pitch:agonist": 10,
+  "T1L:trfe_pitch:antagonist": 8,
+  "T1L:trfe_roll:agonist": 4,
+  "T1R:coxa_pitch:agonist": 7,
+  "T1R:coxa_pitch:antagonist": 4,
+  "T1R:logged_not_actuated:logged_not_actuated": 7,
+  "T1R:tarsus1_pitch:agonist": 2,
+  "T1R:tarsus1_pitch:antagonist": 3,
+  "T1R:tibia_pitch:agonist": 13,
+  "T1R:tibia_pitch:antagonist": 2,
+  "T1R:trfe_pitch:agonist": 10,
+  "T1R:trfe_pitch:antagonist": 8,
+  "T1R:trfe_roll:agonist": 6
+ },
+ "n_motor_neurons": 129,
+ "motor_neurons": [
+  {
+   "row": 1544,
+   "bodyId": 800061,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 1666,
+   "bodyId": 800636,
+   "type": "Ti extensor MN",
+   "motor_module": "tibia extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFTibia_extensor_93932"
+   ],
+   "note": null
+  },
+  {
+   "row": 1746,
+   "bodyId": 801079,
+   "type": "Sternotrochanter MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 1759,
+   "bodyId": 801173,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 1811,
+   "bodyId": 801469,
+   "type": "Sternal anterior rotator MN",
+   "motor_module": "coxa swing",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_sternal_anterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 1845,
+   "bodyId": 801685,
+   "type": "Sternotrochanter MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 1870,
+   "bodyId": 801824,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 1887,
+   "bodyId": 801915,
+   "type": "Sternal posterior rotator MN",
+   "motor_module": "coxa stance",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_sternal_posterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 1889,
+   "bodyId": 801918,
+   "type": "Sternal anterior rotator MN",
+   "motor_module": "coxa swing",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_sternal_anterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 1915,
+   "bodyId": 802072,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 1952,
+   "bodyId": 802361,
+   "type": "Sternotrochanter MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 1978,
+   "bodyId": 802509,
+   "type": "Pleural remotor/abductor MN",
+   "motor_module": "coxa stance",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_pleural_remotor_and_abductor"
+   ],
+   "note": null
+  },
+  {
+   "row": 1984,
+   "bodyId": 802552,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 2076,
+   "bodyId": 803237,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 2087,
+   "bodyId": 803314,
+   "type": "Pleural remotor/abductor MN",
+   "motor_module": "coxa stance",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_pleural_remotor_and_abductor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2102,
+   "bodyId": 803412,
+   "type": "Tr extensor MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_extensor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2143,
+   "bodyId": 803698,
+   "type": "Sternotrochanter MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 2159,
+   "bodyId": 803803,
+   "type": "Pleural remotor/abductor MN",
+   "motor_module": "coxa stance",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_pleural_remotor_and_abductor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2164,
+   "bodyId": 803830,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_roll",
+   "dof": "rf_coxa-rf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 2217,
+   "bodyId": 804257,
+   "type": "Ti extensor MN",
+   "motor_module": "tibia extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFTibia_extensor_93932"
+   ],
+   "note": null
+  },
+  {
+   "row": 2234,
+   "bodyId": 804465,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 2276,
+   "bodyId": 804851,
+   "type": "Sternal posterior rotator MN",
+   "motor_module": "coxa stance",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_sternal_posterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 2280,
+   "bodyId": 804866,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 2290,
+   "bodyId": 804941,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_roll",
+   "dof": "lf_coxa-lf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 2330,
+   "bodyId": 805309,
+   "type": "ltm2-femur MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 2331,
+   "bodyId": 805313,
+   "type": "Pleural remotor/abductor MN",
+   "motor_module": "coxa stance",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_pleural_remotor_and_abductor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2349,
+   "bodyId": 805410,
+   "type": "Sternal posterior rotator MN",
+   "motor_module": "coxa stance",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_sternal_posterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 2371,
+   "bodyId": 805598,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_roll",
+   "dof": "lf_coxa-lf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 2380,
+   "bodyId": 805741,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 2381,
+   "bodyId": 805745,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2471,
+   "bodyId": 806599,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 2507,
+   "bodyId": 806898,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_roll",
+   "dof": "rf_coxa-rf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 2510,
+   "bodyId": 806923,
+   "type": "Sternal anterior rotator MN",
+   "motor_module": "coxa swing",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_sternal_anterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 2546,
+   "bodyId": 807165,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 2558,
+   "bodyId": 807281,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2603,
+   "bodyId": 807873,
+   "type": "Acc. tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_accesory_trochanter_flexor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2607,
+   "bodyId": 807906,
+   "type": "Tr extensor MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_extensor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2618,
+   "bodyId": 808011,
+   "type": "Sternal posterior rotator MN",
+   "motor_module": "coxa stance",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_sternal_posterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 2676,
+   "bodyId": 808640,
+   "type": "Sternal posterior rotator MN",
+   "motor_module": "coxa stance",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_sternal_posterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 2773,
+   "bodyId": 809912,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 2784,
+   "bodyId": 810098,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 2814,
+   "bodyId": 810535,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 2815,
+   "bodyId": 810541,
+   "type": "Ta levator MN",
+   "motor_module": "tarsus control",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tarsus1_pitch",
+   "dof": "lf_tibia-lf_tarsus1-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 2826,
+   "bodyId": 810639,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 2922,
+   "bodyId": 811652,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_roll",
+   "dof": "rf_coxa-rf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 2954,
+   "bodyId": 812111,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_roll",
+   "dof": "lf_coxa-lf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3044,
+   "bodyId": 813480,
+   "type": "Sternal adductor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_sternal_adductor"
+   ],
+   "note": null
+  },
+  {
+   "row": 3049,
+   "bodyId": 813566,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_roll",
+   "dof": "rf_coxa-rf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3086,
+   "bodyId": 814163,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_roll",
+   "dof": "lf_coxa-lf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3109,
+   "bodyId": 814489,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3142,
+   "bodyId": 815246,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3146,
+   "bodyId": 815344,
+   "type": "Ti extensor MN",
+   "motor_module": "tibia extend",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFTibia_extensor_93932"
+   ],
+   "note": null
+  },
+  {
+   "row": 3170,
+   "bodyId": 815678,
+   "type": "Ti extensor MN",
+   "motor_module": "tibia extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFTibia_extensor_93932"
+   ],
+   "note": null
+  },
+  {
+   "row": 3183,
+   "bodyId": 815854,
+   "type": "Sternal adductor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-rf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_sternal_adductor"
+   ],
+   "note": null
+  },
+  {
+   "row": 3201,
+   "bodyId": 816215,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3212,
+   "bodyId": 816404,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3224,
+   "bodyId": 816648,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3250,
+   "bodyId": 817210,
+   "type": "Ta levator MN",
+   "motor_module": "tarsus control",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tarsus1_pitch",
+   "dof": "rf_tibia-rf_tarsus1-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3256,
+   "bodyId": 817283,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3262,
+   "bodyId": 817347,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3271,
+   "bodyId": 817509,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3274,
+   "bodyId": 817595,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_roll",
+   "dof": "rf_coxa-rf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3278,
+   "bodyId": 817640,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3279,
+   "bodyId": 817655,
+   "type": "Ta depressor MN",
+   "motor_module": "tarsus control",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tarsus1_pitch",
+   "dof": "lf_tibia-lf_tarsus1-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3304,
+   "bodyId": 818057,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3316,
+   "bodyId": 818389,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3324,
+   "bodyId": 818553,
+   "type": "ltm1-tibia MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 3336,
+   "bodyId": 818719,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3342,
+   "bodyId": 818842,
+   "type": "Tr extensor MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_extensor"
+   ],
+   "note": null
+  },
+  {
+   "row": 3360,
+   "bodyId": 819278,
+   "type": "Ta depressor MN",
+   "motor_module": "tarsus control",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tarsus1_pitch",
+   "dof": "lf_tibia-lf_tarsus1-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3365,
+   "bodyId": 819384,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3384,
+   "bodyId": 819869,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3391,
+   "bodyId": 820110,
+   "type": "Ta levator MN",
+   "motor_module": "tarsus control",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tarsus1_pitch",
+   "dof": "rf_tibia-rf_tarsus1-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3393,
+   "bodyId": 820130,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3411,
+   "bodyId": 820668,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3417,
+   "bodyId": 820896,
+   "type": "Ta levator MN",
+   "motor_module": "tarsus control",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tarsus1_pitch",
+   "dof": "rf_tibia-rf_tarsus1-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3427,
+   "bodyId": 821291,
+   "type": "Acc. tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_accesory_trochanter_flexor"
+   ],
+   "note": null
+  },
+  {
+   "row": 3437,
+   "bodyId": 821635,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3441,
+   "bodyId": 822047,
+   "type": "ltm1-tibia MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 3442,
+   "bodyId": 822092,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 3443,
+   "bodyId": 822274,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 3451,
+   "bodyId": 823168,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3452,
+   "bodyId": 823281,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3467,
+   "bodyId": 825516,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3469,
+   "bodyId": 825721,
+   "type": "Ta depressor MN",
+   "motor_module": "tarsus control",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tarsus1_pitch",
+   "dof": "rf_tibia-rf_tarsus1-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3480,
+   "bodyId": 827188,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3485,
+   "bodyId": 828939,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3489,
+   "bodyId": 830039,
+   "type": "ltm2-femur MN",
+   "motor_module": "substrate grip",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 3494,
+   "bodyId": 833140,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3496,
+   "bodyId": 835074,
+   "type": "Fe reductor MN",
+   "motor_module": "femur reductor",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_roll",
+   "dof": "rf_coxa-rf_trochanterfemur-roll",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 3498,
+   "bodyId": 837745,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3499,
+   "bodyId": 838321,
+   "type": "Tr extensor MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_extensor"
+   ],
+   "note": null
+  },
+  {
+   "row": 3507,
+   "bodyId": 860084,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 3509,
+   "bodyId": 867630,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3564,
+   "bodyId": 903010,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3588,
+   "bodyId": 903298,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3955,
+   "bodyId": 909521,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 3962,
+   "bodyId": 909618,
+   "type": "Acc. tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_accesory_trochanter_flexor"
+   ],
+   "note": null
+  },
+  {
+   "row": 3966,
+   "bodyId": 909713,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3972,
+   "bodyId": 909831,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 3994,
+   "bodyId": 910334,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 4022,
+   "bodyId": 911134,
+   "type": "Acc. tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_accesory_trochanter_flexor"
+   ],
+   "note": null
+  },
+  {
+   "row": 4032,
+   "bodyId": 911453,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 4111,
+   "bodyId": 914655,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 4118,
+   "bodyId": 919509,
+   "type": "Sternal anterior rotator MN",
+   "motor_module": "coxa swing",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_sternal_anterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 4123,
+   "bodyId": 924189,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 4125,
+   "bodyId": 924716,
+   "type": "Tergotr. MN",
+   "motor_module": "femur/tr extend",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFF_sterno-tergo-trochanter_extensor_a",
+    "LFF_sterno-tergo-trochanter_extensor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 4165,
+   "bodyId": 934091,
+   "type": "Tergopleural/Pleural promotor MN",
+   "motor_module": "coxa swing",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFC_tergopleural_promotor_a",
+    "LFC_tergopleural_promotor_b",
+    "LFC_pleural_promotor"
+   ],
+   "note": null
+  },
+  {
+   "row": 4238,
+   "bodyId": 1050005026,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 4239,
+   "bodyId": 1050013851,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 4240,
+   "bodyId": 1050015101,
+   "type": "ltm MN",
+   "motor_module": "substrate grip",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 4241,
+   "bodyId": 1050031705,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 4243,
+   "bodyId": 1050091581,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 4244,
+   "bodyId": 1050111955,
+   "type": "Ta levator MN",
+   "motor_module": "tarsus control",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tarsus1_pitch",
+   "dof": "lf_tibia-lf_tarsus1-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 4246,
+   "bodyId": 1050115387,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tibia_pitch",
+   "dof": "lf_trochanterfemur-lf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 4247,
+   "bodyId": 1050126678,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 4251,
+   "bodyId": 1050189039,
+   "type": "Ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 4253,
+   "bodyId": 1050248133,
+   "type": "Ta depressor MN",
+   "motor_module": "tarsus control",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tarsus1_pitch",
+   "dof": "rf_tibia-rf_tarsus1-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 4254,
+   "bodyId": 1050251718,
+   "type": "ltm2-femur MN",
+   "motor_module": "substrate grip",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 4255,
+   "bodyId": 1050268065,
+   "type": "Acc. ti flexor MN",
+   "motor_module": "tibia flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "tibia_pitch",
+   "dof": "rf_trochanterfemur-rf_tibia-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFTibia_flex_93434"
+   ],
+   "note": null
+  },
+  {
+   "row": 4256,
+   "bodyId": 1050306082,
+   "type": "Acc. tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_accesory_trochanter_flexor"
+   ],
+   "note": null
+  },
+  {
+   "row": 4257,
+   "bodyId": 1050335829,
+   "type": "Sternal posterior rotator MN",
+   "motor_module": "coxa stance",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "coxa_pitch",
+   "dof": "c_thorax-lf_coxa-pitch",
+   "role": "antagonist",
+   "flymimic_muscles": [
+    "LFC_sternal_posterior_rotator"
+   ],
+   "note": null
+  },
+  {
+   "row": 4259,
+   "bodyId": 1050349786,
+   "type": "Acc. tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": "trfe_pitch",
+   "dof": "rf_coxa-rf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_accesory_trochanter_flexor"
+   ],
+   "note": null
+  },
+  {
+   "row": 4263,
+   "bodyId": 1050403926,
+   "type": "Ta depressor MN",
+   "motor_module": "tarsus control",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tarsus1_pitch",
+   "dof": "lf_tibia-lf_tarsus1-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 4268,
+   "bodyId": 1050615112,
+   "type": "ltm2-femur MN",
+   "motor_module": "substrate grip",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  },
+  {
+   "row": 4269,
+   "bodyId": 1050660827,
+   "type": "Ta depressor MN",
+   "motor_module": "tarsus control",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tarsus1_pitch",
+   "dof": "lf_tibia-lf_tarsus1-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 4278,
+   "bodyId": 1051062549,
+   "type": "Ta depressor MN",
+   "motor_module": "tarsus control",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "tarsus1_pitch",
+   "dof": "lf_tibia-lf_tarsus1-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [],
+   "note": null
+  },
+  {
+   "row": 4285,
+   "bodyId": 1051670893,
+   "type": "Tr flexor MN",
+   "motor_module": "femur/tr flex",
+   "somaSide": "L",
+   "leg": "T1L",
+   "channel": "trfe_pitch",
+   "dof": "lf_coxa-lf_trochanterfemur-pitch",
+   "role": "agonist",
+   "flymimic_muscles": [
+    "LFF_trochanter_flexor_a",
+    "LFF_trochanter_flexor_b"
+   ],
+   "note": null
+  },
+  {
+   "row": 4296,
+   "bodyId": 1057471940,
+   "type": "ltm1-tibia MN",
+   "motor_module": "substrate grip",
+   "somaSide": "R",
+   "leg": "T1R",
+   "channel": null,
+   "dof": null,
+   "role": "logged_not_actuated",
+   "flymimic_muscles": [],
+   "note": "long tendon muscle (claw); FlyBody claws are not actuated"
+  }
+ ],
+ "flymimic_check": {
+  "effect_convention": "+1 = protraction (coxa) / flexion (trochanter, tibia); -1 = the opposite",
+  "muscles": {
+   "LFC_tergopleural_promotor_a": {
+    "mn_types": [
+     "Tergopleural/Pleural promotor MN"
+    ],
+    "module": "coxa swing",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFC_tergopleural_promotor_b": {
+    "mn_types": [
+     "Tergopleural/Pleural promotor MN"
+    ],
+    "module": "coxa swing",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFC_pleural_promotor": {
+    "mn_types": [
+     "Tergopleural/Pleural promotor MN"
+    ],
+    "module": "coxa swing",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFC_pleural_remotor_and_abductor": {
+    "mn_types": [
+     "Pleural remotor/abductor MN"
+    ],
+    "module": "coxa stance",
+    "expected_effect": -1,
+    "pitch_only_effect": -1,
+    "full_torque_effect": -1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFC_sternal_anterior_rotator": {
+    "mn_types": [
+     "Sternal anterior rotator MN"
+    ],
+    "module": "coxa swing",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFC_sternal_posterior_rotator": {
+    "mn_types": [
+     "Sternal posterior rotator MN"
+    ],
+    "module": "coxa stance",
+    "expected_effect": -1,
+    "pitch_only_effect": -1,
+    "full_torque_effect": -1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFC_sternal_adductor": {
+    "mn_types": [
+     "Sternal adductor MN"
+    ],
+    "module": "coxa swing",
+    "expected_effect": 1,
+    "pitch_only_effect": -1,
+    "full_torque_effect": -1,
+    "pitch_only_agrees": false,
+    "full_torque_agrees": false
+   },
+   "LFF_trochanter_flexor_a": {
+    "mn_types": [
+     "Tr flexor MN"
+    ],
+    "module": "femur/tr flex",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFF_trochanter_flexor_b": {
+    "mn_types": [
+     "Tr flexor MN"
+    ],
+    "module": "femur/tr flex",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFF_accesory_trochanter_flexor": {
+    "mn_types": [
+     "Acc. tr flexor MN"
+    ],
+    "module": "femur/tr flex",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFF_sterno-tergo-trochanter_extensor_a": {
+    "mn_types": [
+     "Sternotrochanter MN",
+     "Tergotr. MN"
+    ],
+    "module": "femur/tr extend",
+    "expected_effect": -1,
+    "pitch_only_effect": -1,
+    "full_torque_effect": -1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFF_sterno-tergo-trochanter_extensor_b": {
+    "mn_types": [
+     "Sternotrochanter MN",
+     "Tergotr. MN"
+    ],
+    "module": "femur/tr extend",
+    "expected_effect": -1,
+    "pitch_only_effect": -1,
+    "full_torque_effect": -1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFF_trochanter_extensor": {
+    "mn_types": [
+     "Tr extensor MN"
+    ],
+    "module": "femur/tr extend",
+    "expected_effect": -1,
+    "pitch_only_effect": -1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": false
+   },
+   "LFTibia_flex_93434": {
+    "mn_types": [
+     "Ti flexor MN",
+     "Acc. ti flexor MN"
+    ],
+    "module": "tibia flex",
+    "expected_effect": 1,
+    "pitch_only_effect": 1,
+    "full_torque_effect": 1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   },
+   "LFTibia_extensor_93932": {
+    "mn_types": [
+     "Ti extensor MN"
+    ],
+    "module": "tibia extend",
+    "expected_effect": -1,
+    "pitch_only_effect": -1,
+    "full_torque_effect": -1,
+    "pitch_only_agrees": true,
+    "full_torque_agrees": true
+   }
+  },
+  "pitch_only_disagreements": [
+   "LFC_sternal_adductor"
+  ],
+  "full_torque_disagreements": [
+   "LFC_sternal_adductor",
+   "LFF_trochanter_extensor"
+  ],
+  "expected_pitch_exceptions": [
+   "LFC_sternal_adductor"
+  ]
+ },
+ "engineered": [
+  "module-level agonist/antagonist sums",
+  "one DOF per channel; coxa yaw/roll held",
+  "Ta depressor = tibia-tarsus flexion (GUESS)",
+  "femur reductor -> trochanter-femur roll, posterior rotation (DOF GUESS, action NEEDS SOURCE)",
+  "substrate grip logged, not actuated"
+ ],
+ "generated_utc": "2026-11-12T06:58:42.452195+00:00",
+ "git_commit": "432211e340bb2203038239308fd405e197e96f6d"
+}
