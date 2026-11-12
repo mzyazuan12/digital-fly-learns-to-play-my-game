@@ -138,7 +138,58 @@ Every experiment directory is new (existing outputs are refused), records the gi
 
 ---
 
-<!-- RESULTS -->
+## 5. Results
+
+### 5.1 The validation ladder
+
+The project reached the mCNS experiment through a sequence of gates. Each row below is a saved, timestamped experiment; failures are kept.
+
+| Step | Model and network | Result | Role in this paper |
+|---|---|---|---|
+| Numerical sanity | Shiu-style LIF, single cells and pairs | Rest, positive drive, ACh excitation, GABA inhibition, units, 1/5/10/20-contact scaling, graph direction: all pass | Engine is numerically sound |
+| Tiny biological circuit | All-LIF, uniform constants, 32 core MaleCNS cells + 376 motor read-outs, 40 mV-equivalent drive | Left DNg100 (10045): fails voltage gate (−105.9 mV). Right (10056): passes gates, but no CPG rhythm (only spike-timing peaks at 273/409 Hz) | Negative result; motivates the authors' rate model rather than LIF tuning |
+| Authors' original code | Authors' Hydra entrypoint, MANC T1 (4,604 neurons), DNg100 = MANC 10093, I = 250, 2 replicates | E1/E2 rhythm, scores 0.90/0.90 at 11.0/10.9 Hz | Target behaviour exists and runs locally |
+| MANC port check | Our integrator on the authors' MANC network and sampled parameters | Mean trace correlation 0.99996 with the authors' traces | Our equation and integrator are the authors' |
+| Full-MaleCNS-median control | 408-cell restricted MaleCNS graph, sizes normalised by the median of all MaleCNS neurons (178,403,737) | Silent | Wrong denominator; demoted to a control (Appendix A5) |
+| MANC-amplitude control | Authors' 4,310-cell mCNS network, I = 250 | DNg100_R reaches 7.5 Hz; E1 weakly recruited; E2, I1, I2 and MNs not recruited; no rhythm | Wrong amplitude; kept as a control (A6) |
+| **mCNS, published amplitude** | Authors' 4,310-cell mCNS network, I = 400 | Sections 5.2–5.6 | **This paper** |
+
+### 5.2 The authors' archived run confirms the stimulus
+
+The authors' Zenodo archive for the mCNS DNg100 experiment (`DNg100_Stim_IMAC_vncOnly`, run 33241780, MD5 verified) contains the run configuration, the per-neuron parameters actually used and all 1,024 rate traces. The configuration sets `stimNeurons = [[9]]`, `stimI = [[400]]`, `seed = 626`, `n_replicates = 1024`, T = 2 s, dt = 1 ms, rtol 2×10⁻⁶, atol 5×10⁻⁹. Matrix index 9 is MaleCNS body 10056: the cell this project had pre-registered from anatomy before the configuration was available. The stored `input_currents` are non-zero only at index 9, with value 400, in every replicate. The stimulus question is closed by two independent sources (the paper's text and the archived configuration).
+
+### 5.3 Parameter-level and trace-level agreement with the authors
+
+**Weights.** The authors' stored W equals the shipped CSV W[pre, post] exactly (maximum absolute difference 0).
+
+**Parameters.** Running our sampler at the authors' seed (626) for a 1,024-replicate block and applying our size normalization reproduces all four of their stored parameter arrays (τ, *a*, θ, *r*<sub>max</sub>; each 1,024 × 4,310) to a maximum relative difference of 2.9 × 10⁻⁷, which is float32 storage precision. Without size normalization the gain and threshold differ by up to 100-fold, so this match independently confirms that the denominator is the median of the simulated 4,310-cell table and not of the whole connectome.
+
+**Traces.** We integrated nine of the authors' replicates (0–7 and 954, the example shown in their Figure 2) with their exact parameters and compared them with their stored traces (Figure 2, Table 1). Across all neurons active in either run, the mean correlation is 0.99998 (minimum 0.99988). In all nine replicates the set of active neurons is identical, and so is the number of active motor neurons. The motor rhythmicity score agrees to within 4 × 10⁻⁴, and the frequency is identical in eight of nine (11.67 versus 11.69 Hz in the ninth). The largest pointwise difference is 0.34 Hz, from the different Dopri5 implementations (SciPy, float64, versus Diffrax, float32).
+
+![Authors' trace versus ours](figures/fig2_authors_overlay.png)
+
+*Figure 2. Replicate 954 of the authors' published mCNS run (orange, thick) and our integration with the same parameters (blue, thin), for every active motor neuron, labelled by motor module. The traces overlap within line width.*
+
+*Table 1. Trace-level comparison with the authors' archived replicates.*
+
+| Replicate | r (active cells) | Same active set | MNs active (ours/theirs) | Score (ours/theirs) | Frequency, Hz (ours/theirs) |
+|---:|---:|:---:|:---:|:---:|:---:|
+| 0 | 0.999993 | yes | 7/7 | 0.9990/0.9990 | 11.48/11.48 |
+| 1 | 0.999885 | yes | 7/7 | 0.9851/0.9851 | 10.53/10.53 |
+| 2 | 1.000000 | yes | 8/8 | 0.9755/0.9751 | 12.05/12.05 |
+| 3 | 0.999985 | yes | 8/8 | 0.9590/0.9590 | 10.22/10.22 |
+| 4 | 0.999995 | yes | 7/7 | 0.9894/0.9892 | 11.67/11.69 |
+| 5 | 0.999985 | yes | 8/8 | 0.9996/0.9996 | 13.16/13.16 |
+| 6 | 1.000000 | yes | 8/8 | 0.9957/0.9960 | 11.90/11.90 |
+| 7 | 0.999999 | yes | 8/8 | 0.9990/0.9990 | 11.63/11.63 |
+| 954 | 0.999966 | yes | 8/8 | 0.9993/0.9993 | 12.50/12.50 |
+
+**The authors' population.** Scoring all 1,024 of the authors' stored replicates with their own read-outs: **100% are rhythmic** (score ≥ 0.5); the median score is 0.994 (IQR 0.977–0.999, minimum 0.824); a median of 8 motor neurons are active (range 6–15); the median frequency is **11.49 Hz** (IQR 10.99–12.05, range 8.1–14.5). E1, E2, E3, I1 and I2 are each active and rhythmic (score ≥ 0.5) in 100% of replicates, with median scores of 0.999.
+
+**Lateralization and phase.** In every one of the authors' replicates the active copy of E1, E2, I1 and I2 is the left-soma cell and the active copy of E3 is the right-soma cell (IN19B is a midline-crossing hemilineage). Motor output is left-leg in all replicates, with additional right-leg motor neurons active in 450 of 1,024. Coxa-swing, coxa-stance and femur/trochanter-flexor modules are active in every replicate. Their phases are tightly locked but **not in antiphase**: relative to coxa swing, coxa stance sits at 0.84 cycles (that is, leading by 0.16 cycle; circular resultant 0.94) and femur/trochanter flexion at 0.98 cycles (nearly in phase; resultant 0.997). The network produces a robust rhythm, but not by itself a clean swing/stance alternation. We return to this in [Section 6.2](#62-what-is-not-established).
+
+<!-- BATTERY -->
+
 ## 6. Discussion
 
 ### 6.1 What is now established
@@ -150,7 +201,7 @@ The neural layer that will drive the organism's legs is no longer a guess. On th
 - **This is a model, not a measurement.** Membrane time constants, gains, thresholds and the synapse-to-current scale are the authors' assumptions, randomised per replicate. The connectome fixes topology and synapse counts; the dynamics are a hypothesis, which the original paper tested with optogenetics in MANC flies and which we have not tested in animals.
 - **One front leg's network, not the CNS.** The 4,310 neurons are the descending, premotor and motor neurons of the front legs inside the VNC ROIs. The rest of the brain is absent, so nothing here says how DNg100 is recruited in the first place.
 - **No body yet.** Motor-neuron rates have not been mapped to muscles or joint torques. The organism still walks with FlyGym's engineered CPG (`MODE_ENGINEERED_CPG`); `MODE_NEURAL_CPG` records the motif without actuating joints.
-- **Rhythm is not gait.** An 11 Hz alternation in a set of motor modules is consistent with walking step frequencies, but stance/swing phasing across legs, inter-leg coordination and load-dependent feedback are not tested.
+- **Rhythm is not gait.** An ~11 Hz rhythm is in the range of fly stepping frequencies, but in this feed-forward-driven network the coxa-stance motor neurons lead coxa-swing by only ~0.16 cycle instead of alternating in antiphase, and femur flexors fire nearly in phase with swing (Section 5.3). Real stepping depends on proprioceptive and load feedback that this network does not receive. The output is therefore a validated rhythm generator, not yet a leg controller. Inter-leg coordination is not tested at all, because only one leg's CPG is driven.
 - **Rate model only.** Our earlier all-LIF tiny-circuit model with uniform Shiu et al. constants did not produce the CPG rhythm. We did not tune it to do so; that negative result stands, and the model choice is now justified by agreement with an independent published result.
 
 ### 6.3 What the errors teach
@@ -259,7 +310,3 @@ Data hashes: `wTable_20260210_vncRoisOnly.csv` SHA-256 `593a75c5…dd5b2d`; `W_2
 | A6 | MANC amplitude (I = 250) used on mCNS | DNg100 recruited, no CPG rhythm: an apparent negative result | Paper Methods give I = 400 for CNS datasets; archived config confirms | Kept as a labelled amplitude control |
 | A7 | Spike-train spectral peaks (273/409 Hz) in the all-LIF tiny circuit | A "rhythm" from spike timing, not a CPG | Frequency bands are annotations only; recruitment and E1/E2 criteria required | Reported as a negative result |
 | A8 | Restricting FFT search to a walking band | Selecting a favourable answer | Removed: the search is unrestricted | Fixed |
-
-## Appendix B. AI assistance
-
-Analysis code, experiment runners and this draft were written with the assistance of Claude (Anthropic) working in this repository under the author's direction. Every quantitative claim is generated by committed code from committed or publicly archived data, and is checked by the tests listed in [Section 9](#9-reproducibility).
