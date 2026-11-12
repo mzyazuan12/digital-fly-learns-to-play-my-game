@@ -1,0 +1,196 @@
+{
+  "perturbations": [
+    {
+      "arm": "intact_10056",
+      "label": "intact",
+      "n": 1024,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.991010993719101,
+      "median_n_mn": 8.0,
+      "median_freq": 11.49425283074379
+    },
+    {
+      "arm": "silence_E1_10056",
+      "label": "E1 removed",
+      "n": 64,
+      "fraction_rhythmic": 0.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.0,
+      "median_n_mn": 3.0,
+      "median_freq": null
+    },
+    {
+      "arm": "silence_E2_10056",
+      "label": "E2 removed",
+      "n": 64,
+      "fraction_rhythmic": 0.0,
+      "fraction_any_mn": 0.859375,
+      "median_score": 0.0,
+      "median_n_mn": 1.0,
+      "median_freq": null
+    },
+    {
+      "arm": "silence_E3_10056",
+      "label": "E3 removed",
+      "n": 64,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.9994308054447174,
+      "median_n_mn": 4.0,
+      "median_freq": 16.39344170689583
+    },
+    {
+      "arm": "silence_I1_10056",
+      "label": "I1 removed",
+      "n": 64,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.9933266639709473,
+      "median_n_mn": 8.0,
+      "median_freq": 10.811125859618187
+    },
+    {
+      "arm": "silence_I2_10056",
+      "label": "I2 removed",
+      "n": 64,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.9523166418075562,
+      "median_n_mn": 13.0,
+      "median_freq": 9.950493928045034
+    },
+    {
+      "arm": "silence_I1_I2_10056",
+      "label": "I1 + I2 removed",
+      "n": 64,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.8484203815460205,
+      "median_n_mn": 16.0,
+      "median_freq": 8.547008968889713
+    },
+    {
+      "arm": "shuffle_10056",
+      "label": "shuffled wiring (null)",
+      "n": 64,
+      "fraction_rhythmic": 0.078125,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.10213295370340347,
+      "median_n_mn": 49.5,
+      "median_freq": 2.0811206195503473
+    },
+    {
+      "arm": "intact_10045",
+      "label": "drive 10045 instead",
+      "n": 64,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.9990814924240112,
+      "median_n_mn": 4.0,
+      "median_freq": 13.116314075887203
+    },
+    {
+      "arm": "intact_both",
+      "label": "drive both DNg100",
+      "n": 64,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "median_score": 0.9618996977806091,
+      "median_n_mn": 11.0,
+      "median_freq": 12.081128545105457
+    }
+  ],
+  "dose_response": [
+    {
+      "I": 150.0,
+      "n": 32,
+      "fraction_rhythmic": 0.0,
+      "fraction_any_mn": 0.0,
+      "f_median": null,
+      "f_q25": null,
+      "f_q75": null,
+      "n_mn_median": 0.0
+    },
+    {
+      "I": 200.0,
+      "n": 32,
+      "fraction_rhythmic": 0.0,
+      "fraction_any_mn": 0.0,
+      "f_median": null,
+      "f_q25": null,
+      "f_q75": null,
+      "n_mn_median": 0.0
+    },
+    {
+      "I": 250.0,
+      "n": 32,
+      "fraction_rhythmic": 0.0,
+      "fraction_any_mn": 0.125,
+      "f_median": null,
+      "f_q25": null,
+      "f_q75": null,
+      "n_mn_median": 0.0
+    },
+    {
+      "I": 300.0,
+      "n": 32,
+      "fraction_rhythmic": 0.75,
+      "fraction_any_mn": 0.90625,
+      "f_median": 9.345793165266514,
+      "f_q25": 8.474576286971569,
+      "f_q75": 9.803921915590763,
+      "n_mn_median": 5.0
+    },
+    {
+      "I": 350.0,
+      "n": 32,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "f_median": 10.582306422293186,
+      "f_q25": 10.075757279992104,
+      "f_q75": 11.235954239964485,
+      "n_mn_median": 7.0
+    },
+    {
+      "I": 400.0,
+      "n": 1024,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "f_median": 11.49425283074379,
+      "f_q25": 10.989011265337467,
+      "f_q75": 12.048192322254181,
+      "n_mn_median": 8.0
+    },
+    {
+      "I": 450.0,
+      "n": 32,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "f_median": 11.58245513215661,
+      "f_q25": 11.232486460357904,
+      "f_q75": 12.195122428238392,
+      "n_mn_median": 11.0
+    },
+    {
+      "I": 500.0,
+      "n": 32,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "f_median": 11.780268047004938,
+      "f_q25": 11.331717250868678,
+      "f_q75": 12.345678173005581,
+      "n_mn_median": 14.0
+    },
+    {
+      "I": 600.0,
+      "n": 32,
+      "fraction_rhythmic": 1.0,
+      "fraction_any_mn": 1.0,
+      "f_median": 11.7647061124444,
+      "f_q25": 11.363638564944267,
+      "f_q75": 12.358538107946515,
+      "n_mn_median": 15.5
+    }
+  ]
+}

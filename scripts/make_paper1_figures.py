@@ -77,7 +77,8 @@ def fig_traces(battery: Path, out: Path) -> None:
         ax.plot(t[win], R[k, win], color=color, lw=1.6, label=f"{role} ({typ}, body {int(table['bodyId'].iloc[k])})")
     ax.set_ylabel("rate (Hz)")
     ax.set_title("Core CPG interneurons (active copy of each type)", loc="left", fontsize=9, color=INK)
-    ax.legend(fontsize=7, loc="upper right", ncol=2)
+    ax.set_ylim(top=ax.get_ylim()[1] * 1.45)
+    ax.legend(fontsize=7, loc="upper left", ncol=2)
     ax = axes[2]
     active = [i for i in mn if R[i, 250:].max() > 0.01]
     active = sorted(active, key=lambda i: str(table["motor module"].iloc[i]))
@@ -176,6 +177,7 @@ ARM_LABELS = [
     ("silence_E3_10056", "E3 removed"),
     ("silence_I1_10056", "I1 removed"),
     ("silence_I2_10056", "I2 removed"),
+    ("silence_I1_I2_10056", "I1 + I2 removed"),
     ("shuffle_10056", "shuffled wiring (null)"),
     ("intact_10045", "drive 10045 instead"),
     ("intact_both", "drive both DNg100"),

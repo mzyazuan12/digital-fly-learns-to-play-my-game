@@ -38,6 +38,14 @@ python -m sim3d.serve --connectome malecns
 # http://127.0.0.1:8765/desk   Shiritori desk
 ```
 
+**Status (November 2026):** the neural foundation for walking is validated.
+On the authors' exact 4,310-neuron MaleCNS network, DNg100_R (10056) at the
+published drive (I = 400) produces an 11.5 Hz leg-motor rhythm through the
+identified CPG in 1,024 of 1,024 networks, matching Pugliese et al.'s own
+archived runs parameter-for-parameter and trace-for-trace. See
+[Paper 1](docs/papers/paper1_neural_foundation.md). Open problems before
+the rhythm can drive FlyBody: swing/stance phase and leg-to-leg coupling.
+
 First experiment: DNp09 current should initiate walking through the CPG;
 silencing DNp09 should stop it. If spontaneous walking does not emerge
 without a timer, that is a result.

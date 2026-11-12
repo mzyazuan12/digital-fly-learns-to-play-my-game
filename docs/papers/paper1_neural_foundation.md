@@ -2,7 +2,7 @@
 
 **Paper 1 of the virtual *Drosophila* project** · Zayan ([@mzyazuan12](https://github.com/mzyazuan12)) · draft of 11 November 2026
 
-Repository: [digital-fly-learns-to-play-my-game](https://github.com/mzyazuan12/digital-fly-learns-to-play-my-game). Every number in this paper comes from a file under `outputs/` that a command in [Reproducibility](#9-reproducibility) regenerates.
+Repository: [digital-fly-learns-to-play-my-game](https://github.com/mzyazuan12/digital-fly-learns-to-play-my-game). Every number in this paper comes from saved experiment output that a command in [Reproducibility](#9-reproducibility) regenerates; the summaries behind the tables and figures are committed under [`docs/papers/data/`](data/).
 
 ---
 
@@ -10,11 +10,11 @@ Repository: [digital-fly-learns-to-play-my-game](https://github.com/mzyazuan12/d
 
 The long-term goal of this project is a persistent, embodied digital fruit fly: one individual with a body, senses, a nervous system grounded in measured anatomy, internal state, memory and learning, living continuously in a simulated world. Before any of that is trusted, the neural layer has to be shown to produce real biology and not artefacts of our own code. This paper reports that validation for walking, the first behaviour the body needs.
 
-We take the published connectome-simulation result of Pugliese et al. (2025/2026), which found that stimulating the descending neuron DNg100 in a firing-rate model of the front-leg nerve-cord network produces a ~11 Hz rhythm in leg motor neurons through a small central pattern generator (CPG). We reproduce it in three steps, each with an explicit pass/fail gate. (1) Our port of the authors' rate equation reproduces their own MANC traces (mean correlation 0.99996). (2) On the authors' exact 4,310-neuron male-CNS (MaleCNS v1.0) subnetwork, our parameter sampler and size normalization reproduce every one of their 4 × 1,024 × 4,310 sampled neuron parameters to float32 precision, and our integrator, given their parameters, reproduces their published traces replicate by replicate. (3) Driving MaleCNS DNg100_R (body 10056) at the published CNS amplitude (I = 400) in 1,024 independently sampled networks produces rhythmic leg motor output in RESULT_FRACTION of replicates at RESULT_FREQ Hz, with the identified CPG interneurons E1, E2, I1 and I2 oscillating at the same frequency. Single-cell-type lesions, a sign- and class-preserving shuffled-wiring null, left/right/bilateral drive and an amplitude sweep characterise which parts of the result depend on the measured wiring.
+We take the published connectome-simulation result of Pugliese et al. (2025/2026), which found that stimulating the descending neuron DNg100 in a firing-rate model of the front-leg nerve-cord network produces a ~11 Hz rhythm in leg motor neurons through a small central pattern generator (CPG). We reproduce it in three steps, each with an explicit pass/fail gate. (1) Our port of the authors' rate equation reproduces their own MANC traces (mean correlation 0.99996). (2) On the authors' exact 4,310-neuron male-CNS (MaleCNS v1.0) subnetwork, our parameter sampler and size normalization reproduce every one of their 4 × 1,024 × 4,310 sampled neuron parameters to float32 precision, and our integrator, given their parameters, reproduces their published traces replicate by replicate. (3) Driving MaleCNS DNg100_R (body 10056) at the published CNS amplitude (I = 400) in 1,024 independently sampled networks produces rhythmic leg motor output in 100% of networks at a median of 11.49 Hz, indistinguishable from the authors' own 1,024 runs, with the identified CPG interneurons E1, E2, E3, I1 and I2 oscillating at the same frequency. Removing E1 or E2 abolishes the rhythm, as in the authors' own lesions; removing the inhibitory I1 and I2 does not, but slows and spreads it; shuffling the wiring while keeping every cell's parameters destroys it. Each DNg100 drives its own front leg, and the two legs' rhythms are not coupled. An amplitude sweep shows the rhythm switching on between I = 250 and 300, which explains an earlier apparent failure. Two limitations matter for the body: within a leg, swing and stance motor neurons are phase-offset by ~0.16 cycle rather than alternating, and the two legs are uncoupled.
 
 Along the way we caught and corrected several errors that would have produced fake biology: a body-ID namespace collision between two connectomes, a wrong I2 cell type, a size-normalization denominator that silenced DNg100, and a stimulus amplitude that had been borrowed from the wrong dataset. We describe each, because the discipline that caught them is the main methodological contribution.
 
-We make no claim about consciousness. We discuss what this result does and does not establish for the larger organism, and which properties of a digital organism could later be measured.
+We make no claim about consciousness here. We discuss what this result does and does not establish for the larger organism, and how consciousness-relevant markers will be tested once the organism exists.
 
 ---
 
@@ -34,7 +34,7 @@ So the project adopted a rule: no neural result is used to drive the body until 
 
 ### 1.3 The target result
 
-Pugliese et al. (2025/2026) built a firing-rate model of the neurons controlling one front leg in the male adult nerve cord connectome (MANC), screened descending neurons for those whose activation produces rhythmic leg motor activity, and found DNg100 as the strongest driver. Synthetic pruning reduced the circuit to a core CPG of identified interneurons: excitatory E1 (IN17A001) and E2 (INXXX466), inhibitory I1 (IN16B036), with E3 (IN19B012) and I2 (IN19A007) also involved. They predicted that DNg100 drives walking and confirmed rhythmic leg movement with optogenetics in behaving flies. They then reran the model on three other connectomes, including the male CNS (mCNS, the dataset this project uses), and report that DNg100 produced rhythmic motor activity in all four.
+Pugliese et al. (2025/2026) built a firing-rate model of the neurons controlling one front leg in the male adult nerve cord connectome (MANC), screened descending neurons for those whose activation produces rhythmic leg motor activity, and found DNg100 as the strongest driver. Synthetic pruning reduced the circuit to a minimal core of two excitatory interneurons and one inhibitory interneuron, within a set of identified CPG cell types: excitatory E1 (IN17A001), E2 (INXXX466) and E3 (IN19B012), and inhibitory I1 (IN16B036) and I2 (IN19A007). They predicted that DNg100 drives walking and confirmed rhythmic leg movement with optogenetics in behaving flies. They then reran the model on three other connectomes, including the male CNS (mCNS, the dataset this project uses), and report that DNg100 produced rhythmic motor activity in all four.
 
 That makes it an ideal first gate. It is (i) a causal claim about walking, the first behaviour the body needs; (ii) made on the same connectome we use; (iii) backed by open code (`smpuglie/Pugliese_2026`, commit `10e7661`) and open simulation data (Zenodo record 22260924); and (iv) independent of every assumption in our own codebase.
 
@@ -42,8 +42,8 @@ That makes it an ideal first gate. It is (i) a causal claim about walking, the f
 
 1. A port of the authors' rate model that reproduces their MANC traces at r = 0.99996 and their mCNS sampled parameters to float32 precision.
 2. Resolution of the last open unknown in the mCNS reproduction (the stimulus amplitude), from the paper's Methods and then confirmed against the authors' archived run configuration.
-3. A 1,024-replicate reproduction of DNg100-driven rhythm on the authors' exact 4,310-neuron mCNS network with an independent random seed, plus a replicate-by-replicate trace comparison against the authors' own 1,024 published runs.
-4. Perturbation arms (lesions, shuffled-wiring null, drive side, amplitude sweep) that the original mCNS analysis did not report.
+3. A 1,024-replicate reproduction of DNg100-driven rhythm on the authors' exact 4,310-neuron mCNS network with an independent random seed, plus a trace-level comparison with nine of the authors' archived runs and a population-level comparison with all 1,024 of them.
+4. Perturbation arms the original mCNS analysis did not report (E3, I1 and I1 + I2 lesions, a shuffled-wiring null, drive side, an amplitude sweep), plus a measurement of swing/stance phase and left/right coupling.
 5. A record of the identity, namespace and normalization errors caught on the way, and the gates that now prevent them.
 
 ---
@@ -122,7 +122,7 @@ All arms use the same 4,310-neuron network and the same per-replicate parameter 
 | Arm | Drive | Manipulation | Replicates |
 |---|---|---|---:|
 | intact | 10056, I = 400 | none | 1,024 |
-| E1 / E2 / E3 / I1 / I2 removed | 10056, I = 400 | both copies of the type removed from W (rows and columns), as the authors' `removeNeurons` | 64 each |
+| E1 / E2 / E3 / I1 / I2 / I1 + I2 removed | 10056, I = 400 | both copies of the type removed from W (rows and columns), as the authors' `removeNeurons` | 64 each |
 | shuffled wiring | 10056, I = 400 | postsynaptic targets permuted within DN-exc, DN-inh, interneuron-exc, interneuron-inh and MN groups (the authors' `shuffle_W` groups), new permutation per replicate | 64 |
 | drive 10045 | 10045, I = 400 | other DNg100 | 64 |
 | drive both | 10045 + 10056, I = 400 each | bilateral | 64 |
@@ -152,7 +152,7 @@ The project reached the mCNS experiment through a sequence of gates. Each row be
 | MANC port check | Our integrator on the authors' MANC network and sampled parameters | Mean trace correlation 0.99996 with the authors' traces | Our equation and integrator are the authors' |
 | Full-MaleCNS-median control | 408-cell restricted MaleCNS graph, sizes normalised by the median of all MaleCNS neurons (178,403,737) | Silent | Wrong denominator; demoted to a control (Appendix A5) |
 | MANC-amplitude control | Authors' 4,310-cell mCNS network, I = 250 | DNg100_R reaches 7.5 Hz; E1 weakly recruited; E2, I1, I2 and MNs not recruited; no rhythm | Wrong amplitude; kept as a control (A6) |
-| **mCNS, published amplitude** | Authors' 4,310-cell mCNS network, I = 400 | Sections 5.2–5.6 | **This paper** |
+| **mCNS, published amplitude** | Authors' 4,310-cell mCNS network, I = 400 | Sections 5.2–5.8 | **This paper** |
 
 ### 5.2 The authors' archived run confirms the stimulus
 
@@ -164,11 +164,11 @@ The authors' Zenodo archive for the mCNS DNg100 experiment (`DNg100_Stim_IMAC_vn
 
 **Parameters.** Running our sampler at the authors' seed (626) for a 1,024-replicate block and applying our size normalization reproduces all four of their stored parameter arrays (τ, *a*, θ, *r*<sub>max</sub>; each 1,024 × 4,310) to a maximum relative difference of 2.9 × 10⁻⁷, which is float32 storage precision. Without size normalization the gain and threshold differ by up to 100-fold, so this match independently confirms that the denominator is the median of the simulated 4,310-cell table and not of the whole connectome.
 
-**Traces.** We integrated nine of the authors' replicates (0–7 and 954, the example shown in their Figure 2) with their exact parameters and compared them with their stored traces (Figure 2, Table 1). Across all neurons active in either run, the mean correlation is 0.99998 (minimum 0.99988). In all nine replicates the set of active neurons is identical, and so is the number of active motor neurons. The motor rhythmicity score agrees to within 4 × 10⁻⁴, and the frequency is identical in eight of nine (11.67 versus 11.69 Hz in the ninth). The largest pointwise difference is 0.34 Hz, from the different Dopri5 implementations (SciPy, float64, versus Diffrax, float32).
+**Traces.** We integrated nine of the authors' replicates (0–7 and 954, the example shown in their Figure 2) with their exact parameters and compared them with their stored traces (Figure 1, Table 1). Across all neurons active in either run, the mean correlation is 0.99998 (minimum 0.99988). In all nine replicates the set of active neurons is identical, and so is the number of active motor neurons. The motor rhythmicity score agrees to within 4 × 10⁻⁴, and the frequency is identical in eight of nine (11.67 versus 11.69 Hz in the ninth). The largest pointwise difference is 0.34 Hz, from the different Dopri5 implementations (SciPy, float64, versus Diffrax, float32).
 
 ![Authors' trace versus ours](figures/fig2_authors_overlay.png)
 
-*Figure 2. Replicate 954 of the authors' published mCNS run (orange, thick) and our integration with the same parameters (blue, thin), for every active motor neuron, labelled by motor module. The traces overlap within line width.*
+*Figure 1. Replicate 954 of the authors' published mCNS run (orange, thick) and our integration with the same parameters (blue, thin), for every active motor neuron, labelled by motor module. The traces overlap within line width.*
 
 *Table 1. Trace-level comparison with the authors' archived replicates.*
 
@@ -186,34 +186,108 @@ The authors' Zenodo archive for the mCNS DNg100 experiment (`DNg100_Stim_IMAC_vn
 
 **The authors' population.** Scoring all 1,024 of the authors' stored replicates with their own read-outs: **100% are rhythmic** (score ≥ 0.5); the median score is 0.994 (IQR 0.977–0.999, minimum 0.824); a median of 8 motor neurons are active (range 6–15); the median frequency is **11.49 Hz** (IQR 10.99–12.05, range 8.1–14.5). E1, E2, E3, I1 and I2 are each active and rhythmic (score ≥ 0.5) in 100% of replicates, with median scores of 0.999.
 
-**Lateralization and phase.** In every one of the authors' replicates the active copy of E1, E2, I1 and I2 is the left-soma cell and the active copy of E3 is the right-soma cell (IN19B is a midline-crossing hemilineage). Motor output is left-leg in all replicates, with additional right-leg motor neurons active in 450 of 1,024. Coxa-swing, coxa-stance and femur/trochanter-flexor modules are active in every replicate. Their phases are tightly locked but **not in antiphase**: relative to coxa swing, coxa stance sits at 0.84 cycles (that is, leading by 0.16 cycle; circular resultant 0.94) and femur/trochanter flexion at 0.98 cycles (nearly in phase; resultant 0.997). The network produces a robust rhythm, but not by itself a clean swing/stance alternation. We return to this in [Section 6.2](#62-what-is-not-established).
+**Lateralization and phase.** In every one of the authors' replicates the active copy of E1, E2, I1 and I2 is the left-soma cell and the active copy of E3 is the right-soma cell. Motor output is left-leg in all replicates, with additional right-leg motor neurons active in 450 of 1,024. Coxa-swing, coxa-stance and femur/trochanter-flexor modules are active in every replicate. Their phases are tightly locked but **not in antiphase**: relative to coxa swing, coxa stance sits at 0.84 cycles (that is, leading by 0.16 cycle; circular resultant 0.94) and femur/trochanter flexion at 0.98 cycles (nearly in phase; resultant 0.997). The network produces a robust rhythm, but not by itself a clean swing/stance alternation. We return to this in [Section 6.2](#62-what-is-not-established).
 
-<!-- BATTERY -->
+### 5.4 Independent reproduction: 1,024 new networks at the published drive
+
+With an independent seed (1) and a fresh 1,024-replicate parameter block, driving DNg100_R (10056) at I = 400 gives (Figures 2 and 3):
+
+| Read-out | This work (seed 1, n = 1,024) | Authors (seed 626, n = 1,024) |
+|---|---:|---:|
+| Replicates rhythmic (score ≥ 0.5) | **100%** | 100% |
+| Motor rhythmicity score, median (IQR) | 0.991 (0.975–0.999) | 0.994 (0.977–0.999) |
+| Motor neurons active, median (range) | 8 (6–15) | 8 (6–15) |
+| Rhythm frequency, median (IQR) | **11.49 Hz** (10.99–12.05) | 11.49 Hz (10.99–12.05) |
+| E1, E2, E3, I1, I2 active and rhythmic | 100% each | 100% each |
+| DNg100_R tonic (score 0) | 100% | 100% |
+| Rates finite and below cap | 100% | 100% |
+
+The two independent 1,024-network samples give indistinguishable distributions (Figure 3). DNg100 itself is tonic; the rhythm is generated downstream of it. In every replicate the active E1, E2, E3, I1 and I2 cells are rhythmic; in the example network of Figure 2, E1 leads each cycle and E2, I2 and I1 follow within ~20 ms.
+
+![Example traces](figures/fig1_traces_rep0.png)
+
+*Figure 2. One network (seed 1, replicate 0). Top: DNg100_R rises to a tonic ~17 Hz under constant drive. Middle: the active copy of each core CPG type oscillates at ~12 Hz. Bottom: the seven active leg motor neurons, labelled by motor module.*
+
+![Population comparison](figures/fig3_population.png)
+
+*Figure 3. Distributions over 1,024 networks for the authors' archived run (orange, seed 626) and this work (blue, seed 1): motor rhythmicity score (dotted line, rhythmic threshold 0.5), number of active motor neurons, and rhythm frequency.*
+
+### 5.5 Which cells the rhythm needs
+
+Removing a cell type deletes both of its copies from W (rows and columns), with the same parameters and drive as the intact networks (Figure 4). The authors' repository includes their own mCNS lesion results for three of these cell types (1,024 networks each), shown for comparison.
+
+| Removed | Rhythmic (this work, n = 64) | Rhythmic (authors, n = 1,024) | Median MNs active (this work / authors) | Frequency, median |
+|---|---:|---:|:---:|---:|
+| none | 100% | 100% | 8 / 8 | 11.5 Hz |
+| E1 (IN17A001) | **0%** | 0.8% | 3 / 4 | none |
+| E2 (INXXX466) | **0%** | 0% | 1 / 2 | none |
+| E3 (IN19B012) | 100% | not tested | 4 / – | 16.4 Hz |
+| I1 (IN16B036) | 100% | not tested | 8 / – | 10.8 Hz |
+| I2 (IN19A007) | 100% | 100% | 13 / 13 | 10.0 Hz |
+| I1 + I2 | 100% | not tested | 16 / – | 8.5 Hz |
+
+Where both exist, our lesion results match the authors'. (Their archived summary does not record whether one or both copies of a type were removed; we remove both, which may explain why our lesioned networks recruit one motor neuron fewer.) The rhythm needs both excitatory core cells: without E1 or E2, motor neurons are still driven (E1 removed) or nearly silent (E2 removed), but nothing oscillates. Neither identified inhibitory cell is required, even when both are removed together; but inhibition shapes the rhythm. Removing I2 widens recruitment from 8 to 13 motor neurons. Removing both I1 and I2 slows the rhythm from 11.5 to 8.5 Hz, lowers the median score from 0.99 to 0.85 and doubles recruitment to 16 motor neurons. Removing E3 speeds the rhythm to 16.4 Hz and halves recruitment. In this network, then, E1 and E2 are the rhythm generator, and I1, I2 and E3 set its speed and how far it spreads. The network contains about 1,600 other inhibitory neurons, so "not required" means not required *in the presence of the rest of the network*.
+
+![Perturbations](figures/fig4_perturbations.png)
+
+*Figure 4. Fraction of rhythmic networks and median number of active motor neurons for each arm. Blue: intact reference.*
+
+### 5.6 The wiring, not the cell parameters, makes the rhythm
+
+In the shuffled-wiring null, each neuron keeps its parameters, transmitter sign, class and outgoing synapse weights, but which neurons receive those synapses is permuted within the authors' five classes, with a new permutation per network. DNg100 is still driven in every network, and motor output becomes much broader (median 50 motor neurons active versus 8). In 59 of 64 networks it is not rhythmic. The remaining 5 cross the score threshold weakly (0.55–0.70), at 1.4–3.2 Hz, across 33–59 motor neurons: slow network-wide swells, not the ~11 Hz CPG rhythm. Core CPG cells are rhythmic in at most 6% of shuffled networks. None of the 64 reproduces the intact pattern. The rhythm therefore depends on the measured connectome wiring, not on the cell parameters, transmitter balance or weight distribution alone.
+
+### 5.7 Each DNg100 drives its own leg; the legs are not coupled
+
+- **Drive 10045 (DNg100_L) instead:** 100% rhythmic, 13.1 Hz (IQR 12.5–14.3), median 4 motor neurons, all on the right leg (8 of 8 inspected networks).
+- **Drive 10056 (DNg100_R):** motor output on the left leg (with an occasional single right motor neuron).
+- **Drive both:** 100% rhythmic, median 11 motor neurons on both legs. In 7 of 8 inspected networks the two legs run at different frequencies (left 10.7–12.0 Hz, right 11.3–16.0 Hz) with no consistent phase relation between them.
+
+Each front leg has its own DNg100-driven rhythm generator, and in this one-segment network the two are independent oscillators. Real walking requires coordinated legs; that coordination must come from circuitry or feedback outside this network.
+
+### 5.8 Dose response: why the MANC amplitude looked like a failure
+
+DNg100_R's large normalized size gives it a high threshold (mean ≈ 124), so the drive needed on mCNS is higher than on MANC (Figure 5).
+
+| I | 150 | 200 | 250 | 300 | 350 | **400** | 450 | 500 | 600 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Rhythmic | 0% | 0% | 0% | 75% | 100% | **100%** | 100% | 100% | 100% |
+| Any MN active | 0% | 0% | 12.5% | 91% | 100% | 100% | 100% | 100% | 100% |
+| Median MNs | 0 | 0 | 0 | 5 | 7 | 8 | 11 | 14 | 15.5 |
+| Frequency, Hz | – | – | – | 9.4 | 10.6 | 11.5 | 11.6 | 11.8 | 11.8 |
+
+The rhythm switches on between I = 250 and 300; above that, frequency rises and saturates near 11.8 Hz, while recruitment keeps growing. I = 250, the MANC value, sits just below the rhythm threshold in all 32 networks, which fully explains the earlier "no rhythm" control: the circuit was fine, the drive was too weak. The published I = 400 sits on the plateau, where results are insensitive to the exact amplitude (350–600 all give 100% rhythmic, 10.6–11.8 Hz).
+
+![Dose response](figures/fig5_dose_response.png)
+
+*Figure 5. Fraction of rhythmic networks and rhythm frequency (median and IQR over rhythmic networks) as a function of DNg100_R drive. n = 32 per level; n = 1,024 at I = 400.*
+
+---
+
 
 ## 6. Discussion
 
 ### 6.1 What is now established
 
-The neural layer that will drive the organism's legs is no longer a guess. On the male CNS connectome, the same cell the authors drove (DNg100_R, MaleCNS 10056), driven at the published amplitude, recruits the identified walking CPG and produces rhythmic leg motor output near 11 Hz in essentially every sampled network. The implementation is not merely "similar to" the authors': given their parameters it reproduces their traces at r > 0.9998 replicate by replicate, and its own sampler reproduces their parameters to float32 precision. The two remaining differences (Dopri5 in SciPy versus Diffrax, float64 versus float32) change traces in the fourth decimal of the correlation and never change which neurons are active.
+The neural layer that will drive the organism's legs is no longer a guess. On the male CNS connectome, the same cell the authors drove (DNg100_R, MaleCNS 10056), driven at the published amplitude, recruits the identified walking CPG and produces rhythmic leg motor output at 11.5 Hz in every one of 1,024 independently sampled networks. The rhythm needs E1 and E2, as in the authors' own lesions, and it disappears when the wiring is shuffled while every cell keeps its parameters. It is a property of the measured connectome, not of our code or of a lucky parameter draw. The implementation is not merely "similar to" the authors': given their parameters it reproduces their traces at r > 0.9998 replicate by replicate, and its own sampler reproduces their parameters to float32 precision. The two remaining differences (Dopri5 in SciPy versus Diffrax, float64 versus float32) change traces in the fourth decimal of the correlation and never change which neurons are active.
 
 ### 6.2 What is not established
 
-- **This is a model, not a measurement.** Membrane time constants, gains, thresholds and the synapse-to-current scale are the authors' assumptions, randomised per replicate. The connectome fixes topology and synapse counts; the dynamics are a hypothesis, which the original paper tested with optogenetics in MANC flies and which we have not tested in animals.
+- **This is a model, not a measurement.** Membrane time constants, gains, thresholds and the synapse-to-current scale are the authors' assumptions, randomised per replicate. The connectome fixes topology and synapse counts; the dynamics are a hypothesis, which the original paper tested with optogenetics in behaving flies and which we have not tested in animals.
 - **One front leg's network, not the CNS.** The 4,310 neurons are the descending, premotor and motor neurons of the front legs inside the VNC ROIs. The rest of the brain is absent, so nothing here says how DNg100 is recruited in the first place.
 - **No body yet.** Motor-neuron rates have not been mapped to muscles or joint torques. The organism still walks with FlyGym's engineered CPG (`MODE_ENGINEERED_CPG`); `MODE_NEURAL_CPG` records the motif without actuating joints.
-- **Rhythm is not gait.** An ~11 Hz rhythm is in the range of fly stepping frequencies, but in this feed-forward-driven network the coxa-stance motor neurons lead coxa-swing by only ~0.16 cycle instead of alternating in antiphase, and femur flexors fire nearly in phase with swing (Section 5.3). Real stepping depends on proprioceptive and load feedback that this network does not receive. The output is therefore a validated rhythm generator, not yet a leg controller. Inter-leg coordination is not tested at all, because only one leg's CPG is driven.
+- **Rhythm is not gait.** An ~11 Hz rhythm is in the range of fly stepping frequencies, but in this network, driven by a tonic descending input and without sensory feedback, the coxa-stance motor neurons lead coxa-swing by only ~0.16 cycle instead of alternating in antiphase, and femur flexors fire nearly in phase with swing (Section 5.3). Real stepping depends on proprioceptive and load feedback that this network does not receive. The output is therefore a validated rhythm generator, not yet a leg controller. When both DNg100 are driven, the two front legs oscillate at different frequencies with no consistent phase relation (Section 5.7): this one-segment network contains two independent leg oscillators, and nothing in it coordinates them.
 - **Rate model only.** Our earlier all-LIF tiny-circuit model with uniform Shiu et al. constants did not produce the CPG rhythm. We did not tune it to do so; that negative result stands, and the model choice is now justified by agreement with an independent published result.
 
 ### 6.3 What the errors teach
 
-Four of the errors in [Appendix A](#appendix-a-errors-caught-before-they-became-results) would each have produced a plausible-looking but false result: a namespace collision that drove a GABAergic cell instead of DNg100; a wrong I2 type; a normalization denominator that silenced DNg100 (the "MaleCNS does not reproduce" result that was correctly demoted to a control); and a stimulus amplitude borrowed from a different dataset. None of them was caught by looking at whether the fly "looked right". They were caught by tracing every number to a primary source and refusing to interpret a run until its provenance was complete. The same discipline has to carry into the embodied work, where it is much easier to fool oneself.
+Four of the errors in [Appendix A](#appendix-a-errors-caught-before-they-became-results) would each have produced a plausible-looking but false result: a namespace collision that would have driven a GABAergic cell instead of DNg100; a wrong I2 type; a normalization denominator that silenced DNg100 (the "MaleCNS does not reproduce" result that was correctly demoted to a control); and a stimulus amplitude borrowed from a different dataset. None of them was caught by looking at whether the fly "looked right". They were caught by tracing every number to a primary source and refusing to interpret a run until its provenance was complete. The same discipline has to carry into the embodied work, where it is much easier to fool oneself.
 
 ### 6.4 Consequences for the organism
 
 The locomotor gate is open. The next stages can now be built on top of it:
 
-1. **Neural motor bridge.** Map active motor modules (coxa swing/stance, femur/trochanter extend/flex, …) onto FlyBody actuators, and replace the engineered CPG for one leg, then six.
-2. **Bilateral and multi-segment networks.** Extend from the front-leg network to all six legs, using the same validation pattern against published MANC/BANC results.
+1. **Neural motor bridge.** Map active motor modules (coxa swing/stance, femur/trochanter extend/flex, …) onto FlyBody actuators, and replace the engineered CPG for one leg, then six. The phase offset between swing and stance (§5.3) must be resolved first, by adding the proprioceptive and load feedback this network lacks, or by testing whether the full six-leg VNC network already supplies it, not by retuning parameters.
+2. **Bilateral and multi-segment networks.** Extend from the front-leg network to all six legs, and test whether inter-leg coupling emerges from the full VNC wiring (§5.7 shows it does not within T1 alone), using the same validation pattern against published MANC/BANC results.
 3. **Brain-to-VNC.** Connect the brain side of MaleCNS so that sensory input, not an injected current, recruits DNg100 and other walking DNs.
 4. **Closed loop.** Body → senses → brain → VNC → body, with proprioceptive feedback.
 5. **Persistent individual.** Memory (mushroom-body KC→MBON plasticity), drives and neuromodulation acting on identified circuits, running continuously.
@@ -224,23 +298,24 @@ Each stage gets its own published-result gate before its output is trusted.
 
 ## 7. On consciousness
 
-The project's long-range question is whether a persistent, embodied, connectome-grounded organism could develop properties relevant to consciousness. This paper does not address that question, and nothing in it is evidence for or against consciousness in this or any simulation. A firing-rate model of 4,310 neurons producing a walking rhythm is a reflex-level motor circuit, which nobody proposes as conscious.
+The project's long-range question is whether a persistent, embodied, connectome-grounded organism could develop properties relevant to consciousness. This paper does not answer it: a firing-rate model of 4,310 neurons producing a walking rhythm is a motor circuit, and nothing in it is evidence for or against consciousness.
 
-We want to be precise about what can be done. There is no accepted test for consciousness, in animals or machines. What does exist is a set of computational properties that leading theories associate with it, such as global availability of information, recurrent processing, unified agency, a model of the body and of the self, metacognitive monitoring and flexible goal-directed behaviour (Butlin et al. 2023 survey these "indicator properties"), together with a serious scientific literature on whether insects themselves have subjective experience (e.g. Barron & Klein 2016). Those properties are testable in a digital organism, one by one, in the same way this paper tests the locomotor circuit: with pre-registered criteria, controls and lesions. Possible future measurements include:
+The question can be tested, though not with a single yes/no experiment. Nobody can prove that a real fruit fly is conscious either. What researchers do instead is test animals for specific markers, defined in advance, and argue from the pattern of results. The same standard can be applied to the digital fly, which can then be compared directly with real flies on the same tests:
 
-- **Persistence and individuality:** whether behavioural preferences and spatial memories are stable within one individual over long simulated time and differ between individuals born from the same anatomy.
-- **Self/world distinction:** whether the organism's internal state distinguishes sensory changes caused by its own movement from changes in the world (efference-copy-like prediction).
-- **Prediction error and surprise:** whether internal signals track violated expectations and change subsequent behaviour.
-- **Metacognition-like signals:** whether there are internal variables that track the reliability of its own decisions.
-- **Transfer:** whether skills learned in one environment change behaviour in an unrelated one.
+- **Open-ended associative learning:** trace conditioning, second-order conditioning, learning new compound stimuli. Ginsburg & Jablonka (2019) propose this kind of "unlimited associative learning" as a marker of minimal consciousness.
+- **Sentience criteria:** the evidence framework Birch et al. (2021) used for decapod crustaceans and cephalopods, including motivational trade-offs between noxious stimuli and reward, flexible wound-directed and protective behaviour, and associative learning beyond habituation.
+- **Perturbational complexity:** perturb the network and measure the spatiotemporal complexity of its response. In humans this index separates conscious from unconscious states (Casali et al. 2013); here it can be compared between awake-like and sleep- or anaesthesia-like regimes of the same organism.
+- **Self/world distinction:** efference copy, the brain's prediction of the sensory consequences of its own movements, has been recorded in *Drosophila* (Kim, Fitzgerald & Maimon 2015) and can be measured in the digital fly's visual system.
+- **Global ignition and recurrent processing:** whether a stimulus near threshold either spreads through the network or dies out, with little in between; part of the indicator-property list surveyed by Butlin et al. (2023).
+- **Persistence and individuality:** whether preferences and spatial memories are stable within one individual over long simulated time and differ between individuals born from the same anatomy.
 
-If such properties emerge, they are *evidence relevant to* machine-consciousness theories, which is how we will report them. They would not be proof that the organism is conscious, and we will not write a variable called `consciousness`.
+The rule that makes this science is the same one used throughout this paper: write each test and its pass criterion down, commit it, and only then run it, with lesions and null controls. If the digital fly passes the markers real flies pass, for the reasons real flies pass them, that is a substantive result. We will report it as *evidence relevant to* consciousness, which is the strongest claim any current theory supports, and we will not write a variable called `consciousness`. Most of these tests need the whole organism (body, senses, brain, memory), which is why the neural foundation came first.
 
 ---
 
 ## 8. Conclusion
 
-The neural foundation of the virtual fly reproduces a published, causally tested walking result on the fly's own connectome. On the authors' exact male-CNS network, our implementation matches their sampled parameters to float32 precision and their published traces replicate by replicate. In an independent 1,024-network sample it drives the identified CPG and produces rhythmic leg motor output at ~11 Hz from the same descending neuron. Lesion, null-wiring and dose-response arms show which parts of that result come from the measured wiring. This is the first gate of the organism, not the organism. It is the point at which the project can stop asking whether the neural layer is fake and start connecting it to a body.
+The neural foundation of the virtual fly reproduces a published, causally tested walking result on the fly's own connectome. On the authors' exact male-CNS network, our implementation matches their sampled parameters to float32 precision and their published traces replicate by replicate. In an independent 1,024-network sample it drives the identified CPG and produces rhythmic leg motor output at 11.5 Hz in every network, from the same descending neuron. The rhythm needs the excitatory core cells E1 and E2, matching the authors' own lesion results, and it vanishes when the wiring is shuffled. Two properties a walking leg needs are absent from this circuit on its own: a clean swing/stance alternation, and coupling between legs. Those define the next problem. This is the first gate of the organism, not the organism. It is the point at which the project can stop asking whether the neural layer is fake and start connecting it to a body.
 
 ---
 
@@ -262,6 +337,9 @@ curl -L -o data/zenodo_pugliese_22260924/DNg100_Stim_IMAC_vncOnly.zip \
 # 3. Independent 1,024-replicate battery with all arms
 ./scripts/run_mcns_dng100_battery.sh
 
+# 3b. Lateralization and swing/stance phase in the authors' 1,024 runs
+.venv/bin/python -m experiment.mcns_motor_phase
+
 # 4. Figures
 .venv/bin/python scripts/make_paper1_figures.py --battery outputs/mcns_dng100_battery_<stamp> \
   --compare outputs/authors_mcns_zenodo_compare_<stamp> --out docs/papers/figures
@@ -279,11 +357,15 @@ Data hashes: `wTable_20260210_vncRoisOnly.csv` SHA-256 `593a75c5…dd5b2d`; `W_2
 - Azevedo, A. et al. (2024). Connectomic reconstruction of a female *Drosophila* ventral nerve cord. *Nature*.
 - Barron, A. B. & Klein, C. (2016). What insects can tell us about the origins of consciousness. *PNAS*.
 - Berg, S. et al. (2025/2026). Sexual dimorphism in the complete connectome of the *Drosophila* male central nervous system. *bioRxiv* 10.1101/2025.10.09.680999; reported published in *Cell* (2026). Data: male CNS v1.0, https://male-cns.janelia.org.
+- Birch, J., Burn, C., Schnell, A., Browning, H. & Crump, A. (2021). Review of the evidence of sentience in cephalopod molluscs and decapod crustaceans. LSE Consulting report for the UK government.
 - Butlin, P., Long, R. et al. (2023). Consciousness in artificial intelligence: insights from the science of consciousness. *arXiv*:2308.08708.
+- Casali, A. G. et al. (2013). A theoretically based index of consciousness independent of sensory processing and behavior. *Science Translational Medicine*.
 - Cheong, H. S. J. et al. (2024). Transforming descending input into behavior: the organization of premotor circuits in the *Drosophila* male adult nerve cord connectome. *eLife*.
 - Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. *Nature*.
 - Dormand, J. R. & Prince, P. J. (1980). A family of embedded Runge–Kutta formulae. *J. Comput. Appl. Math.*
 - Eon Systems (2026). Embodied fruit-fly brain emulation demonstration; press coverage, e.g. [ISPR, 21 April 2026](https://ispr.info/2026/04/21/researchers-upload-model-of-flys-brain-to-matrix-let-it-control-virtual-body/). Not peer reviewed at time of writing.
+- Ginsburg, S. & Jablonka, E. (2019). *The Evolution of the Sensitive Soul: Learning and the Origins of Consciousness*. MIT Press.
+- Kim, A. J., Fitzgerald, J. K. & Maimon, G. (2015). Cellular evidence for efference copy in *Drosophila* visuomotor processing. *Nature Neuroscience*.
 - Lappalainen, J. K. et al. (2024). Connectome-constrained networks predict neural activity across the fly visual system. *Nature*.
 - Lobato-Rios, V. et al. (2022). NeuroMechFly, a neuromechanical model of adult *Drosophila melanogaster*. *Nature Methods*.
 - Marin, E. C. et al. (2024). Systematic annotation of a complete adult male *Drosophila* nerve cord connectome reveals principles of functional organisation. *eLife*.

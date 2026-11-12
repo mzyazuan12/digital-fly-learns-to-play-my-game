@@ -30,8 +30,11 @@ mCNS PORT @ I=250 CONTROL               10056 reaches 7.5 Hz; no E1/E2 rhythm; M
 mCNS PARAMETER MATCH (seed 626)         passed: tau/a/threshold/fr_cap within 3e-7 relative
 EXACT mCNS PUBLISHED REPRODUCTION       passed: 9 replicates, mean trace r = 0.99998, same active sets
 AUTHORS' 1,024 mCNS RUNS                100% rhythmic, median 11.49 Hz, median 8 MNs
-INDEPENDENT 1,024 REPLICATES (seed 1)   see docs/papers/paper1_neural_foundation.md
-LESIONS / SHUFFLE NULL / SWEEP          see docs/papers/paper1_neural_foundation.md
+INDEPENDENT 1,024 REPLICATES (seed 1)   100% rhythmic, median 11.49 Hz, median 8 MNs
+LESIONS                                 E1, E2 required (0% rhythmic); E3, I1, I2, I1+I2 not
+SHUFFLED-WIRING NULL                    rhythm destroyed (59/64; 5 slow 1-3 Hz swells)
+AMPLITUDE SWEEP                         rhythm switches on between I=250 and 300
+LEFT/RIGHT                              10056 drives left leg, 10045 right; legs uncoupled
 SWING/STANCE PHASE                      rhythmic but not antiphase (stance leads swing ~0.16 cycle)
 RESTRICTED-408 TRANSFER                 unlocked, not run
 CONNECTIVITY DIFFERENCE DISSECTION      unlocked, not run

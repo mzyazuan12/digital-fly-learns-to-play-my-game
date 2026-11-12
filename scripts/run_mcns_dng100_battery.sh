@@ -15,6 +15,7 @@ run intact_10056            --stim-bodies 10056 --replicates 0:1024
 for R in E1 E2 E3 I1 I2; do
   run silence_${R}_10056    --stim-bodies 10056 --replicates 0:64 --silence $R
 done
+run silence_I1_I2_10056     --stim-bodies 10056 --replicates 0:64 --silence I1,I2
 run shuffle_10056           --stim-bodies 10056 --replicates 0:64 --shuffle
 run intact_10045            --stim-bodies 10045 --replicates 0:64
 run intact_both             --stim-bodies 10045,10056 --replicates 0:64
