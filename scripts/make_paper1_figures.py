@@ -114,14 +114,19 @@ def fig_authors_overlay(compare: Path, out: Path, rep: int = 954) -> None:
     for j, i in enumerate(active):
         ax.plot(t[win], A[i, win] + j * span, color=AUTH, lw=2.4, label="authors (Zenodo run 33241780)" if j == 0 else None)
         ax.plot(t[win], O[i, win] + j * span, color=OURS, lw=1.0, label="this work, same parameters" if j == 0 else None)
+        ax.text(0.505, j * span + 0.15 * span, str(table["motor module"].iloc[i]), fontsize=6, color=INK2, va="bottom")
+    ax.plot([-0.015, -0.015], [0, 5], color=INK, lw=1.2, clip_on=False)
+    ax.text(-0.02, 2.5, "5 Hz", rotation=90, ha="right", va="center", fontsize=7, color=INK)
     ax.set_yticks([])
+    ax.set_xlim(-0.03, 0.58)
     ax.set_xlabel("time (s)")
     ax.set_title(
         f"Replicate {rep}: active motor neurons, r = {row['corrcoef_active']:.6f} over all active cells",
         loc="left",
         fontsize=9,
+        pad=22,
     )
-    ax.legend(loc="upper right", fontsize=7)
+    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, fontsize=7)
     fig.savefig(out / "fig2_authors_overlay.png")
     plt.close(fig)
 

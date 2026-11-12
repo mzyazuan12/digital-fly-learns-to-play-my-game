@@ -139,3 +139,127 @@ Every experiment directory is new (existing outputs are refused), records the gi
 ---
 
 <!-- RESULTS -->
+## 6. Discussion
+
+### 6.1 What is now established
+
+The neural layer that will drive the organism's legs is no longer a guess. On the male CNS connectome, the same cell the authors drove (DNg100_R, MaleCNS 10056), driven at the published amplitude, recruits the identified walking CPG and produces rhythmic leg motor output near 11 Hz in essentially every sampled network. The implementation is not merely "similar to" the authors': given their parameters it reproduces their traces at r > 0.9998 replicate by replicate, and its own sampler reproduces their parameters to float32 precision. The two remaining differences (Dopri5 in SciPy versus Diffrax, float64 versus float32) change traces in the fourth decimal of the correlation and never change which neurons are active.
+
+### 6.2 What is not established
+
+- **This is a model, not a measurement.** Membrane time constants, gains, thresholds and the synapse-to-current scale are the authors' assumptions, randomised per replicate. The connectome fixes topology and synapse counts; the dynamics are a hypothesis, which the original paper tested with optogenetics in MANC flies and which we have not tested in animals.
+- **One front leg's network, not the CNS.** The 4,310 neurons are the descending, premotor and motor neurons of the front legs inside the VNC ROIs. The rest of the brain is absent, so nothing here says how DNg100 is recruited in the first place.
+- **No body yet.** Motor-neuron rates have not been mapped to muscles or joint torques. The organism still walks with FlyGym's engineered CPG (`MODE_ENGINEERED_CPG`); `MODE_NEURAL_CPG` records the motif without actuating joints.
+- **Rhythm is not gait.** An 11 Hz alternation in a set of motor modules is consistent with walking step frequencies, but stance/swing phasing across legs, inter-leg coordination and load-dependent feedback are not tested.
+- **Rate model only.** Our earlier all-LIF tiny-circuit model with uniform Shiu et al. constants did not produce the CPG rhythm. We did not tune it to do so; that negative result stands, and the model choice is now justified by agreement with an independent published result.
+
+### 6.3 What the errors teach
+
+Four of the errors in [Appendix A](#appendix-a-errors-caught-before-they-became-results) would each have produced a plausible-looking but false result: a namespace collision that drove a GABAergic cell instead of DNg100; a wrong I2 type; a normalization denominator that silenced DNg100 (the "MaleCNS does not reproduce" result that was correctly demoted to a control); and a stimulus amplitude borrowed from a different dataset. None of them was caught by looking at whether the fly "looked right". They were caught by tracing every number to a primary source and refusing to interpret a run until its provenance was complete. The same discipline has to carry into the embodied work, where it is much easier to fool oneself.
+
+### 6.4 Consequences for the organism
+
+The locomotor gate is open. The next stages can now be built on top of it:
+
+1. **Neural motor bridge.** Map active motor modules (coxa swing/stance, femur/trochanter extend/flex, …) onto FlyBody actuators, and replace the engineered CPG for one leg, then six.
+2. **Bilateral and multi-segment networks.** Extend from the front-leg network to all six legs, using the same validation pattern against published MANC/BANC results.
+3. **Brain-to-VNC.** Connect the brain side of MaleCNS so that sensory input, not an injected current, recruits DNg100 and other walking DNs.
+4. **Closed loop.** Body → senses → brain → VNC → body, with proprioceptive feedback.
+5. **Persistent individual.** Memory (mushroom-body KC→MBON plasticity), drives and neuromodulation acting on identified circuits, running continuously.
+
+Each stage gets its own published-result gate before its output is trusted.
+
+---
+
+## 7. On consciousness
+
+The project's long-range question is whether a persistent, embodied, connectome-grounded organism could develop properties relevant to consciousness. This paper does not address that question, and nothing in it is evidence for or against consciousness in this or any simulation. A firing-rate model of 4,310 neurons producing a walking rhythm is a reflex-level motor circuit, which nobody proposes as conscious.
+
+We want to be precise about what can be done. There is no accepted test for consciousness, in animals or machines. What does exist is a set of computational properties that leading theories associate with it, such as global availability of information, recurrent processing, unified agency, a model of the body and of the self, metacognitive monitoring and flexible goal-directed behaviour (Butlin et al. 2023 survey these "indicator properties"), together with a serious scientific literature on whether insects themselves have subjective experience (e.g. Barron & Klein 2016). Those properties are testable in a digital organism, one by one, in the same way this paper tests the locomotor circuit: with pre-registered criteria, controls and lesions. Possible future measurements include:
+
+- **Persistence and individuality:** whether behavioural preferences and spatial memories are stable within one individual over long simulated time and differ between individuals born from the same anatomy.
+- **Self/world distinction:** whether the organism's internal state distinguishes sensory changes caused by its own movement from changes in the world (efference-copy-like prediction).
+- **Prediction error and surprise:** whether internal signals track violated expectations and change subsequent behaviour.
+- **Metacognition-like signals:** whether there are internal variables that track the reliability of its own decisions.
+- **Transfer:** whether skills learned in one environment change behaviour in an unrelated one.
+
+If such properties emerge, they are *evidence relevant to* machine-consciousness theories, which is how we will report them. They would not be proof that the organism is conscious, and we will not write a variable called `consciousness`.
+
+---
+
+## 8. Conclusion
+
+The neural foundation of the virtual fly reproduces a published, causally tested walking result on the fly's own connectome. On the authors' exact male-CNS network, our implementation matches their sampled parameters to float32 precision and their published traces replicate by replicate. In an independent 1,024-network sample it drives the identified CPG and produces rhythmic leg motor output at ~11 Hz from the same descending neuron. Lesion, null-wiring and dose-response arms show which parts of that result come from the measured wiring. This is the first gate of the organism, not the organism. It is the point at which the project can stop asking whether the neural layer is fake and start connecting it to a body.
+
+---
+
+## 9. Reproducibility
+
+Environment: the repository's `.venv` (Python, NumPy, SciPy, JAX 0.9.2 for the authors' sampler and scorer). The authors' code is vendored at `third_party/Pugliese_2026`, commit `10e7661bf414ba7b4c2edf795cd36d0f878c17c0`.
+
+```sh
+# 1. MANC port check (authors' Hydra output → our integrator)
+.venv/bin/python -m experiment.pugliese_rate_manc_portcheck
+
+# 2. Authors' archived mCNS run (Zenodo 22260924, 846 MB, md5 75779631356162efa7e701847dbbb9a0)
+mkdir -p data/zenodo_pugliese_22260924
+curl -L -o data/zenodo_pugliese_22260924/DNg100_Stim_IMAC_vncOnly.zip \
+  "https://zenodo.org/api/records/22260924/files/DNg100_Stim_IMAC_vncOnly.zip/content"
+(cd data/zenodo_pugliese_22260924 && unzip -q DNg100_Stim_IMAC_vncOnly.zip -d extracted)
+.venv/bin/python -m experiment.authors_mcns_zenodo_compare
+
+# 3. Independent 1,024-replicate battery with all arms
+./scripts/run_mcns_dng100_battery.sh
+
+# 4. Figures
+.venv/bin/python scripts/make_paper1_figures.py --battery outputs/mcns_dng100_battery_<stamp> \
+  --compare outputs/authors_mcns_zenodo_compare_<stamp> --out docs/papers/figures
+
+# Tests
+.venv/bin/python -m pytest -q --ignore=tests/test_connectome_full.py
+```
+
+Data hashes: `wTable_20260210_vncRoisOnly.csv` SHA-256 `593a75c5…dd5b2d`; `W_20260210_vncRoisOnly.csv` SHA-256 `255236ba…b58d3b4`. Each experiment directory's `report.json` records the git commit, hashes, parameters, stimulus provenance and per-replicate metrics. Summary JSON for this paper is committed under `docs/papers/data/`.
+
+---
+
+## 10. References
+
+- Azevedo, A. et al. (2024). Connectomic reconstruction of a female *Drosophila* ventral nerve cord. *Nature*.
+- Barron, A. B. & Klein, C. (2016). What insects can tell us about the origins of consciousness. *PNAS*.
+- Berg, S. et al. (2025/2026). Sexual dimorphism in the complete connectome of the *Drosophila* male central nervous system. *bioRxiv* 10.1101/2025.10.09.680999; reported published in *Cell* (2026). Data: male CNS v1.0, https://male-cns.janelia.org.
+- Butlin, P., Long, R. et al. (2023). Consciousness in artificial intelligence: insights from the science of consciousness. *arXiv*:2308.08708.
+- Cheong, H. S. J. et al. (2024). Transforming descending input into behavior: the organization of premotor circuits in the *Drosophila* male adult nerve cord connectome. *eLife*.
+- Dorkenwald, S. et al. (2024). Neuronal wiring diagram of an adult brain. *Nature*.
+- Dormand, J. R. & Prince, P. J. (1980). A family of embedded Runge–Kutta formulae. *J. Comput. Appl. Math.*
+- Eon Systems (2026). Embodied fruit-fly brain emulation demonstration; press coverage, e.g. [ISPR, 21 April 2026](https://ispr.info/2026/04/21/researchers-upload-model-of-flys-brain-to-matrix-let-it-control-virtual-body/). Not peer reviewed at time of writing.
+- Lappalainen, J. K. et al. (2024). Connectome-constrained networks predict neural activity across the fly visual system. *Nature*.
+- Lobato-Rios, V. et al. (2022). NeuroMechFly, a neuromechanical model of adult *Drosophila melanogaster*. *Nature Methods*.
+- Marin, E. C. et al. (2024). Systematic annotation of a complete adult male *Drosophila* nerve cord connectome reveals principles of functional organisation. *eLife*.
+- Pugliese, S. M. et al. (2025/2026). Connectome simulations identify a central pattern generator circuit for fly walking. *bioRxiv* 10.1101/2025.09.12.675944 (v2). Code: github.com/smpuglie/Pugliese_2026. Data: Zenodo 22260924.
+- Schlegel, P. et al. (2024). Whole-brain annotation and multi-connectome cell typing of *Drosophila*. *Nature*.
+- Shiu, P. K. et al. (2024). A *Drosophila* computational brain model reveals sensorimotor processing. *Nature*.
+- Takemura, S. et al. (2024). A connectome of the male *Drosophila* ventral nerve cord. *eLife*.
+- Todorov, E., Erez, T. & Tassa, Y. (2012). MuJoCo: a physics engine for model-based control. *IROS*.
+- Vaxenburg, R. et al. (2025). Whole-body physics simulation of fruit fly locomotion. *Nature*.
+- Virtanen, P. et al. (2020). SciPy 1.0: fundamental algorithms for scientific computing in Python. *Nature Methods*.
+- Wang-Chen, S. et al. (2024). NeuroMechFly v2: simulating embodied sensorimotor control in adult *Drosophila*. *Nature Methods*.
+
+---
+
+## Appendix A. Errors caught before they became results
+
+| # | Error | How it would have looked | How it was caught | Status |
+|---|---|---|---|---|
+| A1 | Body-ID namespace collision: MANC 10056 (vMS16, GABAergic) joined to MaleCNS 10056 (DNg100_R) on the integer | Driving an inhibitory cell and calling it DNg100 | Identity re-derived from each dataset's own annotation table | Fixed; old mapping archived as `INVALID_pre_namespace_fix` |
+| A2 | I2 assigned as IN19B007 instead of IN19A007 | Wrong inhibitory partner in lesions and read-outs | Checked against the paper's cell-type list | Fixed; provenance in `cpg_mapping.json` |
+| A3 | Leg/side from non-synaptic signals | CPG copies assigned to the wrong leg | Re-assigned from each cell's own LegNp synapses, no fallback | Fixed; old mapping archived as `INVALID_pre_roi` |
+| A4 | SWC skeleton volume used as neuron size | Rhythm in a 371-cell transfer whose normalization was not the authors' | Authors use the neuPrint `volume` property | Superseded; runs kept, not used as evidence |
+| A5 | Size denominator = median of all MaleCNS neurons (178,403,737) instead of the simulated population (998,603,428.5) | DNg100 thresholds ~5.6× too high: a silent "MaleCNS fails to reproduce" result | Read the authors' `set_sizes()`; later confirmed by parameter-level match (§5.3) | Demoted to a labelled control |
+| A6 | MANC amplitude (I = 250) used on mCNS | DNg100 recruited, no CPG rhythm: an apparent negative result | Paper Methods give I = 400 for CNS datasets; archived config confirms | Kept as a labelled amplitude control |
+| A7 | Spike-train spectral peaks (273/409 Hz) in the all-LIF tiny circuit | A "rhythm" from spike timing, not a CPG | Frequency bands are annotations only; recruitment and E1/E2 criteria required | Reported as a negative result |
+| A8 | Restricting FFT search to a walking band | Selecting a favourable answer | Removed: the search is unrestricted | Fixed |
+
+## Appendix B. AI assistance
+
+Analysis code, experiment runners and this draft were written with the assistance of Claude (Anthropic) working in this repository under the author's direction. Every quantitative claim is generated by committed code from committed or publicly archived data, and is checked by the tests listed in [Section 9](#9-reproducibility).

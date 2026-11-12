@@ -1,0 +1,65 @@
+{
+  "source": "Zenodo 22260924 DNg100_Stim_IMAC_vncOnly run 33241780 (authors' 1,024 replicates)",
+  "reference_module": "coxa swing",
+  "phase_definition": "cross-correlation peak lag of module mean z-trace vs coxa swing, in cycles [0,1)",
+  "summary": {
+    "n_replicates": 1024,
+    "active_mn_sides_counts": {
+      "L+R": 450,
+      "L": 574
+    },
+    "fraction_replicates_module_active": {
+      "coxa stance": 1.0,
+      "coxa swing": 1.0,
+      "femur reductor": 0.00390625,
+      "femur/tr extend": 0.072265625,
+      "femur/tr flex": 1.0,
+      "tibia extend": 0.001953125
+    },
+    "phase_vs_coxa_swing": {
+      "coxa stance": {
+        "n": 1024,
+        "circular_mean_cycles": 0.8376678353740341,
+        "resultant_length": 0.9414656768916232
+      },
+      "femur/tr flex": {
+        "n": 1024,
+        "circular_mean_cycles": 0.981157718378283,
+        "resultant_length": 0.9971085369821846
+      },
+      "femur/tr extend": {
+        "n": 74,
+        "circular_mean_cycles": 0.13013098026872522,
+        "resultant_length": 0.960297668209437
+      },
+      "femur reductor": {
+        "n": 4,
+        "circular_mean_cycles": 0.9663719674960124,
+        "resultant_length": 0.9958509305481922
+      },
+      "tibia extend": {
+        "n": 2,
+        "circular_mean_cycles": 0.9389589275233446,
+        "resultant_length": 0.999846490219008
+      }
+    },
+    "cpg_active_sides_counts": {
+      "E1": {
+        "L": 1024
+      },
+      "E2": {
+        "L": 1024
+      },
+      "E3": {
+        "R": 1024
+      },
+      "I1": {
+        "L": 1024
+      },
+      "I2": {
+        "L": 1024
+      }
+    }
+  },
+  "finished_utc": "2026-11-12T03:19:03.275840+00:00"
+}
