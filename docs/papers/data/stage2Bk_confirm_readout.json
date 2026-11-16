@@ -1,0 +1,667 @@
+{
+ "run_dir": "/private/tmp/claude-501/-Users-mac-fly-learns-shiri/a8f187aa-7c0e-4a1d-87ab-b5a6ac6dcca1/scratchpad/readout_links/confirm",
+ "arm": "kappa_confirm",
+ "frozen_sha256": "91bc54c33dd1c1e60199ece5f6a0c17f947393dc9022963e4d221b6d456fac25",
+ "conditions": {
+  "closed_loop:protraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 64,
+    "mean_cycles": 0.8035139154547732,
+    "R": 0.992189893172719,
+    "n_total": 64,
+    "n_measurable": 64,
+    "R_all": 0.992189893172719,
+    "pass": false,
+    "unmeasurable_reasons": {}
+   },
+   "within_T1R": {
+    "n": 42,
+    "mean_cycles": 0.7106769628079868,
+    "R": 0.9858468753244113,
+    "n_total": 64,
+    "n_measurable": 42,
+    "R_all": 0.6469620119316449,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 8,
+     "coxa stance inactive": 11,
+     "module frequencies differ > 1 Hz": 3
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5108943034045577,
+    "R": 0.33319195425986164,
+    "median_plv": 0.12552959799976673,
+    "null_R_p99": 0.24515206183544244,
+    "pass": false
+   }
+  },
+  "closed_loop:protraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 62,
+    "mean_cycles": 0.8030096535015832,
+    "R": 0.9930168107956101,
+    "n_total": 64,
+    "n_measurable": 62,
+    "R_all": 0.9619850354582474,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 1,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "within_T1R": {
+    "n": 40,
+    "mean_cycles": 0.7077629975383687,
+    "R": 0.9876996773344519,
+    "n_total": 64,
+    "n_measurable": 40,
+    "R_all": 0.6173122983340324,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa stance inactive": 15,
+     "module score < 0.5": 6,
+     "module frequencies differ > 1 Hz": 3
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5339268677240587,
+    "R": 0.441925477923675,
+    "median_plv": 0.1260655697767311,
+    "null_R_p99": 0.2548180384764307,
+    "pass": false
+   }
+  },
+  "closed_loop:retraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 46,
+    "mean_cycles": 0.8919057998182472,
+    "R": 0.8627152566083318,
+    "n_total": 64,
+    "n_measurable": 46,
+    "R_all": 0.6200765906872385,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa swing inactive": 4,
+     "module score < 0.5": 13,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "within_T1R": {
+    "n": 45,
+    "mean_cycles": 0.718821680501192,
+    "R": 0.9892236862146869,
+    "n_total": 64,
+    "n_measurable": 45,
+    "R_all": 0.6955479043697017,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module frequencies differ > 1 Hz": 5,
+     "module score < 0.5": 7,
+     "coxa stance inactive": 6,
+     "coxa swing inactive": 1
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 63,
+    "mean_cycles": 0.3555601533976141,
+    "R": 0.2534229182218699,
+    "median_plv": 0.11320784604382933,
+    "null_R_p99": 0.2878274982732672,
+    "pass": false
+   }
+  },
+  "closed_loop:retraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 54,
+    "mean_cycles": 0.8655492333305796,
+    "R": 0.9155099626437058,
+    "n_total": 64,
+    "n_measurable": 54,
+    "R_all": 0.7724615309806269,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 9,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "within_T1R": {
+    "n": 43,
+    "mean_cycles": 0.716622860460139,
+    "R": 0.9914316287103069,
+    "n_total": 64,
+    "n_measurable": 43,
+    "R_all": 0.6661181255397375,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 11,
+     "coxa stance inactive": 9,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.4765005081126343,
+    "R": 0.2792738461834613,
+    "median_plv": 0.1165320921642727,
+    "null_R_p99": 0.26773046119202604,
+    "pass": false
+   }
+  },
+  "deafferented": {
+   "n": 64,
+   "within_T1L": {
+    "n": 64,
+    "mean_cycles": 0.8096591720353694,
+    "R": 0.9935888990103307,
+    "n_total": 64,
+    "n_measurable": 64,
+    "R_all": 0.9935888990103307,
+    "pass": false,
+    "unmeasurable_reasons": {}
+   },
+   "within_T1R": {
+    "n": 29,
+    "mean_cycles": 0.7133464573455471,
+    "R": 0.9878106286013798,
+    "n_total": 64,
+    "n_measurable": 29,
+    "R_all": 0.4476016910850002,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa stance inactive": 18,
+     "module frequencies differ > 1 Hz": 5,
+     "module score < 0.5": 12
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5708620525301253,
+    "R": 0.4485216972364686,
+    "median_plv": 0.12959873623807966,
+    "null_R_p99": 0.2900713947200085,
+    "pass": false
+   }
+  },
+  "mismatched:protraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 45,
+    "mean_cycles": 0.8086811210267253,
+    "R": 0.9768736558111972,
+    "n_total": 64,
+    "n_measurable": 45,
+    "R_all": 0.686864289242248,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module frequencies differ > 1 Hz": 7,
+     "module score < 0.5": 12
+    }
+   },
+   "within_T1R": {
+    "n": 36,
+    "mean_cycles": 0.7147696969426747,
+    "R": 0.9895774329238364,
+    "n_total": 64,
+    "n_measurable": 36,
+    "R_all": 0.5566373060196579,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 12,
+     "coxa stance inactive": 14,
+     "module frequencies differ > 1 Hz": 2
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5156702058354075,
+    "R": 0.518694993795874,
+    "median_plv": 0.14988437646235053,
+    "null_R_p99": 0.23428609023298683,
+    "pass": false
+   }
+  },
+  "mismatched:protraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 49,
+    "mean_cycles": 0.8095206270183428,
+    "R": 0.9806842314154779,
+    "n_total": 64,
+    "n_measurable": 49,
+    "R_all": 0.7508363646774753,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 8,
+     "module frequencies differ > 1 Hz": 7
+    }
+   },
+   "within_T1R": {
+    "n": 35,
+    "mean_cycles": 0.7138009340222591,
+    "R": 0.9872045267822552,
+    "n_total": 64,
+    "n_measurable": 35,
+    "R_all": 0.5398774755840459,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa stance inactive": 17,
+     "module frequencies differ > 1 Hz": 3,
+     "module score < 0.5": 9
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.42903207793685777,
+    "R": 0.2007159038241299,
+    "median_plv": 0.11180364659886431,
+    "null_R_p99": 0.2452561074241334,
+    "pass": false
+   }
+  },
+  "mismatched:retraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 29,
+    "mean_cycles": 0.8534627220491581,
+    "R": 0.881034791792352,
+    "n_total": 64,
+    "n_measurable": 29,
+    "R_all": 0.3992188900309095,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 27,
+     "coxa swing inactive": 3,
+     "module frequencies differ > 1 Hz": 5
+    }
+   },
+   "within_T1R": {
+    "n": 35,
+    "mean_cycles": 0.7086372513546004,
+    "R": 0.9635823172700613,
+    "n_total": 64,
+    "n_measurable": 35,
+    "R_all": 0.5269590797570648,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module frequencies differ > 1 Hz": 4,
+     "module score < 0.5": 15,
+     "coxa stance inactive": 9,
+     "coxa swing inactive": 1
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 63,
+    "mean_cycles": 0.472195613333368,
+    "R": 0.3044396503146499,
+    "median_plv": 0.18015551493953857,
+    "null_R_p99": 0.27941605809332587,
+    "pass": false
+   }
+  },
+  "mismatched:retraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 42,
+    "mean_cycles": 0.8398772618178322,
+    "R": 0.9194384244793931,
+    "n_total": 64,
+    "n_measurable": 42,
+    "R_all": 0.6033814660646017,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 16,
+     "module frequencies differ > 1 Hz": 6
+    }
+   },
+   "within_T1R": {
+    "n": 34,
+    "mean_cycles": 0.7126477810014039,
+    "R": 0.9920273813992357,
+    "n_total": 64,
+    "n_measurable": 34,
+    "R_all": 0.527014546368344,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 18,
+     "module frequencies differ > 1 Hz": 2,
+     "coxa stance inactive": 10
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.4330501071167769,
+    "R": 0.16570450242332163,
+    "median_plv": 0.101624771722064,
+    "null_R_p99": 0.3084427632655883,
+    "pass": false
+   }
+  },
+  "open_loop": {
+   "n": 64,
+   "within_T1L": {
+    "n": 64,
+    "mean_cycles": 0.8096591720353694,
+    "R": 0.9935888990103307,
+    "n_total": 64,
+    "n_measurable": 64,
+    "R_all": 0.9935888990103307,
+    "pass": false,
+    "unmeasurable_reasons": {}
+   },
+   "within_T1R": {
+    "n": 29,
+    "mean_cycles": 0.7133464573455471,
+    "R": 0.9878106286013798,
+    "n_total": 64,
+    "n_measurable": 29,
+    "R_all": 0.4476016910850002,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa stance inactive": 18,
+     "module frequencies differ > 1 Hz": 5,
+     "module score < 0.5": 12
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5708620525301253,
+    "R": 0.4485216972364686,
+    "median_plv": 0.12959873623807966,
+    "null_R_p99": 0.2900713947200085,
+    "pass": false
+   }
+  },
+  "scrambled:protraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 55,
+    "mean_cycles": 0.8058827312040522,
+    "R": 0.9909856987896014,
+    "n_total": 64,
+    "n_measurable": 55,
+    "R_all": 0.8516283348973137,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 8,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "within_T1R": {
+    "n": 33,
+    "mean_cycles": 0.7168322473211333,
+    "R": 0.9864817875641282,
+    "n_total": 64,
+    "n_measurable": 33,
+    "R_all": 0.5086546717127536,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 17,
+     "coxa stance inactive": 10,
+     "module frequencies differ > 1 Hz": 4
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5814254340453251,
+    "R": 0.5222110883303813,
+    "median_plv": 0.13037856462985178,
+    "null_R_p99": 0.24948397702057445,
+    "pass": false
+   }
+  },
+  "scrambled:protraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 54,
+    "mean_cycles": 0.8104345042163577,
+    "R": 0.9923085213730454,
+    "n_total": 64,
+    "n_measurable": 54,
+    "R_all": 0.837260314908507,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 9,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "within_T1R": {
+    "n": 29,
+    "mean_cycles": 0.7152699421743978,
+    "R": 0.9883913146309958,
+    "n_total": 64,
+    "n_measurable": 29,
+    "R_all": 0.44786481444217,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "coxa stance inactive": 13,
+     "module score < 0.5": 19,
+     "module frequencies differ > 1 Hz": 3
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.5504395419021342,
+    "R": 0.3579039492924779,
+    "median_plv": 0.12112082613292507,
+    "null_R_p99": 0.2667358659795176,
+    "pass": false
+   }
+  },
+  "scrambled:retraction-extension": {
+   "n": 64,
+   "within_T1L": {
+    "n": 40,
+    "mean_cycles": 0.863407619144074,
+    "R": 0.8599098555098477,
+    "n_total": 64,
+    "n_measurable": 40,
+    "R_all": 0.5374436596936547,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module frequencies differ > 1 Hz": 6,
+     "coxa swing inactive": 4,
+     "module score < 0.5": 14
+    }
+   },
+   "within_T1R": {
+    "n": 46,
+    "mean_cycles": 0.7161272173822621,
+    "R": 0.9898608124010535,
+    "n_total": 64,
+    "n_measurable": 46,
+    "R_all": 0.7114624589132572,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 9,
+     "coxa stance inactive": 7,
+     "module frequencies differ > 1 Hz": 1,
+     "coxa swing inactive": 1
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.3667202305167498,
+    "R": 0.31315257865317625,
+    "median_plv": 0.1230043029720988,
+    "null_R_p99": 0.26456362826637225,
+    "pass": false
+   }
+  },
+  "scrambled:retraction-flexion": {
+   "n": 64,
+   "within_T1L": {
+    "n": 56,
+    "mean_cycles": 0.8578306771630011,
+    "R": 0.90885479259862,
+    "n_total": 64,
+    "n_measurable": 56,
+    "R_all": 0.7952479435237925,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 6,
+     "module frequencies differ > 1 Hz": 2
+    }
+   },
+   "within_T1R": {
+    "n": 44,
+    "mean_cycles": 0.7130548478613952,
+    "R": 0.9919996211644855,
+    "n_total": 64,
+    "n_measurable": 44,
+    "R_all": 0.6819997395505838,
+    "pass": false,
+    "unmeasurable_reasons": {
+     "module score < 0.5": 8,
+     "coxa stance inactive": 11,
+     "module frequencies differ > 1 Hz": 1
+    }
+   },
+   "between_T1L_T1R": {
+    "n": 64,
+    "mean_cycles": 0.4448024875320394,
+    "R": 0.26674295653233276,
+    "median_plv": 0.11475197173438764,
+    "null_R_p99": 0.24408287113604613,
+    "pass": false
+   }
+  }
+ },
+ "verdict": {
+  "protraction-extension": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  },
+  "protraction-flexion": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  },
+  "retraction-extension": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  },
+  "retraction-flexion": {
+   "within_T1L": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "within_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   },
+   "between_T1L_T1R": {
+    "closed_loop_pass": false,
+    "controls_pass": {
+     "open_loop": false,
+     "deafferented": false,
+     "scrambled": false,
+     "mismatched": false
+    },
+    "positive": false
+   }
+  }
+ },
+ "finished_utc": "2026-11-16T07:22:11.201539+00:00"
+}
