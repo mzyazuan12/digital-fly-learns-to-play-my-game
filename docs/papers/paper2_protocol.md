@@ -125,3 +125,12 @@ Both must hold in ≥ 95% of calibration replicates, in all 4 cells. κ\* is the
 
 *Scan (descriptive only).* Closed loop and its controls at every grid κ, on replicates 0–15, reported in full as curves. No positive claim may rest on a κ other than κ\*.
 
+**A9 (15 November 2026), κ\* frozen. No coordination read-out has been computed.** The A8 calibration ran 3,072 network runs (12 κ × 4 hair-plate cells × replicates 960–1023; 0 failed, 0 non-finite; 2 h 8 min). The criteria were applied exactly as pre-registered:
+
+- κ ≥ 0.03: feedback alone activates largest-tercile (fast-proxy) motor neurons in at least some cells. At κ = 0.03 and 0.05, C1 holds in the two retraction cells but in only 20–22% (κ 0.03) or 0% (κ 0.05) of protraction-cell replicates.
+- κ ≤ 0.02: C1 and C2 hold in 100% of replicates in all 4 cells.
+- **κ\* = 0.02.** Effectiveness: at κ\*, no smallest-tercile motor neuron is active in any replicate of any cell. The label is **"feedback ineffective"**; per A8 the test still runs.
+- Recorded observation: on this grid there is no κ at which afferent drive alone activates small (slow-proxy) motor neurons while sparing the largest. At κ = 0.1 the protraction cells activate smallest-tercile motor neurons in 72–94% of replicates, but largest-tercile ones too. The model does not reproduce size-ordered recruitment by feedback (Azevedo et al. 2020) at any single sensory scale.
+
+**κ-frozen file:** `data/paper2/stage2Bk_kappa_frozen.json`, SHA-256 `0e59ac6b5be3f729b7e3560aa13395bb27311d42ac7dc93fac5be8bc92e0160a`. The κ runner refuses any other hash.
+
