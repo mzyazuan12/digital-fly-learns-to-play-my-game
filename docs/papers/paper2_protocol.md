@@ -134,3 +134,32 @@ Both must hold in ≥ 95% of calibration replicates, in all 4 cells. κ\* is the
 
 **κ-frozen file:** `data/paper2/stage2Bk_kappa_frozen.json`, SHA-256 `0e59ac6b5be3f729b7e3560aa13395bb27311d42ac7dc93fac5be8bc92e0160a`. The κ runner refuses any other hash.
 
+**A10 (19 November 2026), stage 2M: size-principle afferent efficacy. Pre-registered after the stage 2B-κ negative result and before any stage 2M run.**
+
+*Why.* Stage 2B-κ found no single sensory scale at which afferent drive recruits small motor neurons while sparing large ones (A9). In the connectome, the included afferents contact 18 of 22 largest-tercile left motor neurons but only 5 of 23 smallest, and 0 of 21 smallest on the right. Synapse counts rise with motor-neuron size (log–log slope 0.74 left, 1.22 right), which cancels the rate model's own size scaling. In the A9 calibration, the first motor neurons recruited were largest-tercile coxa-stance neurons with 118–302 afferent synapses, and the recruitment-order index (Spearman of size against recruitment κ) was −0.15 to −0.26. Azevedo et al. 2020 (eLife 9:e56754) found the opposite order in flies: feedback PSPs are largest in slow motor neurons, and fast motor neurons are never driven to spike by feedback.
+
+*Mechanism (ENGINEERED).*
+- For each front-leg motor neuron j with n_j > 0 synapses from the 31 included afferents, the afferents' synapses onto j are multiplied by f_j = n_ref / n_j, with n_ref = 28 (the median over the 44 contacted motor neurons). Every contacted motor neuron therefore receives the same total afferent weight, 0.03 · κ · 28.
+- κ multiplies all outgoing afferent synapses, as in A8.
+- This changes 140 entries of the post × pre matrix (afferent columns × motor-neuron rows) and creates none.
+- Central synapses, afferent → interneuron synapses (beyond κ), the frozen bridge (A7), the transduction and the read-out are unchanged.
+- With f ≡ 1 the network equals the A8 κ network.
+
+*κ\*₂M is fixed by an independent criterion before any coordination read-out.*
+- Set-up and grid are exactly as A8: replicates 960–1023, DN drive off, no body, walking-clip stimulus (SHA-256 `c6ede5aa…` as in A9), r\* = 100 Hz, 4 hair-plate cells, κ ∈ {1, 0.5, 0.3, 0.2, 0.1, 0.05, 0.03, 0.02, 0.01, 0.005, 0.003, 0.001}.
+- Criteria C1 and C2 are as A8, and κ\*₂M is the largest grid κ meeting both in ≥ 95% of replicates in all 4 cells.
+- Recorded at κ\*₂M: the A8 effectiveness label.
+- Recorded over the grid, per cell: the order index O_c. κ_rec,j is the smallest grid κ at which motor neuron j is active in ≥ 50% of replicates, and O_c = Spearman(s_j, κ_rec,j) over motor neurons recruited on the grid. The recruitment is "size-ordered" if O_c > 0 in all 4 cells, each with ≥ 10 recruited motor neurons.
+- The confirmatory test runs only if κ\*₂M exists, the effectiveness label is "effective" or "mixed", and the recruitment is size-ordered. Otherwise the calibration is the stage's reported result.
+- κ\*₂M, the factor table and the full calibration table are written to `data/paper2/stage2M_frozen.json`. Its SHA-256 is committed in an amendment before any test run.
+
+*Test (confirmatory).* As A8's test (A1–A7: bilateral DNg100, position actuation, r\* = 100 Hz, 4 hair-plate cells, replicates 0–63, five conditions), with the stage 2M network at κ\*₂M. Read-outs, pass rules and the positive-verdict rule are unchanged (`experiment/paper2_stage2B_readout.py`, SHA-256 `9765fd82…`). A pass is described according to checks F1, F2 and F15–F20 of the stage 2M design.
+
+*Descriptive only.*
+- The κ scan: closed loop, scrambled and mismatched at every grid κ, replicates 0–15.
+- A size-specificity control: f permuted within each leg, 4 fixed seeds, closed loop at κ\*₂M, replicates 0–15.
+- No positive claim may rest on a κ other than κ\*₂M or on permuted factors.
+
+*Accepted in advance.* The rule cannot create contacts, so right-leg smallest-tercile motor neurons cannot be recruited directly. Recruitment through interneurons stays scaled by κ alone. Azevedo et al. recorded tibia motor neurons under femoral chordotonal stimulation; as in A8, their constraint is applied to all front-leg motor neurons and afferent channels.
+
+*Owner decisions on design §12 (19 November 2026).* Equal-current form; multiplier allowed above 1 (no cap); confirmatory test gated as stated above; Azevedo constraint applied to all motor neurons and channels as in A8; candidate (b), 9A presynaptic gating, deferred to a later stage that first separates claw and hook afferents; the stage is named 2M.

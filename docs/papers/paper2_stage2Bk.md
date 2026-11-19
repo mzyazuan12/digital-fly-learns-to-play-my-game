@@ -76,3 +76,8 @@ Together with the calibration finding, this localises the gap. The model lacks s
 - **The right femur** calibration criterion failed (A7).
 - **Torque actuation (R1)** was not run.
 - **The scan** uses 16 replicates per κ.
+
+## Correction (19 November 2026)
+
+The interpretation above describes the 9A presynaptic inhibition in this rate model as "a weak subtraction, not gain control". That is too strong. The stage 2M design measured it: the main 9A neuron onto the included chordotonal afferents (IN09A012_L) fires tonically at 8–11 Hz, driven directly from DNg100, and on 2 of those afferents its inhibition is close to a veto. Across all afferents it remains small (9A → chordotonal synapses carry 1.1% of direct afferent-to-motor-neuron synapses; hair plates carry 88%), and it is tonic rather than phase-dependent. See [paper2_stage2M_design.md](paper2_stage2M_design.md) §2–3.
+
